@@ -52,7 +52,7 @@ const defaultProgress = (): Progress => ({
   homework: [],
   tiersByTest: [],
   tiersCelebrated: [],
-  unlockAll: false,
+  unlockAll: true,
   placementSeen: false,
   portfolioUrl: '',
 })
@@ -69,6 +69,11 @@ function read<T>(key: string): T | null {
 function loadProgress(): Progress {
   const saved = read<Progress>(PROGRESS_KEY)
   const p = { ...defaultProgress(), ...(saved ?? {}) }
+  // Режим ревью: один раз открываем всё для уже сохранённого прогресса (потом кнопка в профиле работает как обычно)
+  if (!localStorage.getItem('vaibik.reviewUnlock.v1')) {
+    localStorage.setItem('vaibik.reviewUnlock.v1', '1')
+    p.unlockAll = true
+  }
   if (p.lastDay !== today()) {
     return { ...p, todayXp: 0, perfectToday: 0, lessonsToday: 0, lastDay: today() }
   }
