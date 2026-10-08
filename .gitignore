@@ -34,3 +34,8 @@ playwright-report
 
 # Vercel
 .vercel
+
+# мобильное приложение: локальные ключи (см. mobile/.env.example)
+mobile/.env
+mobile/.env.*
+!mobile/.env.example
