@@ -4,7 +4,7 @@ import { useToast } from '../components/Toast'
 import { Bolt, Check, Fire, Shield } from '../components/Icons'
 import { MascotHead } from '../components/Mascot'
 import { ALL_LESSONS } from '../data/course'
-import { TRIAL_DAYS, annualPerMonth, tenge } from '../data/pricing'
+import { TRIAL_DAYS, annualPerMonth, usd } from '../data/pricing'
 import { navigate } from '../router'
 
 function Stat({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) {
@@ -81,7 +81,7 @@ export function Profile() {
               <span className="rounded-full bg-gold px-2.5 py-0.5 text-[12px] font-black text-[#5a3d00]">🎁 {TRIAL_DAYS} дня бесплатно</span>
             </div>
             <h3 className="mt-1.5 text-[20px] font-black leading-tight">Открой все разделы с Вайбик Pro</h3>
-            <p className="mt-1 text-[14px] font-semibold text-white/80">Безлимитные сердечки и ИИ-разбор кода. Потом от {tenge(annualPerMonth)}/мес при оплате за год.</p>
+            <p className="mt-1 text-[14px] font-semibold text-white/80">Безлимитные сердечки и ИИ-разбор кода. Потом от {usd(annualPerMonth)}/мес при оплате за год.</p>
           </div>
           <button className="btn btn-white btn-sm shrink-0" onClick={() => navigate('/pricing')}>
             Попробовать Pro

@@ -1,21 +1,31 @@
 /**
- * Тарифы Вайбика. Цены выбраны по исследованию рынка (docs/pricing-research.md).
+ * Тарифы Вайбика. Цены в долларах США — ориентир на глобальный рынок
+ * (обоснование: docs/pricing-research.md, раздел «Решение: глобальный рынок, USD»).
  * Оплата пока не подключена — кнопки ведут на экран входа.
+ *
+ * Все суммы храним в центах, чтобы не ловить ошибки округления float.
  */
 export const TRIAL_DAYS = 3
 
 export const PRICES = {
-  monthly: 3490, // ₸ в месяц
-  annual: 24990, // ₸ в год
+  monthly: 999, // $9.99 в месяц
+  annual: 5999, // $59.99 в год
 }
 
-export const annualPerMonth = Math.round(PRICES.annual / 12) // 2 083 ₸
-export const annualFull = PRICES.monthly * 12 // 41 880 ₸
-export const annualSavePct = Math.round((1 - PRICES.annual / annualFull) * 100) // 40 %
-export const annualSaveAmount = annualFull - PRICES.annual // 16 890 ₸
+export const annualPerMonth = Math.round(PRICES.annual / 12) // 500 → $5
+export const annualFull = PRICES.monthly * 12 // 11 988 → $119.88
+export const annualSavePct = Math.round((1 - PRICES.annual / annualFull) * 100) // 50 %
+export const annualSaveAmount = annualFull - PRICES.annual // 5 989 → $59.89
 
-/** 24990 → «24 990 ₸» (неразрывный пробел между разрядами) */
-export const tenge = (n: number) => `${n.toLocaleString('ru-RU').replace(/\s/g, '\u00A0')}\u00A0₸`
+/** Центы → «$9.99»; целые суммы без копеек: 500 → «$5», 0 → «$0». */
+export const usd = (cents: number) => {
+  const whole = cents % 100 === 0
+  const value = (cents / 100).toLocaleString('en-US', {
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: 2,
+  })
+  return `$${value}`
+}
 
 export const FREE_FEATURES = [
   'Раздел «Первый промпт» целиком',

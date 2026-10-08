@@ -8,7 +8,7 @@ import { Reveal } from '../components/Reveal'
 import { BrowserArt, BugArt } from '../components/Illustrations'
 import { Bolt, Check, Cross, Fire, Heart, Shield } from '../components/Icons'
 import { UNITS, UNIT_COLORS, type ChoiceExercise } from '../data/course'
-import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, tenge } from '../data/pricing'
+import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, usd } from '../data/pricing'
 
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -459,7 +459,7 @@ function Features() {
     <section id="features" className="scroll-mt-20 py-16 md:py-24">
       <div className="mx-auto max-w-[1160px] px-5 md:px-8">
         <SectionHead eyebrow="Почему затягивает" title="Учёба, которая ощущается как игра" sub="Всё, за что любят игровые приложения для обучения, — но про создание софта с ИИ." color="text-teal-dark" />
-        <div className="grid gap-5 md:grid-cols-2 md:gap-6">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
           {items.map((f, i) => (
             <Reveal key={f.title} delay={(i % 2) * 120}>
               <div className="card flex h-full flex-col gap-5 p-5 md:p-6" style={{ boxShadow: '0 5px 0 #E7E3F1' }}>
@@ -540,7 +540,7 @@ function Pricing() {
         <SectionHead
           eyebrow="Тарифы"
           title="Начни бесплатно, расти с Pro"
-          sub={`Базовый раздел — бесплатно навсегда. Pro открывает всё остальное, и первые ${TRIAL_DAYS} дня — за 0 ₸.`}
+          sub={`Базовый раздел — бесплатно навсегда. Pro открывает всё остальное, и первые ${TRIAL_DAYS} дня — за $0.`}
         />
         <BillingToggle period={period} onChange={setPeriod} />
 
@@ -550,7 +550,7 @@ function Pricing() {
             <div className="card flex h-full flex-col p-6 md:mt-5 md:p-7" style={{ boxShadow: '0 6px 0 #E7E3F1' }}>
               <div className="text-[15px] font-black uppercase tracking-wider text-muted">Free</div>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-[40px] font-black leading-none md:text-[44px]">0&nbsp;₸</span>
+                <span className="text-[40px] font-black leading-none md:text-[44px]">$0</span>
                 <span className="text-[16px] font-bold text-muted">навсегда</span>
               </div>
               <p className="mt-2 text-[15px] font-semibold text-muted">Карта не нужна. Учись в своём темпе.</p>
@@ -582,14 +582,14 @@ function Pricing() {
 
                 <div className="relative mt-3 min-h-[92px]">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className="text-[40px] font-black leading-none md:text-[44px]">{tenge(annual ? annualPerMonth : PRICES.monthly)}</span>
+                    <span className="text-[40px] font-black leading-none md:text-[44px]">{usd(annual ? annualPerMonth : PRICES.monthly)}</span>
                     <span className="text-[16px] font-bold text-white/75">/ мес</span>
-                    {annual && <s className="text-[17px] font-bold text-white/55">{tenge(PRICES.monthly)}</s>}
+                    {annual && <s className="text-[17px] font-bold text-white/55">{usd(PRICES.monthly)}</s>}
                   </div>
                   {annual ? (
                     <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[15px] font-bold text-white/85">
-                      <span>{tenge(PRICES.annual)} раз в год</span>
-                      <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[13px] font-black">экономия {tenge(annualSaveAmount)}</span>
+                      <span>{usd(PRICES.annual)} раз в год</span>
+                      <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[13px] font-black">экономия {usd(annualSaveAmount)}</span>
                     </div>
                   ) : (
                     <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[15px] font-bold text-white/85">
@@ -612,11 +612,11 @@ function Pricing() {
                   ))}
                 </ul>
 
-                <button className="btn btn-white btn-block btn-bouncy relative mt-auto" onClick={startTrial}>
+                <button className="btn btn-white btn-block btn-bouncy relative mt-auto whitespace-normal px-4 py-3 text-center leading-tight md:px-6" onClick={startTrial}>
                   Попробовать {TRIAL_DAYS} дня бесплатно
                 </button>
                 <p className="relative mt-3 text-center text-[14px] font-semibold leading-snug text-white/80">
-                  Сегодня 0&nbsp;₸. Через {TRIAL_DAYS} дня — {tenge(annual ? PRICES.annual : PRICES.monthly)} {annual ? 'за год' : 'в месяц'}, если не отменишь.
+                  Сегодня $0. Через {TRIAL_DAYS} дня — {usd(annual ? PRICES.annual : PRICES.monthly)} {annual ? 'за год' : 'в месяц'}, если не&nbsp;отменишь.
                 </p>
               </div>
             </div>
@@ -659,11 +659,11 @@ const FAQ = [
   },
   {
     q: 'Это бесплатно?',
-    a: `Да, раздел «Первый промпт», серия, XP и лиги бесплатны навсегда. Pro открывает все разделы, безлимитные сердечки и ИИ-разбор кода: ${tenge(PRICES.monthly)} в месяц или ${tenge(PRICES.annual)} в год (≈ ${tenge(annualPerMonth)} в месяц).`,
+    a: `Да, раздел «Первый промпт», серия, XP и лиги бесплатны навсегда. Pro открывает все разделы, безлимитные сердечки и ИИ-разбор кода: ${usd(PRICES.monthly)} в месяц или ${usd(PRICES.annual)} в год (≈ ${usd(annualPerMonth)} в месяц).`,
   },
   {
     q: 'Как работает пробный период?',
-    a: `Нажми «Попробовать ${TRIAL_DAYS} дня бесплатно» и выбери тариф — помесячный или годовой. Все возможности Pro сразу открываются, а сегодня с тебя 0 ₸. За день до конца пробного периода пришлём напоминание.`,
+    a: `Нажми «Попробовать ${TRIAL_DAYS} дня бесплатно» и выбери тариф — помесячный или годовой. Все возможности Pro сразу открываются, а сегодня с тебя $0. За день до конца пробного периода пришлём напоминание.`,
   },
   {
     q: 'Как отменить подписку?',
@@ -671,7 +671,7 @@ const FAQ = [
   },
   {
     q: 'Что будет после пробного периода?',
-    a: `Если не отменишь, на ${TRIAL_DAYS + 1}-й день спишем стоимость выбранного тарифа: ${tenge(PRICES.monthly)} за месяц или ${tenge(PRICES.annual)} за год. Дальше подписка продлевается автоматически, пока ты её не отменишь. А если решишь не продолжать, вернёшься на бесплатный тариф — прогресс и серия сохранятся.`,
+    a: `Если не отменишь, на ${TRIAL_DAYS + 1}-й день спишем стоимость выбранного тарифа: ${usd(PRICES.monthly)} за месяц или ${usd(PRICES.annual)} за год. Дальше подписка продлевается автоматически, пока ты её не отменишь. А если решишь не продолжать, вернёшься на бесплатный тариф — прогресс и серия сохранятся.`,
   },
   {
     q: 'Вайбик связан с Cursor, OpenAI или Anthropic?',
