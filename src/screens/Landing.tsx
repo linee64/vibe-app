@@ -8,6 +8,9 @@ import { Reveal } from '../components/Reveal'
 import { BrowserArt, BugArt, DatabaseArt, RocketArt } from '../components/Illustrations'
 import { Bolt, Check, Cross, Fire, Heart, Shield } from '../components/Icons'
 import { DEMO_EXERCISE, UNITS, UNIT_COLORS } from '../data/course'
+import { HOMEWORKS } from '../data/homework'
+import { SOON_TOPICS, TIERS, unitsOf } from '../data/tiers'
+import { TierBadge } from '../components/TierBadge'
 import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, usd } from '../data/pricing'
 
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -252,7 +255,7 @@ function Program() {
   return (
     <section id="program" className="scroll-mt-20 py-16 md:py-24">
       <div className="mx-auto max-w-[1160px] px-5 md:px-8">
-        <SectionHead eyebrow="Что ты изучишь" title="Пять разделов — от первого промпта до запуска" sub="Каждый раздел — 5 коротких уроков и итоговое испытание. Первый — бесплатно." color="text-coral" />
+        <SectionHead eyebrow="Что ты изучишь" title="Пять разделов — от первого промпта до запуска" sub="Каждый раздел — 5 коротких уроков, домашка-мини-проект и итоговое испытание. Первый — бесплатно." color="text-coral" />
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {UNITS.map((u, i) => {
             const c = UNIT_COLORS[u.color]
@@ -282,7 +285,7 @@ function Program() {
                       ))}
                     </ul>
                     <div className="mt-auto flex items-center justify-between pt-6">
-                      <span className="text-[14px] font-extrabold text-muted">{u.lessons.filter((l) => l.kind !== 'chest' && l.kind !== 'trophy').length} уроков + тест · ~{u.lessons.length * 5} мин</span>
+                      <span className="text-[14px] font-extrabold text-muted">{u.lessons.filter((l) => l.kind !== 'chest' && l.kind !== 'trophy').length} уроков + домашка + тест</span>
                       <button onClick={cta.start} className="text-[14px] font-black uppercase tracking-wider hover:opacity-80" style={{ color: c.dark }}>
                         Начать →
                       </button>
@@ -293,8 +296,55 @@ function Program() {
             )
           })}
         </div>
+        <TiersAndHomework />
       </div>
     </section>
+  )
+}
+
+/** Компактный блок: домашки-мини-проекты и три тира */
+function TiersAndHomework() {
+  return (
+    <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_1.15fr]">
+      <Reveal>
+        <div className="flex h-full flex-col rounded-[24px] bg-brand p-6 text-white shadow-[0_6px_0_#5B2FD6]">
+          <div className="text-[13px] font-black uppercase tracking-[.14em] text-white/70">Домашка</div>
+          <h3 className="mt-1 text-[24px] font-black leading-tight">Мини-проект после каждого раздела</h3>
+          <p className="mt-2 text-[15px] font-semibold leading-relaxed text-white/85">
+            Пишешь промпт — ИИ собирает результат, а живое превью показывает, что вышло. Чек-лист отмечает требования, Бипи подсказывает, чего не хватает.
+          </p>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {HOMEWORKS.map((h) => (
+              <li key={h.id} className="flex items-center gap-2 rounded-xl bg-white/12 px-3 py-2 text-[14px] font-extrabold" style={{ background: 'rgba(255,255,255,.12)' }}>
+                <span className="text-[18px]">{h.badge.emoji}</span>
+                {h.short}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <div className="card flex h-full flex-col p-6" style={{ boxShadow: '0 6px 0 #E7E3F1' }}>
+          <div className="text-[13px] font-black uppercase tracking-[.14em] text-teal-dark">Три тира</div>
+          <h3 className="mt-1 text-[24px] font-black leading-tight">Новичок → Средний → Продвинутый</h3>
+          <p className="mt-2 text-[15px] font-semibold text-muted">Уже что-то умеешь? Пройди тест на уровень и начни с нужного тира.</p>
+          <div className="mt-4 space-y-3">
+            {TIERS.map((t) => (
+              <div key={t.id} className="flex items-center gap-3">
+                <TierBadge tier={t} size={44} />
+                <div className="min-w-0">
+                  <div className="text-[16px] font-black leading-tight">
+                    {t.name} <span className="text-[13px] font-extrabold text-muted">· разделы {unitsOf(t).map((u) => u.num).join('–')}</span>
+                  </div>
+                  <div className="text-[14px] font-semibold leading-snug text-muted">{t.outcome}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-[13px] font-extrabold text-brand">Скоро: {SOON_TOPICS.join(' · ')}</p>
+        </div>
+      </Reveal>
+    </div>
   )
 }
 

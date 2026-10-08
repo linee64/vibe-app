@@ -145,3 +145,14 @@ export const Shield = ({ size = 32, color = '#7C4DFF', dark = '#5B2FD6' }: { siz
     <path d="M16 9.5 20.5 14 16 20.5 11.5 14z" fill="#fff" opacity=".9" />
   </svg>
 )
+
+/** Домашка: домик с молотком */
+export const House = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M3.5 11.2 12 4l8.5 7.2" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <path d="M6 10.5V19a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19v-8.5L12 5.5z" fill="currentColor" opacity=".85" />
+    <rect x="10" y="14" width="4" height="6.5" rx="1" fill="#fff" opacity=".9" />
+    <path d="M15.6 2.6l3.2 1.9-1 1.7-3.2-1.9z" fill="currentColor" />
+    <path d="M17.6 5.4 15.8 8.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+)

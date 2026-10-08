@@ -6,6 +6,9 @@ import { MascotHead } from '../components/Mascot'
 import { ALL_LESSONS, UNITS } from '../data/course'
 import { TRIAL_DAYS, annualPerMonth, usd } from '../data/pricing'
 import { navigate } from '../router'
+import { HOMEWORKS } from '../data/homework'
+import { TIERS, currentTier, isTierComplete } from '../data/tiers'
+import { TierBadge } from '../components/TierBadge'
 
 function Stat({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) {
   return (
@@ -50,7 +53,10 @@ const ACHIEVEMENTS = [
 ]
 
 export function Profile() {
-  const { session, progress, logout, resetProgress } = useStore()
+  const { session, progress, logout, resetProgress, setUnlockAll } = useStore()
+  const tier = currentTier(progress)
+  const tierDone = isTierComplete(tier, progress)
+  const tierStatus = tierDone ? 'пройден' : tier.num === 1 ? 'начальный' : 'в процессе'
   const toast = useToast()
   const done = progress.completed.length
   const handle = (session?.email.split('@')[0] ?? 'user').toLowerCase()
@@ -71,12 +77,32 @@ export function Profile() {
         </div>
       </div>
 
+      <div className="card mt-6 flex items-center gap-4 p-4" data-profile-tier={tier.id}>
+        <TierBadge tier={tier} size={64} />
+        <div className="min-w-0 flex-1">
+          <div className="text-[12px] font-black uppercase tracking-wider text-muted">Текущий тир · {tierStatus}</div>
+          <div className="text-[22px] font-black leading-tight">{tier.name}</div>
+          <div className="mt-1 flex gap-1.5">
+            {TIERS.map((t) => (
+              <span key={t.id} className={`h-2.5 w-10 rounded-full ${t.num < tier.num || (t.num === tier.num && tierDone) ? 'bg-teal' : t.num === tier.num ? 'bg-brand-mid' : 'bg-line'}`} title={t.name} />
+            ))}
+          </div>
+        </div>
+        {progress.unlockAll && <span className="shrink-0 rounded-full bg-gold-light px-2.5 py-1 text-[11px] font-black uppercase text-[#8a6a1e]">демо: всё открыто</span>}
+      </div>
+
       <h2 className="mb-3 mt-8 text-[22px] font-black">Статистика</h2>
       <div className="grid grid-cols-2 gap-3">
         <Stat icon={<Fire size={30} />} value={progress.streak} label="дней подряд" />
         <Stat icon={<Bolt size={30} />} value={progress.xp} label="всего XP" />
         <Stat icon={<Shield size={30} />} value="Аметист" label="текущая лига" />
         <Stat icon={<span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-teal text-white"><Check size={20} /></span>} value={`${done} из ${ALL_LESSONS.length}`} label="уроков пройдено" />
+        <Stat icon={<span className="text-[26px] leading-none">🏠</span>} value={`${progress.homework.length} из ${HOMEWORKS.length}`} label="домашек сдано" />
+        <Stat
+          icon={<span className="text-[26px] leading-none">🌐</span>}
+          value={progress.portfolioUrl ? 'Есть' : '—'}
+          label={progress.portfolioUrl ? progress.portfolioUrl.replace(/^https?:\/\//, '') : 'мой проект (домашка 5)'}
+        />
       </div>
 
       <div className="relative mt-8 overflow-hidden rounded-[20px] bg-brand p-5 text-white shadow-[0_5px_0_#5B2FD6] sm:p-6">
@@ -117,9 +143,9 @@ export function Profile() {
         <Achievement emoji="💎" color="#2EB6F5" title="Коллекционер" desc="Накопи 1000 кристаллов" value={progress.gems} goal={1000} level={2} />
       </div>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
         <button
-          className="btn btn-ghost flex-1"
+          className="btn btn-ghost"
           onClick={() => {
             resetProgress()
             toast('Демо-прогресс сброшен')
@@ -127,7 +153,16 @@ export function Profile() {
         >
           Сбросить демо-прогресс
         </button>
-        <button className="btn btn-coral flex-1" onClick={logout}>
+        <button
+          className="btn btn-ghost"
+          onClick={() => {
+            setUnlockAll(!progress.unlockAll)
+            toast(progress.unlockAll ? 'Блокировки тиров вернулись 🔒' : 'Демо: все тиры открыты 🔓')
+          }}
+        >
+          {progress.unlockAll ? 'Вернуть блокировки' : 'Разблокировать всё (демо)'}
+        </button>
+        <button className="btn btn-coral sm:col-span-2" onClick={logout}>
           Выйти
         </button>
       </div>

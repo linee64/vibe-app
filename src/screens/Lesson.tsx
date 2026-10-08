@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { findLesson } from '../data/course'
-import { LAST_LESSON_KEY, useStore } from '../store'
+import { useStore } from '../store'
+import { continueAfter } from '../flow'
 import { navigate } from '../router'
 import { useToast } from '../components/Toast'
 import { Check, Cross, Heart } from '../components/Icons'
@@ -128,10 +129,7 @@ export function LessonScreen({ id }: { id: string }) {
         result={result}
         lessonTitle={found.title}
         unitLabel={`Раздел ${found.unit.num} · ${found.unit.title}`}
-        onContinue={() => {
-          sessionStorage.setItem(LAST_LESSON_KEY, id)
-          navigate('/learn')
-        }}
+        onContinue={() => continueAfter(progress, id)}
       />
     )
 

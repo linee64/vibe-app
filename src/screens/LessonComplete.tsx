@@ -12,7 +12,7 @@ export interface LessonResult {
 
 const CONFETTI_COLORS = ['#7C4DFF', '#FF7A59', '#13C2AE', '#FFC23D', '#2EB6F5', '#FF4F6D']
 
-function Confetti() {
+export function Confetti() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 h-[340px] overflow-hidden" aria-hidden>
       {Array.from({ length: 36 }, (_, i) => {

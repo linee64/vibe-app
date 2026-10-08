@@ -16,6 +16,18 @@ export interface Progress {
   perfectToday: number
   lessonsToday: number
   lastDay: string
+  /** Сданные домашки (id из src/data/homework.ts) */
+  homework: string[]
+  /** Тиры, засчитанные «Тестом на уровень» (id из src/data/tiers.ts) */
+  tiersByTest: string[]
+  /** Тиры, для которых уже показали экран «Новый тир!» */
+  tiersCelebrated: string[]
+  /** Демо: «Разблокировать всё» — снимает блокировку тиров */
+  unlockAll: boolean
+  /** Предложение пройти «Тест на уровень» после первого входа уже показано/закрыто */
+  placementSeen: boolean
+  /** Ссылка на свой настоящий проект (домашка «Запуск»), хранится только локально */
+  portfolioUrl: string
 }
 
 const SESSION_KEY = 'vaibik.session'
@@ -37,6 +49,12 @@ const defaultProgress = (): Progress => ({
   perfectToday: 1,
   lessonsToday: 1,
   lastDay: today(),
+  homework: [],
+  tiersByTest: [],
+  tiersCelebrated: [],
+  unlockAll: false,
+  placementSeen: false,
+  portfolioUrl: '',
 })
 
 function read<T>(key: string): T | null {
@@ -66,6 +84,14 @@ interface Store {
   loseHeart: () => void
   refillHearts: () => void
   resetProgress: () => void
+  /** Сдать домашку: +xp (повторно — меньше), отметить узел пройденным */
+  completeHomework: (id: string, xp: number) => void
+  /** Засчитать тиры по «Тесту на уровень» */
+  passTiersByTest: (tierIds: string[]) => void
+  markTierCelebrated: (tierId: string) => void
+  setUnlockAll: (on: boolean) => void
+  setPlacementSeen: () => void
+  setPortfolioUrl: (url: string) => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -110,10 +136,57 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const loseHeart = useCallback(() => setProgress((p) => ({ ...p, hearts: Math.max(0, p.hearts - 1) })), [])
   const refillHearts = useCallback(() => setProgress((p) => ({ ...p, hearts: MAX_HEARTS })), [])
   const resetProgress = useCallback(() => setProgress(defaultProgress()), [])
+  const completeHomework = useCallback((id: string, xp: number) => {
+    setProgress((p) => {
+      const again = p.homework.includes(id)
+      const gain = again ? 10 : xp
+      return {
+        ...p,
+        homework: again ? p.homework : [...p.homework, id],
+        xp: p.xp + gain,
+        gems: p.gems + (again ? 5 : 20),
+        todayXp: p.todayXp + gain,
+        lessonsToday: p.lessonsToday + 1,
+      }
+    })
+  }, [])
+  const passTiersByTest = useCallback(
+    (ids: string[]) =>
+      setProgress((p) => ({
+        ...p,
+        tiersByTest: [...new Set([...p.tiersByTest, ...ids])],
+        // экран результата теста и есть праздник — отдельный «Новый тир!» не показываем
+        tiersCelebrated: [...new Set([...p.tiersCelebrated, ...ids])],
+        placementSeen: true,
+      })),
+    [],
+  )
+  const markTierCelebrated = useCallback(
+    (id: string) => setProgress((p) => (p.tiersCelebrated.includes(id) ? p : { ...p, tiersCelebrated: [...p.tiersCelebrated, id] })),
+    [],
+  )
+  const setUnlockAll = useCallback((on: boolean) => setProgress((p) => ({ ...p, unlockAll: on })), [])
+  const setPlacementSeen = useCallback(() => setProgress((p) => ({ ...p, placementSeen: true })), [])
+  const setPortfolioUrl = useCallback((url: string) => setProgress((p) => ({ ...p, portfolioUrl: url })), [])
 
   const value = useMemo(
-    () => ({ session, progress, login, logout, completeLesson, loseHeart, refillHearts, resetProgress }),
-    [session, progress, login, logout, completeLesson, loseHeart, refillHearts, resetProgress],
+    () => ({
+      session,
+      progress,
+      login,
+      logout,
+      completeLesson,
+      loseHeart,
+      refillHearts,
+      resetProgress,
+      completeHomework,
+      passTiersByTest,
+      markTierCelebrated,
+      setUnlockAll,
+      setPlacementSeen,
+      setPortfolioUrl,
+    }),
+    [session, progress, login, logout, completeLesson, loseHeart, refillHearts, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

@@ -2,6 +2,7 @@
 // node scripts/path-shots.mjs [baseUrl]
 import { chromium } from 'playwright'
 import { BASE, watch, login, playLesson, openLessonFromPath } from './lib/solver.mjs'
+import { unlockAll } from './lib/vibe.mjs'
 
 const OUT = new URL('../screenshots/', import.meta.url).pathname
 const errors = []
@@ -36,6 +37,7 @@ const desk = await browser.newContext({ viewport: { width: 1280, height: 800 }, 
 const p = await desk.newPage()
 watch(p, errors)
 await login(p)
+await unlockAll(p) // тиры 2–3 закрыты по умолчанию — для скриншотов открываем всё (демо)
 await noOverflow(p, 'desktop home')
 
 // Урок раздела 4: «Ключи и секреты» — снимок баг-упражнения после верного ответа
@@ -92,6 +94,7 @@ const mob = await browser.newContext({ viewport: { width: 375, height: 812 }, de
 const m = await mob.newPage()
 watch(m, errors)
 await login(m)
+await unlockAll(m)
 await noOverflow(m, 'mobile home')
 await save(m, '25-path-mobile.png')
 await scrollToUnit(m, 'u4', 62)
