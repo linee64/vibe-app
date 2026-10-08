@@ -21,6 +21,8 @@ export interface Progress {
 const SESSION_KEY = 'vaibik.session'
 const PROGRESS_KEY = 'vaibik.progress'
 export const MAX_HEARTS = 5
+/** sessionStorage: урок, из которого вернулись на путь (чтобы прокрутить к нему) */
+export const LAST_LESSON_KEY = 'vaibik.lastLesson'
 
 const today = () => new Date().toISOString().slice(0, 10)
 

@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 
 const TOKEN =
-  /(\/\/.*$)|(`[^`]*`|'[^']*'|"[^"]*")|\b(function|const|let|var|return|for|if|else|async|await|throw|new|true|false|null|undefined)\b|\b(\d+)\b|(<\/?[A-Za-z][\w.]*|\/?>)/g
+  /((?<![:\w])\/\/.*$|^\s*#.*$|^\s*--\s.*$)|(`[^`]*`|'[^']*'|"[^"]*")|\b(function|const|let|var|return|for|if|else|async|await|throw|new|true|false|null|undefined|import|export|from|select|where)\b|\b(\d+)\b|(<\/?[A-Za-z][\w.]*|\/?>)/g
 
 const COLORS = ['#8C86A3', '#FFD27A', '#C9A8FF', '#FF9C85', '#6FE3D3']
 
-/** Простейшая подсветка синтаксиса для коротких JS/JSX-сниппетов */
+/** Простейшая подсветка синтаксиса для коротких JS/JSX-сниппетов (+ комментарии # и -- для .env/SQL) */
 export function highlight(line: string): ReactNode[] {
   const out: ReactNode[] = []
   let last = 0

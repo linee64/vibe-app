@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { findLesson } from '../data/course'
-import { useStore } from '../store'
+import { LAST_LESSON_KEY, useStore } from '../store'
 import { navigate } from '../router'
 import { useToast } from '../components/Toast'
 import { Check, Cross, Heart } from '../components/Icons'
@@ -24,7 +24,7 @@ export function LessonScreen({ id }: { id: string }) {
   const { progress, loseHeart, refillHearts, completeLesson } = useStore()
   const toast = useToast()
 
-  const exercises = found?.unit.exercises ?? []
+  const exercises = found?.exercises ?? []
   const [queue, setQueue] = useState<number[]>(() => exercises.map((_, i) => i))
   const [pos, setPos] = useState(0)
   const [answer, setAnswer] = useState<Answer>(null)
@@ -122,7 +122,18 @@ export function LessonScreen({ id }: { id: string }) {
     )
   }
 
-  if (result) return <LessonComplete result={result} lessonTitle={found.title} onContinue={() => navigate('/learn')} />
+  if (result)
+    return (
+      <LessonComplete
+        result={result}
+        lessonTitle={found.title}
+        unitLabel={`Раздел ${found.unit.num} · ${found.unit.title}`}
+        onContinue={() => {
+          sessionStorage.setItem(LAST_LESSON_KEY, id)
+          navigate('/learn')
+        }}
+      />
+    )
 
   const pct = (solved / exercises.length) * 100
   const sheet =

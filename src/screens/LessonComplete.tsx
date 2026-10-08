@@ -52,7 +52,7 @@ function StatCard({ label, value, icon, color, edge }: { label: string; value: s
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
-export function LessonComplete({ result, lessonTitle, onContinue }: { result: LessonResult; lessonTitle: string; onContinue: () => void }) {
+export function LessonComplete({ result, lessonTitle, unitLabel, onContinue }: { result: LessonResult; lessonTitle: string; unitLabel?: string; onContinue: () => void }) {
   const toast = useToast()
   const perfect = result.accuracy === 100
   return (
@@ -63,7 +63,8 @@ export function LessonComplete({ result, lessonTitle, onContinue }: { result: Le
           <div className="absolute left-1/2 top-[54%] h-[230px] w-[230px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-light" />
           <Mascot mood="happy" size={210} className="anim-pop relative" />
         </div>
-        <h1 className="mt-4 text-[30px] font-black leading-tight text-brand md:text-[36px]">{perfect ? 'Безупречно!' : 'Урок пройден!'}</h1>
+        {unitLabel && <div className="mt-4 text-[13px] font-extrabold uppercase tracking-wider text-muted">{unitLabel}</div>}
+        <h1 className={`${unitLabel ? 'mt-1' : 'mt-4'} text-[30px] font-black leading-tight text-brand md:text-[36px]`}>{perfect ? 'Безупречно!' : 'Урок пройден!'}</h1>
         <p className="mt-1 max-w-[460px] text-[17px] font-semibold text-muted">
           <b className="text-ink">{lessonTitle}</b> — готово! Ты на шаг ближе к своему первому приложению. Бонус: +{result.gems} 💎
         </p>

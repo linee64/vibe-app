@@ -183,10 +183,11 @@ export function BugView({ ex, answer, setAnswer, status }: ViewProps<BugExercise
                 key={i}
                 disabled={status !== 'idle'}
                 onClick={() => setAnswer(i)}
-                className={`code-font flex w-full min-w-max items-center border-l-4 py-[7px] pr-4 text-left text-[14px] text-[#EDEAF6] transition-colors md:text-[15px] ${bg}`}
+                className={`code-font flex w-full items-start border-l-4 py-[7px] pr-4 text-left text-[13px] text-[#EDEAF6] transition-colors sm:min-w-max sm:items-center sm:text-[14px] md:text-[15px] ${bg}`}
               >
-                <span className="mr-4 w-8 select-none text-right text-white/30">{i + 1}</span>
-                <code className="whitespace-pre">{highlight(line)}</code>
+                <span className="mr-3 w-6 shrink-0 select-none text-right text-white/30 sm:mr-4 sm:w-8">{i + 1}</span>
+                {/* на телефоне длинные строки переносятся, на десктопе — горизонтальная прокрутка */}
+                <code className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] sm:whitespace-pre">{highlight(line)}</code>
               </button>
             )
           })}

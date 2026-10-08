@@ -3,7 +3,7 @@ import { useStore } from '../store'
 import { useToast } from '../components/Toast'
 import { Bolt, Check, Fire, Shield } from '../components/Icons'
 import { MascotHead } from '../components/Mascot'
-import { ALL_LESSONS } from '../data/course'
+import { ALL_LESSONS, UNITS } from '../data/course'
 import { TRIAL_DAYS, annualPerMonth, usd } from '../data/pricing'
 import { navigate } from '../router'
 
@@ -41,6 +41,13 @@ function Achievement({ emoji, color, title, desc, value, goal, level }: { emoji:
     </div>
   )
 }
+
+const ACHIEVEMENTS = [
+  { unit: 'u1', emoji: '✍️', color: '#7C4DFF', title: 'Промпт-мастер' },
+  { unit: 'u3', emoji: '🐞', color: '#13C2AE', title: 'Охотник за багами' },
+  { unit: 'u4', emoji: '🗄️', color: '#5B2FD6', title: 'Бэкендер' },
+  { unit: 'u5', emoji: '🚀', color: '#FFA41B', title: 'Запуск!' },
+]
 
 export function Profile() {
   const { session, progress, logout, resetProgress } = useStore()
@@ -92,8 +99,21 @@ export function Profile() {
       <h2 className="mb-3 mt-8 text-[22px] font-black">Достижения</h2>
       <div className="card divide-y-2 divide-line">
         <Achievement emoji="🔥" color="#FF9A1F" title="Огонёк" desc="Учись 14 дней подряд" value={progress.streak} goal={14} level={3} />
-        <Achievement emoji="✍️" color="#7C4DFF" title="Промпт-мастер" desc="Пройди раздел «Первый промпт»" value={progress.completed.filter((c) => c.startsWith('u1')).length} goal={5} level={1} />
-        <Achievement emoji="🐞" color="#13C2AE" title="Охотник за багами" desc="Пройди раздел «Отладка с ИИ»" value={progress.completed.filter((c) => c.startsWith('u3')).length} goal={5} level={1} />
+        {ACHIEVEMENTS.map((a) => {
+          const unit = UNITS.find((u) => u.id === a.unit)!
+          return (
+            <Achievement
+              key={a.unit}
+              emoji={a.emoji}
+              color={a.color}
+              title={a.title}
+              desc={`Пройди раздел «${unit.title}»`}
+              value={unit.lessons.filter((l) => progress.completed.includes(l.id)).length}
+              goal={unit.lessons.length}
+              level={1}
+            />
+          )
+        })}
         <Achievement emoji="💎" color="#2EB6F5" title="Коллекционер" desc="Накопи 1000 кристаллов" value={progress.gems} goal={1000} level={2} />
       </div>
 

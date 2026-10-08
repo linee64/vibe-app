@@ -1,4 +1,4 @@
-import type { ArrangeExercise, Exercise } from './course'
+import type { ArrangeExercise, Exercise } from './types'
 
 export type Answer = number | number[] | null
 export type Status = 'idle' | 'correct' | 'wrong'

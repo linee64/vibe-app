@@ -5,9 +5,9 @@ import { useToast } from '../components/Toast'
 import { Mascot, MascotHead } from '../components/Mascot'
 import { Logo } from '../components/Layout'
 import { Reveal } from '../components/Reveal'
-import { BrowserArt, BugArt } from '../components/Illustrations'
+import { BrowserArt, BugArt, DatabaseArt, RocketArt } from '../components/Illustrations'
 import { Bolt, Check, Cross, Fire, Heart, Shield } from '../components/Icons'
-import { UNITS, UNIT_COLORS, type ChoiceExercise } from '../data/course'
+import { DEMO_EXERCISE, UNITS, UNIT_COLORS } from '../data/course'
 import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, usd } from '../data/pricing'
 
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -246,20 +246,25 @@ function Program() {
     <Mascot key="m" size={130} className="anim-float" />,
     <BrowserArt key="b" size={170} />,
     <BugArt key="g" size={170} />,
+    <DatabaseArt key="d" size={170} />,
+    <RocketArt key="r" size={170} className="anim-float" />,
   ]
   return (
     <section id="program" className="scroll-mt-20 py-16 md:py-24">
       <div className="mx-auto max-w-[1160px] px-5 md:px-8">
-        <SectionHead eyebrow="Что ты изучишь" title="Три раздела — от первого промпта до отладки" sub="Каждый раздел — 5 коротких уроков и итоговое испытание." color="text-coral" />
-        <div className="grid gap-6 md:grid-cols-3">
+        <SectionHead eyebrow="Что ты изучишь" title="Пять разделов — от первого промпта до запуска" sub="Каждый раздел — 5 коротких уроков и итоговое испытание. Первый — бесплатно." color="text-coral" />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {UNITS.map((u, i) => {
             const c = UNIT_COLORS[u.color]
             return (
-              <Reveal key={u.id} delay={i * 120}>
+              <Reveal key={u.id} delay={(i % 3) * 120}>
                 <article className="flex h-full flex-col overflow-hidden rounded-[24px] border-2 bg-white" style={{ borderColor: c.mid, boxShadow: `0 6px 0 ${c.mid}` }}>
                   <div className="relative flex h-[180px] items-center justify-center" style={{ background: c.light }}>
                     <span className="absolute left-4 top-4 rounded-full px-3 py-1 text-[12px] font-black uppercase tracking-wider text-white" style={{ background: c.main }}>
                       Раздел {u.num}
+                    </span>
+                    <span className="absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-[12px] font-black uppercase tracking-wider" style={{ color: c.dark }}>
+                      {u.pro ? 'Pro' : 'Бесплатно'}
                     </span>
                     {arts[i]}
                   </div>
@@ -277,7 +282,7 @@ function Program() {
                       ))}
                     </ul>
                     <div className="mt-auto flex items-center justify-between pt-6">
-                      <span className="text-[14px] font-extrabold text-muted">5 уроков · ~25 мин</span>
+                      <span className="text-[14px] font-extrabold text-muted">{u.lessons.filter((l) => l.kind !== 'chest' && l.kind !== 'trophy').length} уроков + тест · ~{u.lessons.length * 5} мин</span>
                       <button onClick={cta.start} className="text-[14px] font-black uppercase tracking-wider hover:opacity-80" style={{ color: c.dark }}>
                         Начать →
                       </button>
@@ -295,7 +300,7 @@ function Program() {
 
 /* ---------------------------------------------------------------- Demo */
 function Demo() {
-  const ex = UNITS[0].exercises[0] as ChoiceExercise
+  const ex = DEMO_EXERCISE
   const cta = useCta()
   const [answer, setAnswer] = useState<number | null>(null)
   const [status, setStatus] = useState<'idle' | 'correct' | 'wrong'>('idle')
