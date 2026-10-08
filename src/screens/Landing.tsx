@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { navigate } from '../router'
 import { useStore } from '../store'
 import { useToast } from '../components/Toast'
@@ -8,6 +8,7 @@ import { Reveal } from '../components/Reveal'
 import { BrowserArt, BugArt } from '../components/Illustrations'
 import { Bolt, Check, Cross, Fire, Heart, Shield } from '../components/Icons'
 import { UNITS, UNIT_COLORS, type ChoiceExercise } from '../data/course'
+import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, tenge } from '../data/pricing'
 
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -479,32 +480,83 @@ function Features() {
 }
 
 /* ---------------------------------------------------------------- Pricing */
+type Period = 'monthly' | 'annual'
+
+function BillingToggle({ period, onChange }: { period: Period; onChange: (p: Period) => void }) {
+  const item = (p: Period, label: ReactNode) => {
+    const active = period === p
+    return (
+      <button
+        role="tab"
+        aria-selected={active}
+        onClick={() => onChange(p)}
+        className={`flex min-h-[44px] items-center gap-2 rounded-full px-4 text-[15px] font-extrabold transition-all md:px-5 md:text-[16px] ${
+          active ? 'bg-brand text-white shadow-[0_3px_0_#5B2FD6]' : 'text-muted hover:text-ink'
+        }`}
+      >
+        {label}
+      </button>
+    )
+  }
+  return (
+    <Reveal className="mb-10 flex justify-center md:mb-12">
+      <div role="tablist" aria-label="Период оплаты" className="flex rounded-full border-2 border-line bg-white p-1.5 shadow-[0_4px_0_#E7E3F1]">
+        {item('monthly', 'Помесячно')}
+        {item(
+          'annual',
+          <>
+            На год
+            <span className={`rounded-full px-2 py-0.5 text-[12px] font-black ${period === 'annual' ? 'bg-gold text-[#5a3d00]' : 'bg-teal-light text-teal-dark'}`}>
+              −{annualSavePct}%
+            </span>
+          </>,
+        )}
+      </div>
+    </Reveal>
+  )
+}
+
+function Feature({ children, light = false }: { children: ReactNode; light?: boolean }) {
+  return (
+    <li className="flex items-start gap-2.5 text-[16px] font-bold">
+      <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${light ? 'bg-white/20' : 'bg-teal-light text-teal-dark'}`}>
+        <Check size={15} />
+      </span>
+      {children}
+    </li>
+  )
+}
+
 function Pricing() {
   const cta = useCta()
   const toast = useToast()
-  const free = ['Все уроки раздела «Первый промпт»', '5 сердечек в день', 'Серия, XP и лиги', 'Ежедневные задания']
-  const pro = ['Все разделы и новые курсы', 'Безлимитные сердечки', 'Разбор твоего кода с ИИ', 'Мини-проекты с проверкой', 'Без рекламы']
+  const [period, setPeriod] = useState<Period>('annual')
+  const annual = period === 'annual'
+  const startTrial = () => (cta.loggedIn ? toast('Оплата Pro подключится совсем скоро — пробный период начнётся отсюда 🔔') : cta.start())
+
   return (
     <section id="pricing" className="scroll-mt-20 bg-snow py-16 md:py-24">
       <div className="mx-auto max-w-[1160px] px-5 md:px-8">
-        <SectionHead eyebrow="Тарифы" title="Начни бесплатно, расти с Pro" sub="Тарифы ещё не запущены — ниже примерные цены для обсуждения." />
-        <Reveal className="mx-auto mb-8 w-fit rounded-full border-2 border-dashed border-brand-mid bg-brand-light/70 px-4 py-1.5 text-center text-[13px] font-extrabold text-brand-dark">
-          🧪 Демо: цены примерные и могут измениться
-        </Reveal>
-        <div className="mx-auto grid max-w-[860px] gap-6 md:grid-cols-2">
-          <Reveal>
-            <div className="card flex h-full flex-col p-7" style={{ boxShadow: '0 6px 0 #E7E3F1' }}>
+        <SectionHead
+          eyebrow="Тарифы"
+          title="Начни бесплатно, расти с Pro"
+          sub={`Базовый раздел — бесплатно навсегда. Pro открывает всё остальное, и первые ${TRIAL_DAYS} дня — за 0 ₸.`}
+        />
+        <BillingToggle period={period} onChange={setPeriod} />
+
+        <div className="mx-auto grid max-w-[900px] items-stretch gap-6 md:grid-cols-2 md:gap-7">
+          {/* Free */}
+          <Reveal className="order-2 min-w-0 md:order-1">
+            <div className="card flex h-full flex-col p-6 md:mt-5 md:p-7" style={{ boxShadow: '0 6px 0 #E7E3F1' }}>
               <div className="text-[15px] font-black uppercase tracking-wider text-muted">Free</div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-[44px] font-black leading-none">0 ₽</span>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-[40px] font-black leading-none md:text-[44px]">0&nbsp;₸</span>
                 <span className="text-[16px] font-bold text-muted">навсегда</span>
               </div>
+              <p className="mt-2 text-[15px] font-semibold text-muted">Карта не нужна. Учись в своём темпе.</p>
               <ul className="mb-7 mt-6 space-y-3">
-                {free.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-[16px] font-bold">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal-dark"><Check size={15} /></span>
-                    {f}
-                  </li>
+                {FREE_FEATURES.map((f) => (
+                  <Feature key={f}>{f}</Feature>
                 ))}
               </ul>
               <button className="btn btn-ghost btn-block btn-bouncy mt-auto" onClick={cta.start}>
@@ -512,32 +564,76 @@ function Pricing() {
               </button>
             </div>
           </Reveal>
-          <Reveal delay={120}>
-            <div className="relative flex h-full flex-col overflow-hidden rounded-[20px] bg-brand p-7 text-white shadow-[0_6px_0_#5B2FD6]">
-              <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-white/10" />
-              <div className="flex items-center justify-between">
-                <div className="text-[15px] font-black uppercase tracking-wider text-white/80">Pro</div>
-                <span className="rounded-full bg-coral px-3 py-1 text-[12px] font-black uppercase tracking-wider shadow-[0_3px_0_#E0573A]">Скоро</span>
+
+          {/* Pro — рекомендованный */}
+          <Reveal delay={120} className="order-1 min-w-0 md:order-2">
+            <div className="relative h-full pt-5">
+              <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-coral px-4 py-1.5 text-[13px] font-black uppercase tracking-wider text-white shadow-[0_3px_0_#E0573A]">
+                {annual ? '⭐ Популярный выбор' : '⭐ Рекомендуем'}
               </div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-[44px] font-black leading-none">≈ 490 ₽</span>
-                <span className="text-[16px] font-bold text-white/75">/ мес*</span>
+              <div className="relative flex h-full flex-col overflow-hidden rounded-[22px] bg-brand p-6 pt-8 text-white shadow-[0_6px_0_#5B2FD6] ring-4 md:p-7 md:pt-8 ring-brand-mid/60">
+                <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-white/10" />
+                <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-white/5" />
+
+                <div className="relative flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-[15px] font-black uppercase tracking-wider text-white/85">Pro · {annual ? 'на год' : 'помесячно'}</div>
+                  <span className="rounded-full bg-gold px-3 py-1 text-[13px] font-black text-[#5a3d00] shadow-[0_3px_0_#E5A100]">🎁 {TRIAL_DAYS} дня бесплатно</span>
+                </div>
+
+                <div className="relative mt-3 min-h-[92px]">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span className="text-[40px] font-black leading-none md:text-[44px]">{tenge(annual ? annualPerMonth : PRICES.monthly)}</span>
+                    <span className="text-[16px] font-bold text-white/75">/ мес</span>
+                    {annual && <s className="text-[17px] font-bold text-white/55">{tenge(PRICES.monthly)}</s>}
+                  </div>
+                  {annual ? (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[15px] font-bold text-white/85">
+                      <span>{tenge(PRICES.annual)} раз в год</span>
+                      <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[13px] font-black">экономия {tenge(annualSaveAmount)}</span>
+                    </div>
+                  ) : (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[15px] font-bold text-white/85">
+                      <span>Оплата каждый месяц</span>
+                      <button
+                        onClick={() => setPeriod('annual')}
+                        className="rounded-full bg-white/20 px-2.5 py-0.5 text-[13px] font-black transition-colors hover:bg-white/30"
+                      >
+                        На год выгоднее на {annualSavePct}% →
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <ul className="relative mb-7 mt-4 space-y-3">
+                  {PRO_FEATURES.map((f) => (
+                    <Feature key={f} light>
+                      {f}
+                    </Feature>
+                  ))}
+                </ul>
+
+                <button className="btn btn-white btn-block btn-bouncy relative mt-auto" onClick={startTrial}>
+                  Попробовать {TRIAL_DAYS} дня бесплатно
+                </button>
+                <p className="relative mt-3 text-center text-[14px] font-semibold leading-snug text-white/80">
+                  Сегодня 0&nbsp;₸. Через {TRIAL_DAYS} дня — {tenge(annual ? PRICES.annual : PRICES.monthly)} {annual ? 'за год' : 'в месяц'}, если не отменишь.
+                </p>
               </div>
-              <ul className="mb-5 mt-6 space-y-3">
-                {pro.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-[16px] font-bold">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20"><Check size={15} /></span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <p className="mb-5 text-[13px] font-semibold text-white/70">* Примерная демо-цена. Оплата пока не принимается.</p>
-              <button className="btn btn-white btn-block btn-bouncy mt-auto" onClick={() => toast('Сообщим, когда Pro запустится 🔔 (демо)')}>
-                Узнать о запуске
-              </button>
             </div>
           </Reveal>
         </div>
+
+        <Reveal delay={160} className="mx-auto mt-10 flex max-w-[900px] flex-col items-center gap-3 md:flex-row md:justify-center md:gap-4">
+          {[
+            ['✋', 'Отмена в любой момент, спишем только после пробного периода'],
+            ['🔔', 'Напомним за день до списания'],
+          ].map(([icon, text]) => (
+            <div key={text} className="flex items-center gap-2 rounded-full border-2 border-line bg-white px-4 py-2 text-center text-[14px] font-bold text-ink md:text-[15px]">
+              <span aria-hidden>{icon}</span>
+              {text}
+            </div>
+          ))}
+        </Reveal>
       </div>
     </section>
   )
@@ -563,7 +659,19 @@ const FAQ = [
   },
   {
     q: 'Это бесплатно?',
-    a: 'Базовый курс планируется бесплатным. Тариф Pro с расширенными возможностями — в планах, цены на этой странице примерные (демо).',
+    a: `Да, раздел «Первый промпт», серия, XP и лиги бесплатны навсегда. Pro открывает все разделы, безлимитные сердечки и ИИ-разбор кода: ${tenge(PRICES.monthly)} в месяц или ${tenge(PRICES.annual)} в год (≈ ${tenge(annualPerMonth)} в месяц).`,
+  },
+  {
+    q: 'Как работает пробный период?',
+    a: `Нажми «Попробовать ${TRIAL_DAYS} дня бесплатно» и выбери тариф — помесячный или годовой. Все возможности Pro сразу открываются, а сегодня с тебя 0 ₸. За день до конца пробного периода пришлём напоминание.`,
+  },
+  {
+    q: 'Как отменить подписку?',
+    a: 'В любой момент в профиле: «Подписка» → «Отменить». Если отменишь во время пробного периода, мы ничего не спишем. Если после — Pro будет работать до конца уже оплаченного месяца или года.',
+  },
+  {
+    q: 'Что будет после пробного периода?',
+    a: `Если не отменишь, на ${TRIAL_DAYS + 1}-й день спишем стоимость выбранного тарифа: ${tenge(PRICES.monthly)} за месяц или ${tenge(PRICES.annual)} за год. Дальше подписка продлевается автоматически, пока ты её не отменишь. А если решишь не продолжать, вернёшься на бесплатный тариф — прогресс и серия сохранятся.`,
   },
   {
     q: 'Вайбик связан с Cursor, OpenAI или Anthropic?',
@@ -684,14 +792,19 @@ function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1160px] flex-col gap-2 px-5 py-5 text-[13px] font-semibold text-white/45 md:flex-row md:justify-between md:px-8">
           <span>© 2026 Вайбик · прототип</span>
-          <span>Цены, данные и прогресс в приложении — демонстрационные</span>
+          <span>Оплата ещё не подключена; данные и прогресс в приложении — демонстрационные</span>
         </div>
       </div>
     </footer>
   )
 }
 
-export function Landing() {
+export function Landing({ section }: { section?: string }) {
+  useEffect(() => {
+    if (!section) return
+    const t = window.setTimeout(() => document.getElementById(section)?.scrollIntoView({ block: 'start' }), 60)
+    return () => window.clearTimeout(t)
+  }, [section])
   return (
     <div className="min-h-screen bg-white">
       <Header />

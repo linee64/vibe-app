@@ -14,14 +14,16 @@ export default function App() {
   const { session } = useStore()
   const route = useRoute()
 
-  // «/» — публичный лендинг для гостей; «/landing» — лендинг всегда (и для вошедших)
-  const isPublic = route === '/' || route === '/landing'
+  // «/» — публичный лендинг для гостей; «/landing» — лендинг всегда (и для вошедших);
+  // «/pricing» — лендинг, прокрученный к тарифам
+  const isPublic = route === '/' || route === '/landing' || route === '/pricing'
 
   useEffect(() => {
     if (!session && route !== '/login' && !isPublic) navigate('/login')
     if (session && (route === '/login' || route === '/')) navigate('/learn')
   }, [session, route, isPublic])
 
+  if (route === '/pricing') return <Landing section="pricing" />
   if (route === '/landing' || (!session && route === '/')) return <Landing />
   if (!session) return <Login />
 
