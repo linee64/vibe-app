@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Mascot } from '../components/Mascot'
-import { Bolt, Clock, Target } from '../components/Icons'
+import { Clock, Spark, Target, Token } from '../components/Icons'
 import { useToast } from '../components/Toast'
 
 export interface LessonResult {
@@ -10,7 +10,7 @@ export interface LessonResult {
   gems: number
 }
 
-const CONFETTI_COLORS = ['#7C4DFF', '#FF7A59', '#13C2AE', '#FFC23D', '#2EB6F5', '#FF4F6D']
+const CONFETTI_COLORS = ['#7C4DFF', '#FF7A59', '#13C2AE', '#FFC23D', '#5B2FD6', '#FFB61D']
 
 export function Confetti() {
   return (
@@ -66,10 +66,13 @@ export function LessonComplete({ result, lessonTitle, unitLabel, onContinue }: {
         {unitLabel && <div className="mt-4 text-[13px] font-extrabold uppercase tracking-wider text-muted">{unitLabel}</div>}
         <h1 className={`${unitLabel ? 'mt-1' : 'mt-4'} text-[30px] font-black leading-tight text-brand md:text-[36px]`}>{perfect ? 'Безупречно!' : 'Урок пройден!'}</h1>
         <p className="mt-1 max-w-[460px] text-[17px] font-semibold text-muted">
-          <b className="text-ink">{lessonTitle}</b> — готово! Ты на шаг ближе к своему первому приложению. Бонус: +{result.gems} 💎
+          <b className="text-ink">{lessonTitle}</b> — готово! Ты на шаг ближе к своему первому приложению.
+        </p>
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-teal-light px-3 py-1 text-[15px] font-black text-teal-dark" data-reward-tokens>
+          <Token size={20} /> +{result.gems} токенов
         </p>
         <div className="mt-8 grid w-full max-w-[540px] grid-cols-3 gap-3 md:gap-4">
-          <StatCard label="Получено XP" value={`+${result.xp}`} icon={<Bolt size={26} />} color="#FFB61D" edge="#E5A100" />
+          <StatCard label="Вайб-поинты" value={`+${result.xp}`} icon={<Spark size={26} />} color="#FFB61D" edge="#E5A100" />
           <StatCard label="Точность" value={`${result.accuracy}%`} icon={<Target size={24} />} color="#13C2AE" edge="#0E9C8C" />
           <StatCard label="Время" value={fmt(result.seconds)} icon={<Clock size={24} />} color="#7C4DFF" edge="#5B2FD6" />
         </div>

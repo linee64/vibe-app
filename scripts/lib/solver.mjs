@@ -40,23 +40,60 @@ export async function currentExercise(page, lesson) {
   return hit
 }
 
-const tileBtn = (page, t) => page.locator('main').getByRole('button', { name: t, exact: true })
+const main = (page) => page.locator('main')
+const at = (page, attr, i) => main(page).locator(`[${attr}="${i}"]`).first()
 
 /** Выбрать ответ (правильный или намеренно неверный), не нажимая «Проверить» */
 export async function pick(page, ex, { wrong = false } = {}) {
-  if (ex.kind === 'choice') {
-    const i = wrong ? (ex.correct + 1) % ex.options.length : ex.correct
-    const text = ex.quoted ? `«${ex.options[i]}»` : ex.options[i]
-    await page.locator('main button.tile').filter({ has: page.getByText(text, { exact: true }) }).click()
-  } else if (ex.kind === 'fill') {
-    const i = wrong ? (ex.correct + 1) % ex.options.length : ex.correct
-    await tileBtn(page, ex.options[i]).click()
-  } else if (ex.kind === 'bug') {
-    const i = wrong ? (ex.correct + 1) % ex.code.length : ex.correct
-    await page.locator('main button.code-font').nth(i).click()
-  } else if (ex.kind === 'arrange') {
-    const tiles = wrong ? [ex.tiles[1], ex.tiles[0], ex.distractors[0]] : ex.tiles
-    for (const t of tiles) await tileBtn(page, t).click()
+  switch (ex.kind) {
+    case 'choice':
+    case 'nextmove': {
+      const i = wrong ? (ex.correct + 1) % ex.options.length : ex.correct
+      await at(page, 'data-option', i).click()
+      break
+    }
+    case 'predict': {
+      const i = wrong ? (ex.correct + 1) % ex.outcomes.length : ex.correct
+      await at(page, 'data-outcome', i).click()
+      break
+    }
+    case 'bug': {
+      const i = wrong ? (ex.correct + 1) % ex.code.length : ex.correct
+      await at(page, 'data-line', i).click()
+      break
+    }
+    case 'duel': {
+      // неверно: верная сторона, но неверная причина
+      await at(page, 'data-side', ex.winner).click()
+      const r = wrong ? (ex.reason + 1) % ex.reasons.length : ex.reason
+      await at(page, 'data-reason', r).click()
+      break
+    }
+    case 'upgrade': {
+      const good = ex.chips.map((c, i) => (c.trap ? -1 : i)).filter((i) => i >= 0)
+      for (const i of good) await at(page, 'data-chip', i).click()
+      // неверно: добавляем ловушку
+      if (wrong) await at(page, 'data-chip', ex.chips.findIndex((c) => c.trap)).click()
+      break
+    }
+    case 'diff': {
+      for (let i = 0; i < ex.hunks.length; i++) {
+        let reject = !!ex.hunks[i].harmful
+        if (wrong && i === 0) reject = !reject
+        await at(page, 'data-hunk', i)
+          .getByRole('button', { name: reject ? '✕ Отклонить' : '✓ Принять' })
+          .click()
+      }
+      break
+    }
+    case 'pipeline': {
+      const order = ex.steps.map((_, i) => i)
+      if (wrong) [order[0], order[1]] = [order[1], order[0]]
+      for (const c of order) await main(page).locator(`[data-bank] [data-card="${c}"]`).click()
+      break
+    }
+    default:
+      throw new Error('Неизвестный тип ' + ex.kind)
   }
 }
 
@@ -67,9 +104,12 @@ export async function check(page) {
 
 export async function proceed(page) {
   await page.locator('footer').getByRole('button', { name: /^(Продолжить|Понятно)$/ }).click()
-  // сердечки кончились → в демо их можно восстановить
-  const refill = page.getByRole('button', { name: '❤️ Восстановить' })
-  if (await refill.isVisible().catch(() => false)) await refill.click()
+  // заряд Бипи сел → разбираем ошибку (+1 деление) и продолжаем
+  const review = page.locator('[data-empty="review"]')
+  if (await review.isVisible().catch(() => false)) {
+    await review.click()
+    await page.locator('[data-empty="done"]').click()
+  }
 }
 
 /**
@@ -103,7 +143,7 @@ export async function openLessonFromPath(page, lessonId) {
   const center = (sel) => page.evaluate((q) => document.querySelector(q).scrollIntoView({ block: 'center', behavior: 'instant' }), sel)
   await center(`[data-lesson="${lessonId}"]`)
   await page.locator(`[data-lesson="${lessonId}"] > div > button`).click()
-  const start = page.locator(`[data-lesson="${lessonId}"]`).getByRole('button', { name: /^(Начать|Повторить) \+\d+ XP$/ })
+  const start = page.locator(`[data-lesson="${lessonId}"]`).getByRole('button', { name: /^(Начать|Повторить) \+\d+ ВП$/ })
   await start.waitFor()
   await page.evaluate((q) => document.querySelector(q).querySelector('.btn').scrollIntoView({ block: 'center', behavior: 'instant' }), `[data-lesson="${lessonId}"]`)
   await start.click()

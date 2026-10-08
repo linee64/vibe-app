@@ -45,9 +45,11 @@ await p.locator('[data-lesson="u1-4"] > div > button').click()
 await shot(p, '02b-home-popover.png')
 await p.keyboard.press('Escape')
 
-// Итоговый тест раздела 1 — в нём все 4 типа упражнений. Арранж (шаг 1) — намеренно неверно.
+// Итоговый тест раздела 1: дуэль, «Прокачай промпт» (шаг 1 — намеренно неверно, с ловушкой), баг, следующий ход, предсказание.
 const seen = new Set()
-await openLessonFromPath(p, 'u1-6')
+// последний узел раздела: его попап перекрывает баннер следующего раздела — открываем по ссылке
+await p.evaluate(() => (location.hash = '/lesson/u1-6'))
+await p.waitForSelector('main h1')
 await playLesson(p, 'u1-6', {
   wrongAt: [1],
   hooks: {
@@ -55,17 +57,17 @@ await playLesson(p, 'u1-6', {
       const key = ex.kind + (wrong ? '-wrong' : '')
       if (seen.has('b:' + key)) return
       seen.add('b:' + key)
-      if (ex.kind === 'choice') await shot(p, '03-lesson-question.png')
-      if (ex.kind === 'arrange' && wrong) await shot(p, '03b-lesson-arrange.png')
-      if (ex.kind === 'fill') await shot(p, '03c-lesson-fill.png')
+      if (ex.kind === 'duel') await shot(p, '03-lesson-question.png')
+      if (ex.kind === 'upgrade' && wrong) await shot(p, '03b-lesson-upgrade.png')
+      if (ex.kind === 'nextmove') await shot(p, '03c-lesson-nextmove.png')
       if (ex.kind === 'bug') await shot(p, '03d-lesson-bug.png')
     },
     afterCheck: async (ex, step, wrong) => {
       const key = ex.kind + (wrong ? '-wrong' : '')
       if (seen.has('a:' + key)) return
       seen.add('a:' + key)
-      if (ex.kind === 'choice') await shot(p, '04-lesson-feedback.png')
-      if (ex.kind === 'arrange' && wrong) await shot(p, '04b-lesson-feedback-wrong.png')
+      if (ex.kind === 'duel') await shot(p, '04-lesson-feedback.png')
+      if (ex.kind === 'upgrade' && wrong) await shot(p, '04b-lesson-feedback-wrong.png')
       if (ex.kind === 'bug') await shot(p, '04c-lesson-bug-correct.png')
     },
   },

@@ -1,5 +1,6 @@
 // Скриншоты лендинга: node scripts/landing-shots.mjs [baseUrl] [reviewDir]
 import { chromium } from 'playwright'
+import { findLesson } from './lib/solver.mjs'
 
 const BASE = process.argv[2] || 'http://localhost:5173'
 const REVIEW = process.argv[3] || null
@@ -60,7 +61,9 @@ if (REVIEW) {
 
 // interactive demo
 await d.locator('#demo').scrollIntoViewIfNeeded()
-await d.locator('#demo').getByRole('button', { name: /одностраничный сайт/ }).click()
+// «Прокачай промпт»: все улучшения без ловушек → «Вайб пойман!»
+const demoEx = findLesson('u1-2').exercises[0]
+for (const [i, c] of demoEx.chips.entries()) if (!c.trap) await d.locator(`#demo [data-chip="${i}"]`).click()
 await d.locator('#demo').getByRole('button', { name: 'Проверить' }).click()
 await d.waitForTimeout(500)
 await d.locator('#demo').screenshot({ path: OUT + '13-landing-demo.png' })

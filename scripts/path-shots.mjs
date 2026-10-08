@@ -78,7 +78,7 @@ await scrollToUnit(p, 'u5')
 await save(p, '22-path-level5.png')
 
 const progress = await p.evaluate(() => JSON.parse(localStorage.getItem('vaibik.progress')))
-console.log('completed after plays:', progress.completed.join(', '), '| XP', progress.xp)
+console.log('completed after plays:', progress.completed.join(', '), '| ВП', progress.xp)
 
 // Полный путь (1x, чтобы файл был разумного размера)
 const full = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, storageState: await desk.storageState() })
@@ -106,7 +106,7 @@ await openLessonFromPath(m, 'u5-4')
 await playLesson(m, 'u5-4', {
   hooks: {
     afterCheck: async (ex) => {
-      if (ex.kind === 'arrange') {
+      if (ex.kind === 'duel') {
         await m.evaluate(() => document.querySelector('main').scrollTo(0, 0))
         await save(m, '25d-lesson-mobile-level5.png')
       }

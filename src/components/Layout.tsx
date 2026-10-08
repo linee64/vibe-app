@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { navigate } from '../router'
 import { useStore } from '../store'
-import { useToast } from './Toast'
-import { Bolt, Fire, Gem, Heart, NavLearn, NavLeague, NavLogout, NavMore, NavProfile, NavQuests, Shield, Target, Clock } from './Icons'
+import { Spark, NavLearn, NavLeague, NavLogout, NavMore, NavProfile, NavQuests, Shield, Target, Clock } from './Icons'
+import { EconomyBar } from './Economy'
 import { Mascot, MascotHead } from './Mascot'
 import { myStanding } from '../data/league'
 
@@ -85,27 +85,7 @@ function BottomNav({ active }: { active: string }) {
 }
 
 export function StatsBar({ compact = false }: { compact?: boolean }) {
-  const { progress } = useStore()
-  const toast = useToast()
-  const item = 'flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-[17px] font-extrabold hover:bg-snow'
-  return (
-    <div className={`flex items-center justify-between ${compact ? 'gap-1' : 'gap-2'}`}>
-      <button className={item} title="Курс: вайб-кодинг" onClick={() => toast('Курс «Вайб-кодинг» — пока единственный 🙂')}>
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg border-2 border-line bg-brand-light">
-          <MascotHead size={24} />
-        </span>
-      </button>
-      <button className={`${item} text-fire`} title="Серия дней" onClick={() => toast(`Серия: ${progress.streak} дней подряд! 🔥`)}>
-        <Fire size={26} /> {progress.streak}
-      </button>
-      <button className={`${item} text-gem`} title="Кристаллы" onClick={() => toast(`У тебя ${progress.gems} кристаллов 💎`)}>
-        <Gem size={26} /> {progress.gems}
-      </button>
-      <button className={`${item} text-heart`} title="Сердечки" onClick={() => toast('Сердечки: ошибка в уроке стоит одно ❤️')}>
-        <Heart size={26} /> {progress.hearts}
-      </button>
-    </div>
-  )
+  return <EconomyBar compact={compact} />
 }
 
 function QuestRow({ icon, title, value, goal }: { icon: ReactNode; title: string; value: number; goal: number }) {
@@ -137,7 +117,7 @@ export function DailyQuests({ title = 'Задания на день' }: { title?
         </button>
       </div>
       <div className="space-y-5">
-        <QuestRow icon={<Bolt size={32} />} title="Заработай 30 XP" value={progress.todayXp} goal={30} />
+        <QuestRow icon={<Spark size={32} />} title="Набери 30 вайб-поинтов" value={progress.todayXp} goal={30} />
         <QuestRow icon={<Target size={32} />} title="Пройди 2 урока без ошибок" value={progress.perfectToday} goal={2} />
         <QuestRow icon={<Clock size={32} />} title="Пройди 3 урока" value={progress.lessonsToday} goal={3} />
       </div>
@@ -162,7 +142,7 @@ export function RightRail() {
           <Shield size={56} />
           <p className="text-[15px] font-semibold leading-snug text-muted">
             Ты на <b className="text-ink">{rank}-м месте</b>.{' '}
-            {toPromote > 0 ? `Ещё ${toPromote} XP — и ты в зоне повышения!` : 'Ты в зоне повышения — так держать!'}
+            {toPromote > 0 ? `Ещё ${toPromote} ВП — и ты в зоне повышения!` : 'Ты в зоне повышения — так держать!'}
           </p>
         </div>
       </section>

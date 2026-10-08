@@ -4,25 +4,28 @@ import { useStore } from '../store'
 import { continueAfter } from '../flow'
 import { navigate } from '../router'
 import { useToast } from '../components/Toast'
-import { Check, Cross, Heart } from '../components/Icons'
+import { Battery, Check, Cross, Token } from '../components/Icons'
+import { ChargeMeter } from '../components/Economy'
 import { Mascot } from '../components/Mascot'
 import { ExerciseView } from '../components/Exercises'
-import { canCheck, correctText, isCorrect, type Answer, type Status } from '../data/exerciseLogic'
+import { canCheck, correctText, hintFor, isCorrect, keyOptions, type Answer, type Hint, type Status } from '../data/exerciseLogic'
+import { HINT_COST, RECHARGE_COST, RECHARGE_MINUTES, tokens, waitText } from '../data/economy'
+import type { Exercise } from '../data/types'
 import { LessonComplete, type LessonResult } from './LessonComplete'
 
 const PRAISE = ['Отлично!', 'Супер!', 'В точку!', 'Так держать!', 'Прекрасно!']
 
-function Modal({ children }: { children: ReactNode }) {
+function Modal({ children, label }: { children: ReactNode; label: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-4 sm:items-center">
-      <div className="anim-pop w-full max-w-[420px] rounded-[24px] bg-white p-6 text-center">{children}</div>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-label={label}>
+      <div className="anim-pop max-h-[92dvh] w-full max-w-[440px] overflow-y-auto rounded-[24px] bg-white p-6 text-center">{children}</div>
     </div>
   )
 }
 
 export function LessonScreen({ id }: { id: string }) {
   const found = findLesson(id)
-  const { progress, loseHeart, refillHearts, completeLesson } = useStore()
+  const { progress, loseHeart, refillHearts, addCharge, spendGems, chargeAt, completeLesson } = useStore()
   const toast = useToast()
 
   const exercises = found?.exercises ?? []
@@ -36,7 +39,12 @@ export function LessonScreen({ id }: { id: string }) {
   const [praise, setPraise] = useState(PRAISE[0])
   const [result, setResult] = useState<LessonResult | null>(null)
   const [quitOpen, setQuitOpen] = useState(false)
-  const [noHearts, setNoHearts] = useState(false)
+  /** Модалка «заряд сел»: 'menu' — варианты, 'review' — разбор последней ошибки */
+  const [empty, setEmpty] = useState<null | 'menu' | 'review'>(null)
+  const [hint, setHint] = useState<Hint | null>(null)
+  /** +1 деление за исправленную ошибку (показываем в нижней панели) */
+  const [recharged, setRecharged] = useState(false)
+  const [lastWrong, setLastWrong] = useState<Exercise | null>(null)
   const startRef = useRef(0)
   const wasDone = useRef(false)
 
@@ -45,35 +53,50 @@ export function LessonScreen({ id }: { id: string }) {
     wasDone.current = progress.completed.includes(id)
     if (progress.hearts === 0) {
       refillHearts()
-      toast('Демо: сердечки восстановлены ❤️')
+      toast('Демо: Бипи подзарядился ⚡')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const ex = exercises[queue[pos]]
+  /** Это упражнение уже решали с ошибкой (вернулось в очередь) */
+  const isRetry = queue.indexOf(queue[pos]) < pos
 
   const check = useCallback(
     (skip = false) => {
       if (!ex || status !== 'idle') return
-      if (!skip && !canCheck(answer)) return
+      if (!skip && !canCheck(ex, answer)) return
       setAttempts((a) => a + 1)
       if (!skip && isCorrect(ex, answer)) {
         setSolved((s) => s + 1)
         setPraise(PRAISE[Math.floor(Math.random() * PRAISE.length)])
         setStatus('correct')
+        if (isRetry) {
+          addCharge(1)
+          setRecharged(true)
+        }
       } else {
         setMistakes((m) => m + 1)
         setStatus('wrong')
+        setLastWrong(ex)
         if (!skip) loseHeart()
         setQueue((q) => [...q, q[pos]])
       }
     },
-    [ex, status, answer, pos, loseHeart],
+    [ex, status, answer, pos, isRetry, loseHeart, addCharge],
   )
+
+  const advance = useCallback(() => {
+    setPos((p) => p + 1)
+    setAnswer(null)
+    setStatus('idle')
+    setHint(null)
+    setRecharged(false)
+  }, [])
 
   const next = useCallback(() => {
     if (status === 'wrong' && progress.hearts === 0) {
-      setNoHearts(true)
+      setEmpty('menu')
       return
     }
     if (pos + 1 >= queue.length) {
@@ -85,15 +108,22 @@ export function LessonScreen({ id }: { id: string }) {
       setResult({ xp, accuracy, seconds, gems: perfect ? 10 : 5 })
       return
     }
-    setPos((p) => p + 1)
-    setAnswer(null)
-    setStatus('idle')
-  }, [status, progress.hearts, pos, queue.length, mistakes, exercises.length, attempts, completeLesson, id])
+    advance()
+  }, [status, progress.hearts, pos, queue.length, mistakes, exercises.length, attempts, completeLesson, id, advance])
+
+  const buyHint = useCallback(() => {
+    if (!ex || hint || status !== 'idle') return
+    if (!spendGems(HINT_COST)) {
+      toast(`Нужно ${tokens(HINT_COST)} — их дают за уроки`)
+      return
+    }
+    setHint(hintFor(ex))
+  }, [ex, hint, status, spendGems, toast])
 
   // Клавиатура: Enter — проверить/продолжить, цифры — выбрать вариант
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (quitOpen || noHearts || result || !ex) return
+      if (quitOpen || empty || result || !ex) return
       if (e.key === 'Enter') {
         e.preventDefault()
         if (status === 'idle') check()
@@ -101,15 +131,11 @@ export function LessonScreen({ id }: { id: string }) {
         return
       }
       const n = Number(e.key)
-      if (status === 'idle' && n >= 1 && n <= 9) {
-        if (ex.kind === 'arrange') return
-        const max = ex.kind === 'bug' ? ex.code.length : ex.options.length
-        if (n <= max) setAnswer(n - 1)
-      }
+      if (status === 'idle' && n >= 1 && n <= keyOptions(ex)) setAnswer(n - 1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [check, next, status, ex, quitOpen, noHearts, result])
+  }, [check, next, status, ex, quitOpen, empty, result])
 
   if (!found) {
     return (
@@ -140,6 +166,7 @@ export function LessonScreen({ id }: { id: string }) {
       : status === 'wrong'
         ? { bg: 'bg-coral-light', text: 'text-coral-dark', btn: 'btn-coral' }
         : null
+  const canHint = progress.gems >= HINT_COST && !hint
 
   return (
     <div className="flex h-[100dvh] flex-col bg-white">
@@ -150,15 +177,14 @@ export function LessonScreen({ id }: { id: string }) {
         <div className="progress-track flex-1 !h-[18px]">
           <div className="progress-fill bg-brand" style={{ width: `${Math.max(pct, 3)}%` }} />
         </div>
-        <div className={`flex items-center gap-1.5 text-[19px] font-black text-heart ${status === 'wrong' ? 'anim-shake' : ''}`} key={progress.hearts}>
-          <Heart size={30} />
-          {progress.hearts}
+        <div className="text-[19px]" key={progress.hearts} title="Заряд Бипи">
+          <ChargeMeter value={progress.hearts} size={26} shake={status === 'wrong'} />
         </div>
       </header>
 
       <main className="flex min-h-0 flex-1 justify-center overflow-y-auto px-4 md:px-8">
         <div key={`${pos}`} className="anim-fade-up w-full max-w-[620px] py-5 md:py-7">
-          {ex && <ExerciseView ex={ex} answer={answer} setAnswer={setAnswer} status={status} />}
+          {ex && <ExerciseView ex={ex} answer={answer} setAnswer={setAnswer} status={status} hint={hint} />}
         </div>
       </main>
 
@@ -171,13 +197,23 @@ export function LessonScreen({ id }: { id: string }) {
                   {status === 'correct' ? <Check size={36} /> : <Cross size={34} />}
                 </span>
                 <div className="min-w-0">
-                  <div className="text-[22px] font-black leading-tight md:text-[24px]">{status === 'correct' ? praise : 'Не совсем так'}</div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="text-[22px] font-black leading-tight md:text-[24px]">{status === 'correct' ? praise : 'Не совсем так'}</span>
+                    {recharged && (
+                      <span className="anim-pop inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[13px] font-black text-teal-dark" data-recharged>
+                        <Battery size={16} level={Math.min(5, progress.hearts)} /> +1 заряд: ошибка исправлена
+                      </span>
+                    )}
+                  </div>
                   {status === 'wrong' && (
                     <div className="mt-1 text-[16px] font-extrabold">
-                      Правильный ответ: <span className="font-bold">{correctText(ex)}</span>
+                      Правильный ответ: <span className="font-bold [overflow-wrap:anywhere]">{correctText(ex)}</span>
                     </div>
                   )}
                   <p className="mt-1 max-w-[640px] text-[15px] font-semibold leading-snug opacity-90">{ex.explain}</p>
+                  {status === 'wrong' && progress.hearts > 0 && (
+                    <p className="mt-1 text-[13px] font-extrabold opacity-80">Задание вернётся в конце урока — исправишь и вернёшь деление заряда.</p>
+                  )}
                 </div>
               </div>
               <button className={`btn ${sheet.btn} w-full shrink-0 md:w-[180px]`} onClick={next} autoFocus>
@@ -185,20 +221,36 @@ export function LessonScreen({ id }: { id: string }) {
               </button>
             </>
           ) : (
-            <>
+            <div className="flex w-full items-center gap-3">
               <button className="btn btn-ghost hidden md:inline-flex md:w-[160px]" onClick={() => check(true)}>
                 Пропустить
               </button>
-              <button className="btn w-full md:w-[180px]" disabled={!canCheck(answer)} onClick={() => check()}>
+              <button
+                className="btn btn-ghost shrink-0 !px-3 md:!px-4"
+                onClick={buyHint}
+                disabled={!canHint}
+                data-hint-btn
+                title={hint ? 'Подсказка уже открыта' : `Подсказка Бипи за ${tokens(HINT_COST)}`}
+                aria-label={`Подсказка за ${tokens(HINT_COST)}`}
+              >
+                <span aria-hidden>💡</span>
+                <span className="hidden sm:inline">Подсказка</span>
+                <span className="inline-flex items-center gap-0.5 text-teal-dark">
+                  <Token size={18} />
+                  {HINT_COST}
+                </span>
+              </button>
+              <span className="hidden flex-1 md:block" />
+              <button className="btn min-w-0 flex-1 md:w-[180px] md:flex-none" disabled={!canCheck(ex, answer)} onClick={() => check()}>
                 Проверить
               </button>
-            </>
+            </div>
           )}
         </div>
       </footer>
 
       {quitOpen && (
-        <Modal>
+        <Modal label="Выйти из урока">
           <Mascot mood="think" size={120} className="mx-auto" />
           <h2 className="mt-3 text-[22px] font-black">Уже уходишь?</h2>
           <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">Прогресс этого урока не сохранится.</p>
@@ -211,25 +263,65 @@ export function LessonScreen({ id }: { id: string }) {
         </Modal>
       )}
 
-      {noHearts && (
-        <Modal>
-          <Mascot mood="think" size={120} className="mx-auto" />
-          <h2 className="mt-3 text-[22px] font-black">Сердечки закончились</h2>
-          <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">В демо-версии их можно восстановить бесплатно.</p>
+      {empty === 'menu' && (
+        <Modal label="Заряд Бипи на нуле">
+          <div className="relative mx-auto w-fit">
+            <Mascot mood="think" size={112} />
+            <span className="absolute -right-6 bottom-1 rounded-xl bg-white p-1 shadow">
+              <Battery size={30} level={0} />
+            </span>
+          </div>
+          <h2 className="mt-3 text-[22px] font-black">Бипи на нуле</h2>
+          <p className="mb-5 mt-1 text-[15px] font-semibold leading-snug text-muted">
+            Это не штраф — просто пауза. Разбери ошибку, и Бипи получит деление заряда. Или подожди: +1 деление каждые {RECHARGE_MINUTES} мин{chargeAt ? ` (следующее ${waitText(chargeAt)})` : ''}.
+          </p>
+          <button className="btn btn-teal btn-block" onClick={() => setEmpty('review')} data-empty="review">
+            🔁 Разобрать ошибку · +1 деление
+          </button>
           <button
-            className="btn btn-coral btn-block"
+            className="btn btn-ghost btn-block mt-3"
+            disabled={progress.gems < RECHARGE_COST}
+            data-empty="buy"
             onClick={() => {
+              if (!spendGems(RECHARGE_COST)) return
               refillHearts()
-              setNoHearts(false)
-              setPos((p) => p + 1)
-              setAnswer(null)
-              setStatus('idle')
+              setEmpty(null)
+              advance()
             }}
           >
-            ❤️ Восстановить
+            <Token size={20} /> Подзарядить за {RECHARGE_COST}
           </button>
-          <button className="mt-4 w-full py-2 text-[15px] font-extrabold uppercase tracking-wider text-muted hover:opacity-80" onClick={() => navigate('/learn')}>
+          <button className="mt-3 w-full py-2 text-[15px] font-extrabold uppercase tracking-wider text-muted hover:opacity-80" onClick={() => navigate('/learn')}>
             Выйти
+          </button>
+        </Modal>
+      )}
+
+      {empty === 'review' && lastWrong && (
+        <Modal label="Разбор ошибки">
+          <div className="text-left">
+            <div className="mb-1 text-[12px] font-black uppercase tracking-wider text-brand">Разбор с Бипи</div>
+            <h2 className="text-[20px] font-black leading-tight">{lastWrong.title}</h2>
+            <div className="mt-3 rounded-2xl border-2 border-teal bg-teal-light px-4 py-3">
+              <div className="text-[12px] font-black uppercase tracking-wider text-teal-dark">Правильный ответ</div>
+              <div className="mt-0.5 text-[15px] font-extrabold text-ink [overflow-wrap:anywhere]">{correctText(lastWrong)}</div>
+            </div>
+            <div className="mt-3 rounded-2xl bg-snow px-4 py-3">
+              <div className="text-[12px] font-black uppercase tracking-wider text-muted">Почему</div>
+              <p className="mt-0.5 text-[15px] font-semibold leading-snug text-ink">{lastWrong.explain}</p>
+            </div>
+          </div>
+          <button
+            className="btn btn-teal btn-block mt-5"
+            data-empty="done"
+            onClick={() => {
+              addCharge(1)
+              setEmpty(null)
+              advance()
+              toast('+1 деление заряда ⚡')
+            }}
+          >
+            Понял, заряжаем ⚡
           </button>
         </Modal>
       )}

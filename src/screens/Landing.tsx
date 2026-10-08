@@ -6,12 +6,17 @@ import { Mascot, MascotHead } from '../components/Mascot'
 import { Logo } from '../components/Layout'
 import { Reveal } from '../components/Reveal'
 import { BrowserArt, BugArt, DatabaseArt, RocketArt } from '../components/Illustrations'
-import { Bolt, Check, Cross, Fire, Heart, Shield } from '../components/Icons'
+import { Battery, Check, Cross, Rocket, Shield, Spark, Token } from '../components/Icons'
+import { ChargeMeter } from '../components/Economy'
+import { UpgradeView, VibeMeter } from '../components/exercises/Upgrade'
+import { isCorrect, upgradeScore, type Answer, type Status } from '../data/exerciseLogic'
 import { DEMO_EXERCISE, UNITS, UNIT_COLORS } from '../data/course'
 import { HOMEWORKS } from '../data/homework'
 import { SOON_TOPICS, TIERS, unitsOf } from '../data/tiers'
 import { TierBadge } from '../components/TierBadge'
 import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, usd } from '../data/pricing'
+import { BILLING_ENABLED } from '../lib/config'
+import { startCheckout } from '../lib/billing'
 
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -51,7 +56,14 @@ function Header() {
         </nav>
         <div className="ml-auto flex items-center gap-3">
           <button className="btn btn-ghost btn-sm" onClick={cta.login}>
-            {cta.loggedIn ? 'В приложение' : 'Войти'}
+            {cta.loggedIn ? (
+              <>
+                <span className="max-[359px]:hidden">В приложение</span>
+                <span className="min-[360px]:hidden">Учиться</span>
+              </>
+            ) : (
+              'Войти'
+            )}
           </button>
           <button className="btn btn-sm btn-bouncy hidden sm:inline-flex" onClick={cta.start}>
             Начать бесплатно
@@ -105,17 +117,17 @@ function HeroArt() {
         </div>
       </div>
 
-      {/* xp chip */}
+      {/* vibe points chip */}
       <div className="anim-float-tilt absolute bottom-[10%] left-[2%] md:bottom-[12%] md:left-[2%]" style={{ ['--r' as string]: '-4deg', animationDelay: '-2.2s' }}>
         <div className="flex items-center gap-1.5 rounded-2xl bg-gold px-3.5 py-2 text-[16px] font-black text-[#5a3d00] shadow-[0_5px_0_#E5A100] md:text-[18px]">
-          <Bolt size={22} /> +15 XP
+          <Spark size={22} /> +15 ВП
         </div>
       </div>
 
-      {/* streak chip */}
+      {/* deploy streak chip */}
       <div className="anim-float-tilt absolute bottom-[4%] right-[6%] md:bottom-[8%] md:right-[4%]" style={{ ['--r' as string]: '4deg', animationDelay: '-0.7s' }}>
-        <div className="flex items-center gap-1.5 rounded-2xl border-2 border-line bg-white px-3.5 py-2 text-[15px] font-black text-fire shadow-[0_5px_0_#E7E3F1] md:text-[16px]">
-          <Fire size={22} /> Серия: 7 дней
+        <div className="flex items-center gap-1.5 rounded-2xl border-2 border-line bg-white px-3.5 py-2 text-[15px] font-black text-brand-dark shadow-[0_5px_0_#E7E3F1] md:text-[16px]">
+          <Rocket size={22} /> Деплой-серия: 7
         </div>
       </div>
     </div>
@@ -194,12 +206,18 @@ function StepVisual({ n }: { n: number }) {
     )
   if (n === 2)
     return (
-      <div className="flex h-full flex-col justify-center gap-2 px-6">
-        <div className="tile px-3 py-2 text-[13px] font-bold">«Сделай сайт»</div>
-        <div className="tile is-correct flex items-center justify-between px-3 py-2 text-[13px] font-bold">
-          «Лендинг кофейни на React…» <Check size={16} />
+      <div className="flex h-full items-center justify-center gap-3 px-4">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="rounded-xl border-2 border-line bg-white px-2.5 py-1.5 text-[12px] font-bold text-ink">Сделай сайт <span className="rounded bg-brand-light px-1 text-brand-dark">для кофейни «Зерно»</span></div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="tile is-selected px-2 py-1 text-[11px] font-black">✓ Цель</span>
+            <span className="tile is-selected px-2 py-1 text-[11px] font-black">✓ Стиль</span>
+            <span className="tile px-2 py-1 text-[11px] font-black">+ Формат</span>
+          </div>
         </div>
-        <div className="tile px-3 py-2 text-[13px] font-bold">«сайт быстро!!!»</div>
+        <div className="shrink-0">
+          <VibeMeter value={64} target={80} size={110} />
+        </div>
       </div>
     )
   return (
@@ -212,7 +230,7 @@ function StepVisual({ n }: { n: number }) {
 function HowItWorks() {
   const steps = [
     { n: 1, color: UNIT_COLORS.brand, title: 'Учишься говорить с ИИ', text: 'Короткий урок объясняет, как сформулировать задачу так, чтобы ИИ понял с первого раза.' },
-    { n: 2, color: UNIT_COLORS.coral, title: 'Тренируешься на задачах', text: 'Выбираешь лучший промпт, собираешь запрос из фрагментов и ищешь баги в коде от ИИ.' },
+    { n: 2, color: UNIT_COLORS.coral, title: 'Тренируешься на задачах', text: 'Прокачиваешь слабые промпты по Вайб-метру, устраиваешь дуэли промптов и проверяешь правки ИИ, как настоящий ревьюер.' },
     { n: 3, color: UNIT_COLORS.teal, title: 'Собираешь свои проекты', text: 'Шаг за шагом доходишь до живого лендинга — и знаешь, как его отладить.' },
   ]
   return (
@@ -352,18 +370,14 @@ function TiersAndHomework() {
 function Demo() {
   const ex = DEMO_EXERCISE
   const cta = useCta()
-  const [answer, setAnswer] = useState<number | null>(null)
-  const [status, setStatus] = useState<'idle' | 'correct' | 'wrong'>('idle')
-  const check = () => answer !== null && setStatus(answer === ex.correct ? 'correct' : 'wrong')
+  const [answer, setAnswer] = useState<Answer>(null)
+  const [status, setStatus] = useState<Status>('idle')
+  const picked = Array.isArray(answer) ? answer : []
+  const score = upgradeScore(ex, picked)
+  const check = () => picked.length > 0 && setStatus(isCorrect(ex, answer) ? 'correct' : 'wrong')
   const reset = () => {
     setAnswer(null)
     setStatus('idle')
-  }
-  const cls = (i: number) => {
-    if (status === 'idle') return answer === i ? 'is-selected' : ''
-    if (i === ex.correct) return 'is-correct'
-    if (answer === i) return 'is-wrong'
-    return 'opacity-60'
   }
   return (
     <section id="demo" className="relative scroll-mt-20 overflow-hidden bg-brand py-16 text-white md:py-24">
@@ -372,41 +386,38 @@ function Demo() {
       <div className="relative mx-auto grid max-w-[1160px] items-center gap-10 px-5 md:px-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
         <Reveal className="text-center lg:text-left">
           <div className="text-[14px] font-black uppercase tracking-[.14em] text-white/70">Попробуй прямо сейчас</div>
-          <h2 className="mt-2 text-balance text-[30px] font-black leading-tight tracking-tight md:text-[42px]">Мини-урок за&nbsp;20&nbsp;секунд</h2>
+          <h2 className="mt-2 text-balance text-[30px] font-black leading-tight tracking-tight md:text-[42px]">Прокачай промпт за&nbsp;20&nbsp;секунд</h2>
           <p className="mx-auto mt-3 max-w-[460px] text-[17px] font-semibold leading-relaxed text-white/80 lg:mx-0 md:text-[18px]">
-            Так выглядит задание в Вайбике. Выбери вариант и нажми «Проверить» — Бипи сразу объяснит, почему так.
+            Слабый промпт → нажимай улучшения, и они впишутся в текст. Вайб-метр покажет, насколько ИИ тебя поймёт. Но осторожно: среди улучшений есть ловушки.
           </p>
+          <ul className="mx-auto mt-5 flex max-w-[460px] flex-wrap justify-center gap-2 lg:mx-0 lg:justify-start">
+            {['⚔️ Дуэль промптов', '🔮 Предскажи результат', '🔍 Ревью правок ИИ', '🛤️ Собери пайплайн'].map((t) => (
+              <li key={t} className="rounded-full bg-white/15 px-3 py-1 text-[13px] font-extrabold text-white">
+                {t}
+              </li>
+            ))}
+          </ul>
           <div className="mt-6 hidden justify-center lg:flex lg:justify-start">
-            <Mascot size={150} mood={status === 'correct' ? 'happy' : status === 'wrong' ? 'think' : 'default'} className="anim-float" />
+            <Mascot size={140} mood={status === 'correct' ? 'happy' : status === 'wrong' ? 'think' : 'default'} className="anim-float" />
           </div>
         </Reveal>
 
         <Reveal delay={120}>
-          <div className="mx-auto w-full max-w-[540px] overflow-hidden rounded-[28px] bg-white text-ink shadow-[0_10px_0_rgba(47,42,71,.25)]">
+          <div className="mx-auto w-full max-w-[540px] overflow-hidden rounded-[28px] bg-white text-ink shadow-[0_10px_0_rgba(47,42,71,.25)]" data-demo>
             <div className="flex items-center gap-3 px-5 pt-5">
               <Cross size={22} className="text-[#B3ADC8]" />
               <div className="progress-track flex-1 !h-[14px]">
-                <div className="progress-fill bg-brand" style={{ width: status === 'correct' ? '100%' : '35%' }} />
+                <div className="progress-fill bg-brand" style={{ width: status === 'correct' ? '100%' : `${Math.max(12, Math.min(90, score))}%` }} />
               </div>
-              <span className="flex items-center gap-1 text-[16px] font-black text-heart">
-                <Heart size={22} /> {status === 'wrong' ? 4 : 5}
+              <span className="text-[16px]">
+                <ChargeMeter value={status === 'wrong' ? 4 : 5} size={20} />
               </span>
             </div>
-            <div className="px-5 pb-5 pt-5">
-              <h3 className="text-[22px] font-black">{ex.title}</h3>
-              <p className="mt-1 text-[15px] font-semibold text-muted">{ex.prompt}</p>
-              <div className="mt-4 grid gap-2.5">
-                {ex.options.map((o, i) => (
-                  <button
-                    key={i}
-                    disabled={status !== 'idle'}
-                    onClick={() => setAnswer(i)}
-                    className={`tile px-4 py-3 text-[14px] font-bold leading-snug md:text-[15px] ${cls(i)}`}
-                  >
-                    «{o}»
-                  </button>
-                ))}
-              </div>
+            <div className="px-5 pb-5 pt-4">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-coral-light px-3 py-1 text-[12px] font-black uppercase tracking-wider text-coral-dark">🎛️ Прокачай промпт</span>
+              <h3 className="mt-2 text-[21px] font-black leading-tight">{ex.title}</h3>
+              <p className="mb-3 mt-1 text-[15px] font-semibold text-muted">{ex.prompt}</p>
+              <UpgradeView ex={ex} answer={answer} setAnswer={setAnswer} status={status} compact />
             </div>
             <div
               className={`border-t-2 px-5 py-4 transition-colors ${
@@ -414,13 +425,13 @@ function Demo() {
               }`}
             >
               {status === 'idle' ? (
-                <button className="btn btn-block" disabled={answer === null} onClick={check}>
+                <button className="btn btn-block" disabled={picked.length === 0} onClick={check}>
                   Проверить
                 </button>
               ) : (
                 <div className="anim-fade-up">
                   <div className={`text-[19px] font-black ${status === 'correct' ? 'text-teal-dark' : 'text-coral-dark'}`}>
-                    {status === 'correct' ? 'В точку! +15 XP' : 'Не совсем — смотри почему'}
+                    {status === 'correct' ? 'Вайб пойман! +15 ВП' : 'Почти — смотри, что мешает'}
                   </div>
                   <p className={`mt-1 text-[14px] font-semibold leading-snug ${status === 'correct' ? 'text-teal-dark' : 'text-coral-dark'}`}>{ex.explain}</p>
                   <div className="mt-3 flex gap-3">
@@ -453,34 +464,39 @@ function Features() {
   ]
   const items: { title: string; text: string; bg: string; visual: ReactNode }[] = [
     {
-      title: 'Серия дней',
-      text: 'Занимайся каждый день и держи огонёк. Маленькая привычка — большой результат.',
-      bg: '#FFF1DE',
+      title: 'Деплой-серия',
+      text: 'Каждый день с уроком — новый «релиз» твоих навыков: v1, v2, v3… Маленькая привычка — большой результат.',
+      bg: '#EFE9FF',
       visual: (
         <div className="flex gap-1.5">
           {days.map((d, i) => (
             <div key={d} className="flex flex-col items-center gap-1">
-              <span className={`flex h-9 w-9 items-center justify-center rounded-full ${i < 5 ? 'bg-white' : 'border-2 border-dashed border-[#F5C68A]'}`}>
-                {i < 5 && <Fire size={22} />}
+              <span className={`flex h-9 w-9 items-center justify-center rounded-full ${i < 5 ? 'bg-white' : 'border-2 border-dashed border-brand-mid'}`}>
+                {i < 5 && <Rocket size={22} />}
               </span>
-              <span className="text-[11px] font-extrabold text-[#C7883A]">{d}</span>
+              <span className="text-[11px] font-extrabold text-brand-dark">{d}</span>
             </div>
           ))}
         </div>
       ),
     },
     {
-      title: 'XP и уровни',
-      text: 'За каждый урок — опыт и кристаллы. Видно, как растёт навык.',
-      bg: '#FFF4D6',
+      title: 'Заряд Бипи и токены',
+      text: 'Ошибка тратит деление батарейки, но заряд сам восстанавливается и растёт, когда разбираешь ошибки. За уроки — вайб-поинты и токены на подсказки.',
+      bg: '#DCF8F3',
       visual: (
-        <div className="w-full max-w-[260px]">
-          <div className="mb-1.5 flex items-center justify-between text-[13px] font-black text-[#8a6a1e]">
-            <span className="flex items-center gap-1"><Bolt size={18} /> Уровень 3</span>
-            <span>120 / 200 XP</span>
+        <div className="flex w-full max-w-[280px] items-center justify-between gap-3">
+          <div className="flex flex-col items-center gap-1 text-[13px] font-black text-teal-dark">
+            <Battery size={34} level={4} />
+            4 / 5
           </div>
-          <div className="progress-track !h-[18px] !bg-white">
-            <div className="progress-fill bg-gold" style={{ width: '60%' }} />
+          <div className="flex flex-col items-center gap-1 text-[13px] font-black text-teal-dark">
+            <Token size={34} />
+            +10
+          </div>
+          <div className="flex flex-col items-center gap-1 text-[13px] font-black text-brand-dark">
+            <Spark size={34} />
+            +15 ВП
           </div>
         </div>
       ),
@@ -587,7 +603,11 @@ function Pricing() {
   const toast = useToast()
   const [period, setPeriod] = useState<Period>('annual')
   const annual = period === 'annual'
-  const startTrial = () => (cta.loggedIn ? toast('Оплата Pro подключится совсем скоро — пробный период начнётся отсюда 🔔') : cta.start())
+  const startTrial = () => {
+    if (!cta.loggedIn) return cta.start()
+    if (!BILLING_ENABLED) return toast('Оплата Pro подключится совсем скоро — пробный период начнётся отсюда 🔔')
+    void startCheckout(annual ? 'annual' : 'monthly').then((err) => err && toast(err))
+  }
 
   return (
     <section id="pricing" className="scroll-mt-20 bg-snow py-16 md:py-24">
@@ -710,11 +730,11 @@ const FAQ = [
   },
   {
     q: 'Сколько времени занимает урок?',
-    a: 'Обычно 3–5 минут. Можно пройти один урок за утренним кофе и не терять серию.',
+    a: 'Обычно 3–5 минут. Можно пройти один урок за утренним кофе и не прерывать деплой-серию.',
   },
   {
     q: 'Это бесплатно?',
-    a: `Да, раздел «Первый промпт», серия, XP и лиги бесплатны навсегда. Pro открывает все разделы, безлимитные сердечки и ИИ-разбор кода: ${usd(PRICES.monthly)} в месяц или ${usd(PRICES.annual)} в год (≈ ${usd(annualPerMonth)} в месяц).`,
+    a: `Да, раздел «Первый промпт», деплой-серия, вайб-поинты и лиги бесплатны навсегда. Pro открывает все разделы, безлимитный заряд Бипи и ИИ-разбор кода: ${usd(PRICES.monthly)} в месяц или ${usd(PRICES.annual)} в год (≈ ${usd(annualPerMonth)} в месяц).`,
   },
   {
     q: 'Как работает пробный период?',
@@ -726,7 +746,7 @@ const FAQ = [
   },
   {
     q: 'Что будет после пробного периода?',
-    a: `Если не отменишь, на ${TRIAL_DAYS + 1}-й день спишем стоимость выбранного тарифа: ${usd(PRICES.monthly)} за месяц или ${usd(PRICES.annual)} за год. Дальше подписка продлевается автоматически, пока ты её не отменишь. А если решишь не продолжать, вернёшься на бесплатный тариф — прогресс и серия сохранятся.`,
+    a: `Если не отменишь, на ${TRIAL_DAYS + 1}-й день спишем стоимость выбранного тарифа: ${usd(PRICES.monthly)} за месяц или ${usd(PRICES.annual)} за год. Дальше подписка продлевается автоматически, пока ты её не отменишь. А если решишь не продолжать, вернёшься на бесплатный тариф — прогресс и деплой-серия сохранятся.`,
   },
   {
     q: 'Вайбик связан с Cursor, OpenAI или Anthropic?',
@@ -789,7 +809,7 @@ function FinalCta() {
                 <br className="hidden md:block" /> ближе, чем кажется
               </h2>
               <p className="mt-3 max-w-[480px] text-[17px] font-semibold text-white/85 md:text-[18px]">Пять минут сегодня — и ты уже знаешь, как написать хороший промпт.</p>
-              <button className="btn btn-white btn-bouncy mt-7 !min-h-[56px] !px-8 !text-[16px]" style={{ color: '#E0573A' }} onClick={cta.start}>
+              <button className="btn btn-white btn-bouncy mt-7 !min-h-[56px] !px-8 !text-[16px] max-[359px]:!px-5" style={{ color: '#E0573A' }} onClick={cta.start}>
                 {cta.loggedIn ? 'Продолжить обучение' : 'Начать бесплатно'}
               </button>
             </div>

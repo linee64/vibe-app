@@ -3,24 +3,46 @@ import type { SVGProps } from 'react'
 type P = SVGProps<SVGSVGElement> & { size?: number }
 const base = (size = 24, p: P) => ({ width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': true, ...p })
 
-export const Fire = ({ size, ...p }: P) => (
+/** Батарейка Бипи: 5 делений заряда. Цвет — по уровню (teal → amber → coral), без «сердечек» */
+export const Battery = ({ size = 24, level = 5, max = 5, ...p }: P & { level?: number; max?: number }) => {
+  const color = level >= 3 ? '#13C2AE' : level === 2 ? '#FFB61D' : '#FF7A59'
+  const w = 15 / max
+  return (
+    <svg width={size * 1.25} height={size} viewBox="0 0 30 24" aria-hidden {...p}>
+      <rect x="1.5" y="5" width="23.5" height="14" rx="4" fill="#fff" stroke={level ? color : '#B3ADC8'} strokeWidth="2.2" />
+      <rect x="25.6" y="9" width="3" height="6" rx="1.4" fill={level ? color : '#B3ADC8'} />
+      {Array.from({ length: max }, (_, i) => (
+        <rect key={i} x={4.6 + i * (w + 0.85)} y="8" width={w - 0.4} height="8" rx="1.3" fill={i < level ? color : '#EEEAF6'} />
+      ))}
+      {level === 0 && <path d="M14.2 6.8 10.6 12.6h3l-.8 4.6 3.8-6h-3z" fill="#FF7A59" />}
+    </svg>
+  )
+}
+/** Токен: шестигранная фишка — валюта для подсказок и подзарядки */
+export const Token = ({ size, ...p }: P) => (
   <svg {...base(size, p)}>
-    <path d="M12 1.8c1.2 3.7 5.6 5.6 5.6 11a5.6 5.6 0 0 1-11.2 0c0-2.3 1-3.9 2.3-5.1 0 2 .9 3.2 2.1 3.4C10.4 8 10 5 12 1.8z" fill="#FF9A1F" />
-    <path d="M12 12.6c1.3 1.4 2.8 2.4 2.8 4.4a2.8 2.8 0 0 1-5.6 0c0-1.8 1.4-2.9 2.8-4.4z" fill="#FFD23D" />
+    <path d="M12 1.8 21 7v10l-9 5.2L3 17V7z" fill="#0E9C8C" />
+    <path d="M12 1.8 21 7v9l-9 5.2L3 16V7z" fill="#13C2AE" />
+    <path d="M12 5.4 17.8 8.7v6.4L12 18.4l-5.8-3.3V8.7z" fill="#9BE7DD" />
+    <path d="M12 8.2c.4 1.7 1.5 2.8 3.2 3.2-1.7.4-2.8 1.5-3.2 3.2-.4-1.7-1.5-2.8-3.2-3.2 1.7-.4 2.8-1.5 3.2-3.2z" fill="#fff" />
   </svg>
 )
-export const Gem = ({ size, ...p }: P) => (
+/** Ракета: деплой-серия (дни подряд с уроками) */
+export const Rocket = ({ size, ...p }: P) => (
   <svg {...base(size, p)}>
-    <path d="M6.5 3h11L22 9 12 21.5 2 9z" fill="#2EB6F5" />
-    <path d="M6.5 3h11L22 9H2z" fill="#7FD3FA" />
-    <path d="M8.5 9 12 21.5 15.5 9" fill="#1C9FDB" />
-    <path d="M5 5.5 7.5 3.8" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" opacity=".8" />
+    <path d="M9.2 16.6c-1.6.6-2.6 2.6-2.8 5 2.4-.2 4.4-1.2 5-2.8z" fill="#FFB61D" />
+    <path d="M9.6 16.8c-.8.5-1.3 1.6-1.4 2.8 1.2-.1 2.3-.6 2.8-1.4z" fill="#FF7A59" />
+    <path d="M7.4 12.8 4 13.6l3-4.6 3.4-.6zM11.2 16.6l-.8 3.4 4.6-3 .6-3.4z" fill="#5B2FD6" />
+    <path d="M20.8 3.2c-5.2-.3-9.6 2.9-12 8.6l3.4 3.4c5.7-2.4 8.9-6.8 8.6-12z" fill="#7C4DFF" />
+    <circle cx="15.4" cy="8.6" r="2" fill="#fff" stroke="#5B2FD6" strokeWidth="1.2" />
   </svg>
 )
-export const Heart = ({ size, ...p }: P) => (
+/** Вайб-поинт: искра (вместо «опыта») */
+export const Spark = ({ size, ...p }: P) => (
   <svg {...base(size, p)}>
-    <path d="M12 21s-9-5.6-9-11.6A5 5 0 0 1 12 6.6a5 5 0 0 1 9 2.8C21 15.4 12 21 12 21z" fill="#FF4F6D" />
-    <ellipse cx="7.6" cy="9" rx="1.8" ry="1.2" fill="#fff" opacity=".6" transform="rotate(-35 7.6 9)" />
+    <path d="M12 1.8c.9 4.6 3.6 7.3 8.2 8.2-4.6.9-7.3 3.6-8.2 8.2-.9-4.6-3.6-7.3-8.2-8.2 4.6-.9 7.3-3.6 8.2-8.2z" fill="#7C4DFF" />
+    <path d="M12 6.4c.5 2.4 1.9 3.8 4.3 4.3-2.4.5-3.8 1.9-4.3 4.3-.5-2.4-1.9-3.8-4.3-4.3 2.4-.5 3.8-1.9 4.3-4.3z" fill="#FFC23D" />
+    <path d="M19 15.6c.3 1.6 1.3 2.6 2.9 2.9-1.6.3-2.6 1.3-2.9 2.9-.3-1.6-1.3-2.6-2.9-2.9 1.6-.3 2.6-1.3 2.9-2.9z" fill="#FF7A59" />
   </svg>
 )
 export const Bolt = ({ size, ...p }: P) => (

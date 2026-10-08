@@ -1,7 +1,25 @@
 {
+  // Корень: tsc -b собирает три проекта ниже. compilerOptions здесь читает только Vercel,
+  // когда компилирует функции из /api (project references он не поддерживает).
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "skipLibCheck": true
+  },
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.server.json"
+    }
   ]
 }

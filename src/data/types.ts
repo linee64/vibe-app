@@ -1,40 +1,160 @@
 export type NodeKind = 'star' | 'book' | 'dumbbell' | 'chest' | 'trophy'
 export type UnitColor = 'brand' | 'coral' | 'teal' | 'deep' | 'amber'
 
+/* ------------------------------------------------------------------ Мини-превью результатов ИИ */
+
+/** Блоки, из которых рисуется мини-превью страницы (рамка браузера) */
+export type UIBlock =
+  | { t: 'nav'; items: string[]; logo?: string }
+  | { t: 'h'; text: string; size?: 'xl' | 'lg' | 'md'; align?: 'center' }
+  | { t: 'p'; text: string; muted?: boolean; align?: 'center' }
+  | { t: 'btn'; text: string; tone?: 'brand' | 'coral' | 'teal' | 'grey' | 'ghost'; full?: boolean }
+  | { t: 'img'; label?: string; h?: number }
+  | { t: 'cards'; items: string[]; cols?: 1 | 2 | 3 }
+  | { t: 'list'; items: string[] }
+  | { t: 'input'; label: string; value?: string; error?: string }
+  | { t: 'rows'; items: [string, string][] }
+  | { t: 'note'; text: string; tone: 'coral' | 'teal' | 'amber' | 'violet' }
+  | { t: 'lorem'; lines?: number }
+  | { t: 'split'; left: UIBlock[]; right: UIBlock[] }
+
+export interface MiniUI {
+  url?: string
+  /** plain — нейтрально-серый «шаблон», brand/warm/dark — оформленные */
+  theme?: 'plain' | 'brand' | 'warm' | 'dark'
+  /** узкая рамка телефона */
+  mobile?: boolean
+  blocks: UIBlock[]
+}
+
+/** Что «выдал» ИИ: превью страницы, ответ в чате, код или терминал */
+export type Outcome =
+  | { type: 'ui'; label: string; ui: MiniUI }
+  | { type: 'chat'; label: string; text: string; code?: string[] }
+  | { type: 'code'; label: string; file: string; lines: string[] }
+  | { type: 'terminal'; label: string; lines: string[] }
+
+/* ------------------------------------------------------------------ Упражнения */
+
 interface ExerciseBase {
   title: string
-  /** Реплика маскота / условие задачи */
+  /** Реплика Бипи / условие задачи */
   prompt?: string
+  /** Объяснение «почему» — показывается после проверки */
   explain: string
 }
 
+/** «Ситуация»: карточка-сценарий → что сделаешь? (не больше 25% упражнений) */
 export interface ChoiceExercise extends ExerciseBase {
   kind: 'choice'
+  /** Описание ситуации (карточка) */
+  situation?: string
   options: string[]
   correct: number
-  /** если true — варианты показываются как промпты (моноширинным/цитатой) */
+  /** варианты — это реплики/промпты (показываются как цитаты) */
   quoted?: boolean
 }
-export interface ArrangeExercise extends ExerciseBase {
-  kind: 'arrange'
-  /** Правильный порядок фрагментов */
-  tiles: string[]
-  distractors: string[]
+
+/** «Дуэль промптов»: два промпта и их результаты → кто победил → почему */
+export interface DuelExercise extends ExerciseBase {
+  kind: 'duel'
+  sides: [DuelSide, DuelSide]
+  /** индекс победившей стороны */
+  winner: 0 | 1
+  /** варианты причины победы */
+  reasons: string[]
+  reason: number
 }
+export interface DuelSide {
+  prompt: string
+  result: Outcome
+}
+
+/** «Предскажи результат»: промпт → какой результат выдаст ИИ */
+export interface PredictExercise extends ExerciseBase {
+  kind: 'predict'
+  /** промпт / сообщение, которое отправили ИИ (или описание действия) */
+  input: string
+  /** код, о котором идёт речь (показывается под сообщением) */
+  code?: string[]
+  /** подпись окна: «Чат с ИИ», «ИИ-редактор», «Конструктор сайтов»… */
+  tool?: string
+  outcomes: Outcome[]
+  correct: number
+}
+
+/** «Прокачай промпт»: слабый промпт + чипы-улучшения (часть — ловушки) → Вайб-метр */
+export interface UpgradeExercise extends ExerciseBase {
+  kind: 'upgrade'
+  /** исходный слабый промпт */
+  base: string
+  /** стартовое значение Вайб-метра, 0–100 */
+  start: number
+  /** порог «Вайб достигнут» */
+  target: number
+  chips: UpgradeChip[]
+}
+export interface UpgradeChip {
+  /** короткий ярлык: «Контекст», «Формат», «Стиль»… (у ловушек тоже правдоподобный) */
+  tag: string
+  /** текст, который вставится в промпт */
+  text: string
+  /** вклад в Вайб-метр: > 0 у полезных; у ловушек игнорируется (они всегда тянут вниз) */
+  power: number
+  /** если задано — чип-ловушка, а здесь объяснение почему */
+  trap?: string
+}
+
+/** «Следующий ход»: короткий чат с ИИ (с неидеальным ответом) → лучшее следующее сообщение */
+export interface NextMoveExercise extends ExerciseBase {
+  kind: 'nextmove'
+  chat: ChatMsg[]
+  options: string[]
+  correct: number
+}
+export interface ChatMsg {
+  from: 'me' | 'ai'
+  text: string
+  code?: string[]
+  preview?: MiniUI
+}
+
+/** «Ревью правок ИИ»: дифф по кускам → принять / отклонить каждый */
+export interface DiffExercise extends ExerciseBase {
+  kind: 'diff'
+  /** о чём ты просил ИИ */
+  request: string
+  hunks: DiffHunk[]
+}
+export interface DiffHunk {
+  file: string
+  /** строки с префиксом '+', '-' или ' ' */
+  lines: string[]
+  /** вредный кусок — его нужно отклонить; текст = почему */
+  harmful?: string
+}
+
+/** «Найди баг» / «Красный флаг»: тап по строке кода или фразе в ответе ИИ */
 export interface BugExercise extends ExerciseBase {
   kind: 'bug'
   file: string
   code: string[]
   correct: number
+  /** text — строки это фразы ответа ИИ в чате (красный флаг), по умолчанию — код */
+  mode?: 'code' | 'text'
 }
-export interface FillExercise extends ExerciseBase {
-  kind: 'fill'
-  before: string
-  after: string
-  options: string[]
-  correct: number
+
+/** «Собери пайплайн»: расставь карточки шагов на трек (тап или перетаскивание) */
+export interface PipelineExercise extends ExerciseBase {
+  kind: 'pipeline'
+  /** шаги в правильном порядке */
+  steps: string[]
+  /** лишние карточки, которым не место в пайплайне */
+  extra?: string[]
 }
-export type Exercise = ChoiceExercise | ArrangeExercise | BugExercise | FillExercise
+
+export type Exercise = ChoiceExercise | DuelExercise | PredictExercise | UpgradeExercise | NextMoveExercise | DiffExercise | BugExercise | PipelineExercise
+export type ExerciseKind = Exercise['kind']
 
 export interface Lesson {
   id: string

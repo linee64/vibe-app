@@ -32,7 +32,7 @@ export function Leaderboard() {
       </div>
       <h1 className="text-center text-[28px] font-black">Аметистовая лига</h1>
       <p className="mt-1 text-center text-[16px] font-semibold text-muted">Топ-{PROMOTE} переходят в Коралловую лигу</p>
-      <p className="mt-1 text-center text-[15px] font-extrabold text-fire">Осталось 3 дня</p>
+      <p className="mt-1 text-center text-[15px] font-extrabold text-coral-dark">Осталось 3 дня</p>
       <div className="mx-auto mt-4 w-fit rounded-full border-2 border-dashed border-brand-mid bg-brand-light/60 px-4 py-1.5 text-[13px] font-extrabold text-brand-dark">
         🧪 Демо-данные: все участники вымышленные
       </div>
@@ -80,7 +80,7 @@ export function Leaderboard() {
                   {r.name}
                   {me && <span className="ml-2 rounded-md bg-brand px-1.5 py-0.5 align-middle text-[11px] font-black uppercase text-white">ты</span>}
                 </span>
-                <span className="text-[16px] font-bold text-muted">{r.xp} XP</span>
+                <span className="text-[16px] font-bold text-muted">{r.xp} ВП</span>
               </li>
             </Fragment>
           )

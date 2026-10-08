@@ -115,6 +115,12 @@ export function isTierOpenByProgress(tier: Tier, p: TierProgress) {
 export const isTierUnlocked = (tier: Tier, p: TierProgress) => p.unlockAll || isTierOpenByProgress(tier, p)
 export const isUnitLocked = (unitId: string, p: TierProgress) => !isTierUnlocked(tierOfUnit(unitId), p)
 
+// ---------------------------------------------------------------- Free / Pro
+
+/** Бесплатно навсегда: раздел 1 (+ его домашка) и «Тест на уровень». Остальные разделы — Pro или пробный период. */
+export const FREE_UNIT_IDS = ['u1']
+export const needsPro = (unitId: string) => !FREE_UNIT_IDS.includes(unitId)
+
 /** Текущий тир — последний честно открытый */
 export function currentTier(p: TierProgress): Tier {
   return [...TIERS].reverse().find((t) => isTierOpenByProgress(t, p)) ?? TIERS[0]

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { navigate } from '../router'
 import { LAST_LESSON_KEY, useStore } from '../store'
 import { PLACEMENT_PASS, TIERS, findTier, placementQuestions, tiersBefore } from '../data/tiers'
-import { canCheck, correctText, isCorrect, type Answer, type Status } from '../data/exerciseLogic'
+import { canCheck, correctText, isCorrect, keyOptions, type Answer, type Status } from '../data/exerciseLogic'
 import { ExerciseView } from '../components/Exercises'
 import { Mascot } from '../components/Mascot'
 import { TierBadge } from '../components/TierBadge'
@@ -27,7 +27,7 @@ export function PlacementScreen({ target }: { target: string }) {
 
   const check = useCallback(
     (skip = false) => {
-      if (!ex || status !== 'idle' || (!skip && !canCheck(answer))) return
+      if (!ex || status !== 'idle' || (!skip && !canCheck(ex, answer))) return
       const ok = !skip && isCorrect(ex, answer)
       if (ok) setScore((s) => s + 1)
       setStatus(ok ? 'correct' : 'wrong')
@@ -58,10 +58,7 @@ export function PlacementScreen({ target }: { target: string }) {
         return
       }
       const n = Number(e.key)
-      if (status === 'idle' && n >= 1 && n <= 9 && ex.kind !== 'arrange') {
-        const max = ex.kind === 'bug' ? ex.code.length : ex.options.length
-        if (n <= max) setAnswer(n - 1)
-      }
+      if (status === 'idle' && n >= 1 && n <= keyOptions(ex)) setAnswer(n - 1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -103,7 +100,7 @@ export function PlacementScreen({ target }: { target: string }) {
         <h1 className="max-w-[520px] text-[28px] font-black leading-tight md:text-[34px]">Уже что-то умеешь? Сразу в тир «{tier.name}»</h1>
         <p className="max-w-[460px] text-[16px] font-semibold text-muted">
           {questions.length} вопросов по {skipped.length > 1 ? 'тирам' : 'тиру'} {skipped.map((t) => `«${t.name}»`).join(' и ')}. Ответь верно хотя бы на {PLACEMENT_PASS} — и{' '}
-          {skipped.length > 1 ? 'они засчитаются' : 'он засчитается'}, а «{tier.name}» откроется. Без сердечек и штрафов.
+          {skipped.length > 1 ? 'они засчитаются' : 'он засчитается'}, а «{tier.name}» откроется. Заряд Бипи не тратится, штрафов нет.
         </p>
         <div className="mt-2 flex w-full max-w-[360px] flex-col gap-3">
           <button className="btn btn-block" onClick={() => setPhase('quiz')}>
@@ -198,7 +195,7 @@ export function PlacementScreen({ target }: { target: string }) {
                   <div className="text-[22px] font-black leading-tight md:text-[24px]">{status === 'correct' ? 'Верно!' : 'Не совсем так'}</div>
                   {status === 'wrong' && (
                     <div className="mt-1 text-[16px] font-extrabold">
-                      Правильный ответ: <span className="font-bold">{correctText(ex)}</span>
+                      Правильный ответ: <span className="font-bold [overflow-wrap:anywhere]">{correctText(ex)}</span>
                     </div>
                   )}
                   <p className="mt-1 max-w-[640px] text-[15px] font-semibold leading-snug opacity-90">{ex.explain}</p>
@@ -213,7 +210,7 @@ export function PlacementScreen({ target }: { target: string }) {
               <button className="btn btn-ghost hidden md:inline-flex md:w-[160px]" onClick={() => check(true)}>
                 Не знаю
               </button>
-              <button className="btn w-full md:w-[180px]" disabled={!canCheck(answer)} onClick={() => check()}>
+              <button className="btn w-full md:w-[180px]" disabled={!canCheck(ex, answer)} onClick={() => check()}>
                 Проверить
               </button>
             </>

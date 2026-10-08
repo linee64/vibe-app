@@ -4,10 +4,11 @@
 //  B. Честное прохождение: ВСЕ 30 уроков + 5 домашек («правильный путь», перед ним — расплывчатый промпт,
 //     который не должен засчитываться) по порядку пути; тиры открываются по мере прохождения, экраны «Тир пройден!».
 //  C. «Разблокировать всё (демо)» из профиля.
+//  D. Экономика: магазин токенов, подсказка за 10 токенов, «Бипи на нуле» → разбор ошибки даёт +1 деление.
 // Везде: нет горизонтального переполнения и ошибок консоли.
 // node scripts/playthrough.mjs [baseUrl] [--desktop]
 import { chromium } from 'playwright'
-import { UNITS, watch, login, playLesson, BASE } from './lib/solver.mjs'
+import { UNITS, watch, login, playLesson, BASE, findLesson, currentExercise, pick, check } from './lib/solver.mjs'
 import { HOMEWORKS, TIERS, PLACEMENT_PASS, readProgress, unlockAll, dismissFirstRun, playHomework, playPlacement } from './lib/vibe.mjs'
 
 const desktop = process.argv.includes('--desktop')
@@ -147,7 +148,7 @@ for (const tier of TIERS) {
           // одну домашку открываем через попап на пути
           await page.evaluate(() => document.querySelector('[data-lesson="hw1"]').scrollIntoView({ block: 'center', behavior: 'instant' }))
           await page.locator('[data-lesson="hw1"] > div > button').click()
-          await page.locator('[data-lesson="hw1"]').getByRole('button', { name: /^Открыть \+50 XP$/ }).click()
+          await page.locator('[data-lesson="hw1"]').getByRole('button', { name: /^Открыть \+50 ВП$/ }).click()
         } else await go(page, `/homework/${id}`)
         const log = await playHomework(page, id, {
           vagueFirst: true,
@@ -164,7 +165,8 @@ for (const tier of TIERS) {
       const lesson = unit.lessons.find((l) => l.id === id)
       await go(page, `/lesson/${id}`)
       const res = await playLesson(page, id, {
-        wrongAt: id.endsWith('-2') ? [0] : [],
+        // ошибки разных типов: упражнение вернётся в конец урока, исправление даёт +1 деление заряда
+        wrongAt: { 2: [0], 3: [3], 4: [0], 5: [1] }[id.slice(-1)] ?? [],
         hooks: { beforeCheck: (ex, step) => overflowCheck(page, `${id} step ${step} (${ex.kind})`) },
       })
       await overflowCheck(page, `${id} complete`)
@@ -180,9 +182,50 @@ for (const tier of TIERS) {
 }
 await overflowCheck(page, 'home after all')
 const progress = await readProgress(page)
-console.log(`\nAll lessons done: ${progress.completed.length}, homework: ${progress.homework.length}, exercises answered: ${total}, XP now ${progress.xp}`)
+console.log(`\nAll lessons done: ${progress.completed.length}, homework: ${progress.homework.length}, exercises answered: ${total}, вайб-поинты: ${progress.xp}`)
 assert(progress.tiersCelebrated.length === 3 && progress.tiersByTest.length === 0, `B: тиры ${JSON.stringify(progress.tiersCelebrated)} / по тесту ${JSON.stringify(progress.tiersByTest)}`)
 await ctx.close()
+
+// ================================================================ D. Экономика: подсказка за токены, заряд Бипи на нуле
+{
+  const ctx = await browser.newContext(ctxOpts)
+  const page = await ctx.newPage()
+  watch(page, errors)
+  await login(page)
+  await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem('vaibik.progress') || '{}')
+    localStorage.setItem('vaibik.progress', JSON.stringify({ ...p, hearts: 1, gems: 40 }))
+  })
+  await page.reload()
+  await page.waitForSelector('[data-lesson]')
+  assert((await page.locator('[data-eco="charge"]:visible [data-charge]').first().getAttribute('data-charge')) === '1', 'D: в шапке должен быть заряд 1')
+  // мини-магазин токенов
+  await page.locator('[data-eco="tokens"]:visible').first().click()
+  assert(await page.locator('[data-shop]:visible').first().isVisible(), 'D: не открылся магазин токенов')
+  await overflowCheck(page, 'D shop')
+  await page.keyboard.press('Escape')
+  await go(page, '/lesson/u1-1')
+  await page.waitForSelector('main h1')
+  const lesson = findLesson('u1-1')
+  // подсказка: −10 токенов, на экране пометка Бипи
+  await page.locator('[data-hint-btn]').click()
+  await page.locator('main [data-hint]').waitFor()
+  assert((await readProgress(page)).gems === 30, 'D: подсказка должна стоить 10 токенов')
+  // ошибка на последнем делении → модалка «Бипи на нуле» → разбор ошибки (+1)
+  const ex = await currentExercise(page, lesson)
+  await pick(page, ex, { wrong: true })
+  await check(page)
+  await page.locator('footer').getByRole('button', { name: 'Понятно', exact: true }).click()
+  const modal = page.locator('[data-empty="review"]')
+  if (assert(await modal.isVisible().catch(() => false), 'D: нет модалки «Бипи на нуле»')) {
+    await overflowCheck(page, 'D empty modal')
+    await modal.click()
+    await page.locator('[data-empty="done"]').click()
+    assert((await readProgress(page)).hearts === 1, 'D: разбор ошибки должен дать +1 деление')
+    console.log('✓ D: подсказка за токены, «Бипи на нуле» → разбор ошибки (+1 деление)')
+  }
+  await ctx.close()
+}
 
 // ================================================================ C. Демо-разблокировка
 {

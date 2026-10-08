@@ -8,10 +8,14 @@ import { useStore } from '../store'
 import { navigate } from '../router'
 import { continueAfter } from '../flow'
 import { Mascot, MascotHead } from '../components/Mascot'
-import { Bolt, Check, Cross, House, Target } from '../components/Icons'
+import { Spark, Check, Cross, House, Target } from '../components/Icons'
 import { highlight } from '../components/Code'
 import { LockedScreen } from '../components/Locked'
 import { Confetti } from './LessonComplete'
+import { AI_ENABLED } from '../lib/config'
+import { reviewPrompt, type ReviewOutcome } from '../lib/review'
+import { buildReviewRequest, mergeAiIntoPrompt } from '../homework/ai'
+import { recordHomeworkSubmission } from '../lib/progressSync'
 
 interface Msg {
   id: number
@@ -20,6 +24,10 @@ interface Msg {
   changes?: string[]
   code?: string[]
   tone?: Tone | 'intro'
+  /** Советы ИИ-ментора (DeepSeek) */
+  bullets?: string[]
+  /** Улучшенный промпт от ИИ — можно вставить в поле ввода */
+  improved?: string
 }
 
 const BLOCK_COLORS: Record<BlockColor, { main: string; light: string; dark: string }> = {
@@ -65,7 +73,7 @@ function Chip({ block, active, onClick }: { block: PromptBlock; active: boolean;
   )
 }
 
-function Bubble({ m, onPreview }: { m: Msg; onPreview: () => void }) {
+function Bubble({ m, onPreview, onUseImproved }: { m: Msg; onPreview: () => void; onUseImproved: (text: string) => void }) {
   if (m.role === 'user')
     return (
       <div className="anim-fade-up flex justify-end">
@@ -81,6 +89,25 @@ function Bubble({ m, onPreview }: { m: Msg; onPreview: () => void }) {
         <div className={`max-w-[88%] rounded-2xl rounded-bl-md px-3.5 py-2.5 text-[14px] font-bold leading-snug ${TONE_BG[m.tone ?? 'intro']}`}>
           <div className="mb-0.5 text-[11px] font-black uppercase tracking-wider opacity-70">Бипи</div>
           {m.text}
+          {m.bullets && m.bullets.length > 0 && (
+            <ul className="mt-1.5 space-y-1" data-ai-feedback>
+              {m.bullets.map((b, i) => (
+                <li key={i} className="flex items-start gap-1.5 font-semibold">
+                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60" />
+                  {b}
+                </li>
+              ))}
+            </ul>
+          )}
+          {m.improved && (
+            <button
+              type="button"
+              onClick={() => onUseImproved(m.improved!)}
+              className="mt-2 rounded-lg bg-white/70 px-2 py-1 text-[12px] font-black uppercase tracking-wider text-brand hover:bg-white"
+            >
+              ✨ Вставить улучшенный промпт
+            </button>
+          )}
         </div>
       </div>
     )
@@ -137,7 +164,7 @@ interface RunnerProps<S, U> {
   def: HomeworkDef
   sim: Sim<S, U>
   Preview: ComponentType<PreviewProps<S, U>>
-  onSubmit: (iterations: number) => void
+  onSubmit: (iterations: number, prompts: string[]) => void
 }
 
 function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
@@ -161,6 +188,11 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   const previewRef = useRef<HTMLDivElement>(null)
   const announced = useRef(false)
   const nextId = useRef(1)
+  /** ИИ-проверка: 'on' — DeepSeek, 'off' — офлайн-симуляция (демо, лимит или ошибка) */
+  const [aiMode, setAiMode] = useState<'on' | 'off'>(AI_ENABLED ? 'on' : 'off')
+  const fallbackNoted = useRef(false)
+  /** Номер текущего запроса: ответы от «старых» (после «Заново»/выхода) игнорируем */
+  const runId = useRef(0)
 
   const checks = sim.check(state, ui)
   const doneCount = def.requirements.filter((r) => checks[r.id]).length
@@ -168,7 +200,13 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   const sends = msgs.filter((m) => m.role === 'user').length
   const firstMissing = def.requirements.find((r) => !checks[r.id])
 
-  useEffect(() => () => timers.current.forEach((t) => clearTimeout(t)), [])
+  useEffect(
+    () => () => {
+      runId.current++
+      timers.current.forEach((t) => clearTimeout(t))
+    },
+    [],
+  )
   useEffect(() => {
     const el = chatRef.current
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
@@ -184,32 +222,71 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
 
   const push = (...add: Omit<Msg, 'id'>[]) => setMsgs((m) => [...m, ...add.map((x) => ({ ...x, id: nextId.current++ }))])
 
+  const finish = (prompt: string, outcome: ReviewOutcome | null) => {
+    let text = prompt
+    let review = null
+    if (outcome?.ok) {
+      review = outcome.review
+      text = mergeAiIntoPrompt(sim, def, stateRef.current, prompt, review).text
+    }
+    const turn = sim.apply(stateRef.current, text)
+    const ck = sim.check(turn.state, uiRef.current)
+    const missing = def.requirements.find((r) => !ck[r.id])
+    const done = !missing
+    let bipi = turn.bipi
+    const tip = missing ? (sim.hint?.(turn.state, uiRef.current, missing.id) ?? missing.hint) : ''
+    if (!bipi && review) bipi = done ? 'Все требования выполнены! 🎉 Жми «Сдать домашку».' : `Промпт на ${review.score}/100. Вот что подскажу:`
+    if (!bipi) bipi = done ? 'Все требования выполнены! 🎉 Жми «Сдать домашку».' : `${turn.tone === 'good' ? 'Отлично! Осталось ещё чуть-чуть. ' : turn.tone === 'meh' ? 'Уже лучше! ' : 'Хм, результат так себе. '}${tip}`
+    if (done) announced.current = true
+    setState(turn.state)
+    setVersion((v) => v + 1)
+    const add: Omit<Msg, 'id'>[] = [
+      { role: 'ai', text: turn.reply, changes: turn.changes, code: turn.code },
+      {
+        role: 'bipi',
+        text: bipi,
+        tone: done ? 'good' : turn.tone,
+        bullets: review?.feedback,
+        improved: review && !done && review.improved_prompt && review.improved_prompt !== prompt ? review.improved_prompt : undefined,
+      },
+    ]
+    // ИИ недоступен — один раз честно говорим, что проверяем офлайн
+    if (outcome && !outcome.ok && outcome.reason !== 'disabled' && !fallbackNoted.current) {
+      fallbackNoted.current = true
+      add.push({
+        role: 'bipi',
+        tone: 'meh',
+        text:
+          outcome.reason === 'limit'
+            ? `${outcome.message} Дальше проверяю офлайн — превью и чек-лист работают как обычно.`
+            : 'ИИ-ментор сейчас недоступен — проверяю офлайн, всё работает как обычно 🙂',
+      })
+    }
+    if (outcome && !outcome.ok && (outcome.reason === 'limit' || outcome.reason === 'disabled' || outcome.reason === 'auth')) setAiMode('off')
+    push(...add)
+    setBusy(false)
+  }
+
   const send = useCallback(() => {
     const prompt = draft.trim()
     if (!prompt || busy) return
+    const history = msgs.filter((m) => m.role === 'user').map((m) => m.text)
     push({ role: 'user', text: prompt })
     setDraft('')
     setBusy(true)
     setHint(false)
-    STEP_LABELS.forEach((l, i) => timers.current.push(window.setTimeout(() => setLabel(l), (i * THINK_MS) / STEP_LABELS.length)))
-    timers.current.push(
-      window.setTimeout(() => {
-        const turn = sim.apply(stateRef.current, prompt)
-        const ck = sim.check(turn.state, uiRef.current)
-        const missing = def.requirements.find((r) => !ck[r.id])
-        const done = !missing
-        let bipi = turn.bipi
-        const tip = missing ? (sim.hint?.(turn.state, uiRef.current, missing.id) ?? missing.hint) : ''
-        if (!bipi) bipi = done ? 'Все требования выполнены! 🎉 Жми «Сдать домашку».' : `${turn.tone === 'good' ? 'Отлично! Осталось ещё чуть-чуть. ' : turn.tone === 'meh' ? 'Уже лучше! ' : 'Хм, результат так себе. '}${tip}`
-        if (done) announced.current = true
-        setState(turn.state)
-        setVersion((v) => v + 1)
-        push({ role: 'ai', text: turn.reply, changes: turn.changes, code: turn.code }, { role: 'bipi', text: bipi, tone: done ? 'good' : turn.tone })
-        setBusy(false)
-      }, THINK_MS),
-    )
+    const run = ++runId.current
+    const labels = aiMode === 'on' ? [...STEP_LABELS.slice(0, 3), 'Бипи проверяет промпт…'] : STEP_LABELS
+    labels.forEach((l, i) => timers.current.push(window.setTimeout(() => setLabel(l), (i * THINK_MS) / labels.length)))
+    // ИИ-разбор идёт параллельно с «анимацией размышления»; без ИИ — ровно THINK_MS, как раньше
+    const ai: Promise<ReviewOutcome | null> = aiMode === 'on' ? reviewPrompt(buildReviewRequest(def, prompt, history)) : Promise.resolve(null)
+    const minWait = new Promise<void>((r) => timers.current.push(window.setTimeout(r, THINK_MS)))
+    void Promise.all([ai, minWait]).then(([outcome]) => {
+      if (run !== runId.current) return
+      finish(prompt, outcome)
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, busy, sim, def])
+  }, [draft, busy, sim, def, msgs, aiMode])
 
   const toggleBlock = (b: PromptBlock) => {
     setDraft((d) => {
@@ -219,6 +296,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   }
   const insert = useCallback((text: string) => setDraft((d) => (d.trim() ? `${d.trimEnd()}\n${text}` : text)), [])
   const restart = () => {
+    runId.current++
     timers.current.forEach((t) => clearTimeout(t))
     setBusy(false)
     setState(sim.init())
@@ -238,7 +316,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   }
 
   const submitBtn = (cls = '') => (
-    <button className={`btn btn-gold ${cls}`} onClick={() => onSubmit(sends)}>
+    <button className={`btn btn-gold ${cls}`} onClick={() => onSubmit(sends, msgs.filter((m) => m.role === 'user').map((m) => m.text))}>
       Сдать домашку
     </button>
   )
@@ -280,7 +358,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
               <div className="flex items-center justify-between gap-2">
                 <span className="rounded-lg bg-white/25 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">Домашка {def.num}</span>
                 <span className="flex items-center gap-1 rounded-lg bg-white px-2 py-0.5 text-[12px] font-black" style={{ color: c.dark }}>
-                  <Bolt size={14} /> +{HOMEWORK_XP} XP
+                  <Spark size={14} /> +{HOMEWORK_XP} ВП
                 </span>
               </div>
               <h1 className="mt-2 text-[21px] font-black leading-tight">{def.title}</h1>
@@ -333,7 +411,9 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
           <div className="flex items-center justify-between gap-2 border-b-2 border-line px-4 py-2.5">
             <div className="flex min-w-0 items-center gap-2">
               <span className="shrink-0 whitespace-nowrap text-[16px] font-black">Чат с ИИ</span>
-              <span className="truncate rounded-full bg-snow px-2 py-0.5 text-[11px] font-extrabold text-muted">симуляция · без интернета</span>
+              <span className={`truncate rounded-full px-2 py-0.5 text-[11px] font-extrabold ${aiMode === 'on' ? 'bg-brand-light text-brand-dark' : 'bg-snow text-muted'}`} data-ai-mode={aiMode}>
+                {aiMode === 'on' ? 'ИИ-ментор · онлайн' : 'симуляция · без интернета'}
+              </span>
             </div>
             {sends > 0 && (
               <button onClick={restart} className="shrink-0 text-[12px] font-black uppercase tracking-wider text-muted hover:text-ink">
@@ -343,7 +423,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
           </div>
           <div ref={chatRef} className="min-h-[170px] max-h-[380px] space-y-3 overflow-y-auto bg-snow/60 p-3.5 lg:max-h-[44vh]" data-chat>
             {msgs.map((m) => (
-              <Bubble key={m.id} m={m} onPreview={scrollToPreview} />
+              <Bubble key={m.id} m={m} onPreview={scrollToPreview} onUseImproved={setDraft} />
             ))}
             {busy && <Thinking label={label} />}
           </div>
@@ -464,7 +544,7 @@ function HomeworkDone({ def, iterations, again, onContinue }: { def: HomeworkDef
         </p>
         <div className="mt-8 grid w-full max-w-[540px] grid-cols-3 gap-3 md:gap-4">
           {[
-            { label: 'Получено XP', value: `+${again ? 10 : HOMEWORK_XP}`, icon: <Bolt size={26} />, color: '#FFB61D', edge: '#E5A100' },
+            { label: 'Вайб-поинты', value: `+${again ? 10 : HOMEWORK_XP}`, icon: <Spark size={26} />, color: '#FFB61D', edge: '#E5A100' },
             { label: 'Требования', value: `${def.requirements.length}/${def.requirements.length}`, icon: <Target size={24} />, color: '#13C2AE', edge: '#0E9C8C' },
             { label: 'Промптов', value: String(iterations), icon: <span className="text-[22px]">✨</span>, color: '#7C4DFF', edge: '#5B2FD6' },
           ].map((s) => (
@@ -489,7 +569,7 @@ function HomeworkDone({ def, iterations, again, onContinue }: { def: HomeworkDef
   )
 }
 
-const RUNNERS: Record<string, (def: HomeworkDef, onSubmit: (n: number) => void) => ReactNode> = {
+const RUNNERS: Record<string, (def: HomeworkDef, onSubmit: (n: number, prompts: string[]) => void) => ReactNode> = {
   hw1: (def, onSubmit) => <Runner def={def} sim={cardSim} Preview={CardPreview} onSubmit={onSubmit} />,
   hw2: (def, onSubmit) => <Runner def={def} sim={landingSim} Preview={LandingPreview} onSubmit={onSubmit} />,
   hw3: (def, onSubmit) => <Runner def={def} sim={debugSim} Preview={TodoPreview} onSubmit={onSubmit} />,
@@ -499,7 +579,7 @@ const RUNNERS: Record<string, (def: HomeworkDef, onSubmit: (n: number) => void) 
 
 export function HomeworkScreen({ id }: { id: string }) {
   const def = findHomework(id)
-  const { progress, completeHomework } = useStore()
+  const { session, progress, completeHomework } = useStore()
   const [done, setDone] = useState<{ iterations: number; again: boolean } | null>(null)
 
   if (!def || !RUNNERS[def.id])
@@ -514,8 +594,10 @@ export function HomeworkScreen({ id }: { id: string }) {
     )
   if (isUnitLocked(def.unitId, progress)) return <LockedScreen tier={tierOfUnit(def.unitId)} />
   if (done) return <HomeworkDone def={def} iterations={done.iterations} again={done.again} onContinue={() => continueAfter(progress, def.id)} />
-  return RUNNERS[def.id](def, (iterations) => {
+  return RUNNERS[def.id](def, (iterations, prompts) => {
     const again = progress.homework.includes(def.id)
+    // настоящий аккаунт: сохраняем сданную домашку (история промптов) — для аналитики и будущих проверок
+    if (session?.real) void recordHomeworkSubmission(def.id, prompts, true)
     completeHomework(def.id, HOMEWORK_XP)
     setDone({ iterations, again })
     window.scrollTo(0, 0)

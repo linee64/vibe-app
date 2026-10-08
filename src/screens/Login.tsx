@@ -1,11 +1,14 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { useStore } from '../store'
 import { useToast } from '../components/Toast'
 import { Mascot } from '../components/Mascot'
 import { Logo } from '../components/Layout'
 import { navigate } from '../router'
+import { DEMO_MODE } from '../lib/config'
+import * as auth from '../lib/auth'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+const MIN_PASSWORD = 6
 
 const BUBBLES = [
   { text: '✨ Сделай лендинг для кофейни', cls: 'left-[7%] top-[7%] -rotate-3' },
@@ -13,29 +16,8 @@ const BUBBLES = [
   { text: '</> React + Tailwind', cls: 'right-[9%] bottom-[7%] -rotate-2' },
 ]
 
-export function Login() {
-  const { login } = useStore()
-  const toast = useToast()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
-  const [shake, setShake] = useState(0)
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    const next: typeof errors = {}
-    if (!email.trim()) next.email = 'Введи email'
-    else if (!EMAIL_RE.test(email.trim())) next.email = 'Похоже, в email опечатка'
-    if (!password) next.password = 'Введи пароль'
-    setErrors(next)
-    if (Object.keys(next).length) {
-      setShake((s) => s + 1)
-      return
-    }
-    login(email.trim().toLowerCase())
-    navigate('/learn')
-  }
-
+/** Общая раскладка экранов входа: иллюстрация слева, форма справа */
+function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-white lg:flex-row">
       {/* Illustration side */}
@@ -66,8 +48,91 @@ export function Login() {
       </div>
 
       {/* Form side */}
-      <div className="flex flex-1 items-center justify-center px-6 py-10">
-        <form onSubmit={submit} noValidate className="w-full max-w-[400px]">
+      <div className="flex flex-1 items-center justify-center px-6 py-10">{children}</div>
+    </div>
+  )
+}
+
+type Mode = 'signin' | 'signup' | 'forgot'
+
+const TITLES: Record<Mode, [string, string]> = {
+  signin: ['С возвращением!', 'Войди, чтобы продолжить деплой-серию 🚀'],
+  signup: ['Создай аккаунт', 'Прогресс сохранится на всех устройствах ☁️'],
+  forgot: ['Забыл пароль?', 'Пришлём ссылку, чтобы задать новый 🔑'],
+}
+
+function Notice({ tone, children }: { tone: 'info' | 'error'; children: ReactNode }) {
+  const cls =
+    tone === 'error'
+      ? 'border-coral/60 bg-coral-light/60 text-coral-dark'
+      : 'border-teal/60 bg-teal-light/60 text-ink'
+  return (
+    <div role={tone === 'error' ? 'alert' : 'status'} className={`mb-5 rounded-2xl border-2 px-4 py-3 text-[14px] font-bold leading-snug ${cls}`}>
+      {children}
+    </div>
+  )
+}
+
+export function Login({ initialError }: { initialError?: string | null } = {}) {
+  const { login } = useStore()
+  const toast = useToast()
+  const [mode, setMode] = useState<Mode>('signin')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+  const [shake, setShake] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState<{ tone: 'info' | 'error'; text: string } | null>(initialError ? { tone: 'error', text: initialError } : null)
+
+  const switchMode = (m: Mode) => {
+    setMode(m)
+    setErrors({})
+    setNotice(null)
+    setPassword('')
+  }
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (busy) return
+    const next: typeof errors = {}
+    if (!email.trim()) next.email = 'Введи email'
+    else if (!EMAIL_RE.test(email.trim())) next.email = 'Похоже, в email опечатка'
+    if (mode !== 'forgot') {
+      if (!password) next.password = 'Введи пароль'
+      else if (!DEMO_MODE && mode === 'signup' && password.length < MIN_PASSWORD) next.password = `Минимум ${MIN_PASSWORD} символов`
+    }
+    setErrors(next)
+    if (Object.keys(next).length) {
+      setShake((s) => s + 1)
+      return
+    }
+    const mail = email.trim().toLowerCase()
+    if (DEMO_MODE) {
+      login(mail)
+      navigate('/learn')
+      return
+    }
+    setBusy(true)
+    setNotice(null)
+    const res =
+      mode === 'signin' ? await auth.signIn(mail, password) : mode === 'signup' ? await auth.signUp(mail, password) : await auth.sendPasswordReset(mail)
+    setBusy(false)
+    if (!res.ok) {
+      setNotice({ tone: 'error', text: res.error })
+      setShake((s) => s + 1)
+      return
+    }
+    if (res.message) setNotice({ tone: 'info', text: res.message })
+    if (mode === 'signup' && res.needsConfirm) setPassword('')
+    // успешный вход: сессия придёт из Supabase, App сам переведёт на /learn
+  }
+
+  const [title, subtitle] = TITLES[mode]
+  const submitLabel = busy ? 'Секунду…' : mode === 'signin' ? 'Войти' : mode === 'signup' ? 'Создать аккаунт' : 'Прислать ссылку'
+
+  return (
+    <AuthLayout>
+        <form onSubmit={submit} noValidate className="w-full max-w-[400px]" aria-busy={busy}>
           <button
             type="button"
             onClick={() => navigate('/')}
@@ -77,8 +142,10 @@ export function Login() {
           </button>
           <br />
           <Logo className="mb-8 hidden !text-[40px] lg:inline-block" />
-          <h1 className="text-[28px] font-black leading-tight">С возвращением!</h1>
-          <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">Войди, чтобы продолжить серию 🔥</p>
+          <h1 className="text-[28px] font-black leading-tight">{title}</h1>
+          <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">{subtitle}</p>
+
+          {notice && <Notice tone={notice.tone}>{notice.text}</Notice>}
 
           <div key={shake} className={shake ? 'anim-shake' : ''}>
             <label className="mb-4 block">
@@ -97,47 +164,136 @@ export function Login() {
               />
               {errors.email && <span className="mt-1.5 block text-[14px] font-bold text-coral-dark">{errors.email}</span>}
             </label>
-            <label className="mb-6 block">
-              <span className="mb-1.5 flex items-center justify-between text-[14px] font-extrabold text-ink">
-                Пароль
-                <button type="button" onClick={() => toast('Это тестовый вход — подойдёт любой пароль 😉')} className="text-[13px] font-extrabold text-brand hover:opacity-80">
-                  Забыли пароль?
-                </button>
-              </span>
-              <input
-                className={`input ${errors.password ? 'has-error' : ''}`}
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  if (errors.password) setErrors((x) => ({ ...x, password: undefined }))
-                }}
-              />
-              {errors.password && <span className="mt-1.5 block text-[14px] font-bold text-coral-dark">{errors.password}</span>}
-            </label>
+            {mode !== 'forgot' && (
+              // не <label>: внутри кнопка «Забыли пароль?» — иначе label «приклеится» к ней, а не к полю
+              <div className="mb-6 block">
+                <span className="mb-1.5 flex items-center justify-between text-[14px] font-extrabold text-ink">
+                  <label htmlFor="login-password">Пароль</label>
+                  {mode === 'signin' && (
+                    <button
+                      type="button"
+                      onClick={() => (DEMO_MODE ? toast('Это тестовый вход — подойдёт любой пароль 😉') : switchMode('forgot'))}
+                      className="text-[13px] font-extrabold text-brand hover:opacity-80"
+                    >
+                      Забыли пароль?
+                    </button>
+                  )}
+                </span>
+                <input
+                  id="login-password"
+                  className={`input ${errors.password ? 'has-error' : ''}`}
+                  type="password"
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (errors.password) setErrors((x) => ({ ...x, password: undefined }))
+                  }}
+                />
+                {errors.password && <span className="mt-1.5 block text-[14px] font-bold text-coral-dark">{errors.password}</span>}
+              </div>
+            )}
+            {mode === 'forgot' && <div className="mb-2" />}
           </div>
 
-          <button type="submit" className="btn btn-block !min-h-[54px] !text-[16px]">
-            Войти
+          <button type="submit" disabled={busy} className="btn btn-block !min-h-[54px] !text-[16px]">
+            {submitLabel}
           </button>
 
           <p className="mt-6 text-center text-[15px] font-bold text-muted">
-            Нет аккаунта?{' '}
-            <button type="button" onClick={() => toast('Регистрация скоро появится! Пока войди с любым email 🙂')} className="font-extrabold text-brand hover:underline">
-              Создать аккаунт
-            </button>
+            {mode === 'signin' ? (
+              <>
+                Нет аккаунта?{' '}
+                <button
+                  type="button"
+                  onClick={() => (DEMO_MODE ? toast('Регистрация скоро появится! Пока войди с любым email 🙂') : switchMode('signup'))}
+                  className="font-extrabold text-brand hover:underline"
+                >
+                  Создать аккаунт
+                </button>
+              </>
+            ) : (
+              <>
+                {mode === 'signup' ? 'Уже есть аккаунт?' : 'Вспомнил пароль?'}{' '}
+                <button type="button" onClick={() => switchMode('signin')} className="font-extrabold text-brand hover:underline">
+                  Войти
+                </button>
+              </>
+            )}
           </p>
 
-          <div className="mt-8 flex items-start gap-3 rounded-2xl border-2 border-dashed border-brand-mid bg-brand-light/60 px-4 py-3 text-[14px] font-semibold leading-snug text-brand-dark">
-            <span className="text-[18px] leading-none">🧪</span>
-            <span>
-              <b>Тестовый вход.</b> Подойдёт любой корректный email и непустой пароль — данные хранятся только в этом браузере.
-            </span>
-          </div>
+          {DEMO_MODE && (
+            <div className="mt-8 flex items-start gap-3 rounded-2xl border-2 border-dashed border-brand-mid bg-brand-light/60 px-4 py-3 text-[14px] font-semibold leading-snug text-brand-dark">
+              <span className="text-[18px] leading-none">🧪</span>
+              <span>
+                <b>Тестовый вход.</b> Подойдёт любой корректный email и непустой пароль — данные хранятся только в этом браузере.
+              </span>
+            </div>
+          )}
         </form>
-      </div>
-    </div>
+    </AuthLayout>
+  )
+}
+
+/** Новый пароль после перехода по ссылке из письма «Сброс пароля» */
+export function ResetPassword({ onDone }: { onDone: () => void }) {
+  const toast = useToast()
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [shake, setShake] = useState(0)
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (busy) return
+    if (password.length < MIN_PASSWORD) {
+      setError(`Минимум ${MIN_PASSWORD} символов`)
+      setShake((s) => s + 1)
+      return
+    }
+    setBusy(true)
+    const res = await auth.updatePassword(password)
+    setBusy(false)
+    if (!res.ok) {
+      setError(res.error)
+      setShake((s) => s + 1)
+      return
+    }
+    toast('Пароль обновлён — продолжаем учиться! 🎉')
+    onDone()
+  }
+
+  return (
+    <AuthLayout>
+      <form onSubmit={submit} noValidate className="w-full max-w-[400px]" aria-busy={busy}>
+        <Logo className="mb-8 hidden !text-[40px] lg:inline-block" />
+        <h1 className="text-[28px] font-black leading-tight">Новый пароль</h1>
+        <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">Придумай пароль понадёжнее — и сразу в урок 🚀</p>
+        <div key={shake} className={shake ? 'anim-shake' : ''}>
+          <label className="mb-6 block">
+            <span className="mb-1.5 block text-[14px] font-extrabold text-ink">Пароль</span>
+            <input
+              className={`input ${error ? 'has-error' : ''}`}
+              type="password"
+              autoComplete="new-password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value)
+                setError(null)
+              }}
+            />
+            {error && <span className="mt-1.5 block text-[14px] font-bold text-coral-dark">{error}</span>}
+          </label>
+        </div>
+        <button type="submit" disabled={busy} className="btn btn-block !min-h-[54px] !text-[16px]">
+          {busy ? 'Секунду…' : 'Сохранить пароль'}
+        </button>
+        <button type="button" onClick={onDone} className="mt-4 w-full text-center text-[15px] font-extrabold text-muted hover:text-ink">
+          Пропустить
+        </button>
+      </form>
+    </AuthLayout>
   )
 }

@@ -194,7 +194,7 @@ function PathNode({
           style={soft ? ({ '--c': c.main, '--e': c.dark } as CSSProperties) : { color: c.main }}
           onClick={() => navigate(`/homework/${hw.id}`)}
         >
-          {state === 'done' ? 'Открыть снова +10 XP' : `Открыть +${HOMEWORK_XP} XP`}
+          {state === 'done' ? 'Открыть снова +10 ВП' : `Открыть +${HOMEWORK_XP} ВП`}
         </button>
       </Popover>
     )
@@ -209,11 +209,11 @@ function PathNode({
         </div>
         {soft ? (
           <button className="btn btn-block" style={{ '--c': c.main, '--e': c.dark } as CSSProperties} onClick={() => navigate(`/lesson/${lesson.id}`)}>
-            Начать +15 XP
+            Начать +15 ВП
           </button>
         ) : (
           <button className="btn btn-white btn-block" style={{ color: c.main }} onClick={() => navigate(`/lesson/${lesson.id}`)}>
-            {state === 'done' ? 'Повторить +5 XP' : 'Начать +15 XP'}
+            {state === 'done' ? 'Повторить +5 ВП' : 'Начать +15 ВП'}
           </button>
         )}
       </Popover>
@@ -271,17 +271,17 @@ function PathNode({
 }
 
 const ARTS: Record<string, ReactNode> = {
-  u1: <Mascot size={150} className="anim-float w-[104px] sm:w-[150px]" />,
-  u2: <BrowserArt size={170} className="w-[110px] sm:w-[170px]" />,
-  u3: <BugArt size={170} className="w-[110px] sm:w-[170px]" />,
-  u4: <DatabaseArt size={170} className="w-[110px] sm:w-[170px]" />,
-  u5: <RocketArt size={170} className="anim-float w-[110px] sm:w-[170px]" />,
+  u1: <Mascot size={150} className="anim-float w-[88px] min-[360px]:w-[104px] sm:w-[150px]" />,
+  u2: <BrowserArt size={170} className="w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
+  u3: <BugArt size={170} className="w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
+  u4: <DatabaseArt size={170} className="w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
+  u5: <RocketArt size={170} className="anim-float w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
 }
 
 function UnitArt({ unit, dir, locked }: { unit: Unit; dir: number; locked: boolean }) {
   // Иллюстрация стоит с той стороны, куда «змейка» не уходит в начале раздела
   const side = dir === 1 ? 'left' : 'right'
-  const art = ARTS[unit.id] ?? <Mascot size={150} className="w-[104px] sm:w-[150px]" />
+  const art = ARTS[unit.id] ?? <Mascot size={150} className="w-[88px] min-[360px]:w-[104px] sm:w-[150px]" />
   return (
     <div
       className={`pointer-events-none absolute top-[130px] ${locked ? 'opacity-40 grayscale' : ''}`}
