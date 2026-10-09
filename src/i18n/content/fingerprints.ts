@@ -1,4 +1,4 @@
-// Сгенерировано: npx jiti scripts/validate-i18n.ts --write-fingerprints
+// Сгенерировано: npx jiti scripts/validate/i18n.ts --write-fingerprints
 // Отпечатки русского текста, с которого сделаны переводы. Не править вручную.
 export const FINGERPRINTS: Record<string, string> = {
   'u1-1#0': '5ed2bbc4',

@@ -1,41 +1,64 @@
-# Logs
-logs
+# Зависимости
+node_modules/
+
+# Сборки
+dist/
+dist-ssr/
+*.tsbuildinfo
+*.local
+
+# Локальные артефакты скриптов (скриншоты, отчёты) — см. scripts/shots/out.mjs
+.artifacts/
+screenshots/
+
+# Логи
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Тесты
+coverage/
+test-results/
+playwright-report/
+blob-report/
 
-# Editor directories and files
+# Секреты: в git только примеры
+.env
+.env.*
+!.env.example
+
+# Vercel / Supabase CLI
+.vercel/
+supabase/.temp/
+supabase/.branches/
+
+# Мобильное приложение (подробнее — mobile/.gitignore)
+mobile/.env
+mobile/.env.*
+!mobile/.env.example
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/ios/
+mobile/android/
+mobile/expo-env.d.ts
+mobile/*.jks
+mobile/*.p8
+mobile/*.p12
+mobile/*.key
+mobile/*.mobileprovision
+
+# Редакторы и ОС
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-# Secrets
-.env
-.env.*
-!.env.example
-
-# Playwright
-test-results
-playwright-report
-
-# Vercel
-.vercel
-
-# мобильное приложение: локальные ключи (см. mobile/.env.example)
-mobile/.env
-mobile/.env.*
-!mobile/.env.example

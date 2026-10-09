@@ -33,13 +33,6 @@ export function setCourseContent(units: Unit[], demo: typeof DEMO_RU) {
   DEMO_EXERCISE = demo
 }
 
-export const TOTAL_EXERCISES = ALL_LESSONS.reduce((n, l) => n + l.exercises.length, 0)
-
 export function findLesson(id: string) {
   return ALL_LESSONS.find((l) => l.id === id)
-}
-
-/** Текущий урок — первый непройденный по порядку пути */
-export function currentLessonId(completed: string[]) {
-  return ALL_LESSONS.find((l) => !completed.includes(l.id))?.id ?? null
 }

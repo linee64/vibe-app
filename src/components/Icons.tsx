@@ -45,11 +45,6 @@ export const Spark = ({ size, ...p }: P) => (
     <path d="M19 15.6c.3 1.6 1.3 2.6 2.9 2.9-1.6.3-2.6 1.3-2.9 2.9-.3-1.6-1.3-2.6-2.9-2.9 1.6-.3 2.6-1.3 2.9-2.9z" fill="#FF7A59" />
   </svg>
 )
-export const Bolt = ({ size, ...p }: P) => (
-  <svg {...base(size, p)}>
-    <path d="M13.5 1.8 4.2 13.6h6.6l-1.3 8.6 9.3-12h-6.6z" fill="#FFC23D" stroke="#E5A100" strokeWidth="1.2" strokeLinejoin="round" />
-  </svg>
-)
 export const Clock = ({ size, ...p }: P) => (
   <svg {...base(size, p)}>
     <circle cx="12" cy="12" r="9.5" fill="#7C4DFF" />

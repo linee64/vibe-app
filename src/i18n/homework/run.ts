@@ -1,6 +1,6 @@
 /**
  * Прогон «правильного пути» домашки в локализованном симуляторе (для валидатора и тестов) —
- * как run() в scripts/validate-homework.ts.
+ * как run() в scripts/validate/homework.ts.
  */
 import type { HomeworkDef } from '../../data/homework'
 import { BUG_CODE, BUG_ERROR, type Sim } from '../../homework/sims'

@@ -1,0 +1,15 @@
+# Vercel собирает только веб-приложение из корня репозитория (сайт + функции /api).
+# Мобильное приложение (Expo) деплоится отдельно через EAS — на Vercel не загружаем.
+mobile/
+# Скриншоты и отчёты тестов на сайте не нужны
+screenshots/
+test-results/
+playwright-report/
+# Локальные секреты и артефакты никогда не уходят на Vercel
+.env
+.env.*
+!.env.example
+.vercel/
+node_modules/
+dist/
+.artifacts/

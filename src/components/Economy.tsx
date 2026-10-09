@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { MAX_HEARTS, useStore } from '../store'
-import { CHARGE_MAX, RECHARGE_COST, RECHARGE_MINUTES, SHOP, VP, days, tokens, waitText } from '../data/economy'
-import { Battery, Rocket, Spark, Token } from './Icons'
+import { CHARGE_MAX, RECHARGE_COST, RECHARGE_MINUTES, SHOP, days, tokens, waitText } from '../data/economy'
+import { Battery, Rocket, Token } from './Icons'
 import { MascotHead } from './Mascot'
 import { useToast } from './Toast'
 import { track } from '../lib/analytics'
@@ -138,14 +138,5 @@ export function EconomyBar({ compact = false }: { compact?: boolean }) {
         </PanelCard>
       )}
     </div>
-  )
-}
-
-/** Подпись очков: «120 ВП» с искрой */
-export function VibePoints({ value, size = 18 }: { value: number | string; size?: number }) {
-  return (
-    <span className="inline-flex items-center gap-1">
-      <Spark size={size} /> {value} {VP}
-    </span>
   )
 }

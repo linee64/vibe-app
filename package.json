@@ -8,7 +8,15 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "validate": "npm run validate:content && npm run validate:homework && npm run validate:i18n",
+    "validate:content": "jiti scripts/validate/content.ts",
+    "validate:homework": "jiti scripts/validate/homework.ts",
+    "validate:i18n": "jiti scripts/validate/i18n.ts",
+    "e2e": "node scripts/e2e/playthrough.mjs",
+    "e2e:i18n": "node scripts/e2e/i18n-smoke.mjs",
+    "shots": "node scripts/shots/all.mjs",
+    "shots:mobile": "node scripts/shots/all.mjs --mobile"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",
@@ -26,6 +34,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "jiti": "^2.7.0",
     "oxlint": "^1.81.0",
     "playwright": "^1.64.0",
     "typescript": "~6.0.2",

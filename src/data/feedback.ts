@@ -25,19 +25,6 @@ export const PAYWALL_REASONS: { id: FeedbackCategory; label: string }[] = [
   { id: 'other', label: 'Другое' },
 ]
 
-export const CATEGORY_LABEL: Record<FeedbackCategory, string> = {
-  bug: 'Баг',
-  idea: 'Идея',
-  hard: 'Сложно/непонятно',
-  other: 'Другое',
-  price: 'Дорого',
-  try_first: 'Хочу сначала попробовать',
-  no_value: 'Не вижу ценности',
-}
-
-/** Оценка 1–5 — лица Бипи (свои иконки, не звёзды) */
-export const RATING_LABELS = ['Плохо', 'Так себе', 'Нормально', 'Хорошо', 'Супер!'] as const
-
 export const FEEDBACK_MAX_MESSAGE = 1000
 export const FEEDBACK_MAX_EMAIL = 254
 
