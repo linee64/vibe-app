@@ -5,7 +5,8 @@
   "outputDirectory": "dist",
   "functions": {
     "api/ai/review.ts": { "maxDuration": 60 },
-    "api/billing/*.ts": { "maxDuration": 30 }
+    "api/billing/*.ts": { "maxDuration": 30 },
+    "api/feedback.ts": { "maxDuration": 15 }
   },
   "headers": [
     {

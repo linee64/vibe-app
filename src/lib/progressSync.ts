@@ -29,6 +29,7 @@ export function sanitizeRemote(raw: unknown): Partial<Progress> | null {
     tiersCelebrated: strArr(r.tiersCelebrated),
     placementSeen: r.placementSeen === true,
     portfolioUrl: typeof r.portfolioUrl === 'string' ? r.portfolioUrl.slice(0, 300) : '',
+    ...(typeof r.locale === 'string' && /^(ru|en|kk|es|zh)$/.test(r.locale) ? { locale: r.locale } : {}),
   }
 }
 
@@ -65,6 +66,7 @@ export function mergeProgress(local: Progress, remote: Partial<Progress> | null)
     hearts: Math.min(local.hearts, remote.hearts ?? local.hearts),
     placementSeen: local.placementSeen || !!remote.placementSeen,
     portfolioUrl: local.portfolioUrl || remote.portfolioUrl || '',
+    ...(local.locale || remote.locale ? { locale: local.locale || remote.locale } : {}),
   }
 }
 

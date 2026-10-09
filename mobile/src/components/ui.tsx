@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View, type PressableProps, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { C, font, type Weight } from '../theme'
+import { t } from '@web/i18n/core'
 
 export function Txt({ children, w = 700, size = 15, color = C.ink, style, center }: { children?: React.ReactNode; w?: Weight; size?: number; color?: string; style?: StyleProp<TextStyle>; center?: boolean }) {
   return <Text style={[font(w, size, color), center && { textAlign: 'center' }, style]}>{children}</Text>
@@ -59,7 +60,7 @@ export function Battery({ level, size = 26 }: { level: number; size?: number }) 
   const cells = 5
   const w = size * 1.7
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 1 }} accessibilityLabel={`Заряд Бипи: ${level} из ${cells}`}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 1 }} accessibilityLabel={t('x1o1gwzr', { level, cells })}>
       <View style={{ width: w, height: size * 0.62, borderRadius: 6, borderWidth: 2, borderColor: C.ink, flexDirection: 'row', padding: 2, gap: 2 }}>
         {Array.from({ length: cells }, (_, i) => (
           <View key={i} style={{ flex: 1, borderRadius: 2, backgroundColor: i < level ? (level <= 1 ? C.coral : level <= 3 ? C.gold : C.teal) : C.line }} />

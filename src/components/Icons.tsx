@@ -178,3 +178,13 @@ export const House = ({ size, ...p }: P) => (
     <path d="M17.6 5.4 15.8 8.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
   </svg>
 )
+/** Облачко-отзыв: пузырь с улыбкой Бипи (кнопка «Отзыв») */
+export const FeedbackBubble = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v7a3.5 3.5 0 0 1-3.5 3.5H11l-4.6 3.6c-.5.4-1.2 0-1.2-.6V16A3.5 3.5 0 0 1 2 12.5v-7" fill="#5B2FD6" transform="translate(1 1.4)" />
+    <path d="M3 5.5A3.5 3.5 0 0 1 6.5 2h10A3.5 3.5 0 0 1 20 5.5v7a3.5 3.5 0 0 1-3.5 3.5H11l-4.6 3.6c-.5.4-1.2 0-1.2-.6V16h-.2A2 2 0 0 1 3 14z" fill="#7C4DFF" />
+    <circle cx="8.6" cy="8.4" r="1.4" fill="#fff" />
+    <circle cx="14.4" cy="8.4" r="1.4" fill="#fff" />
+    <path d="M8.6 11.6q2.9 2.4 5.8 0" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+  </svg>
+)

@@ -30,6 +30,17 @@ export interface ApplySubscriptionArgs {
   sourceAt: string | null
 }
 
+/** Строка таблицы feedback (id и created_at заполняет база) */
+export interface FeedbackRow {
+  user_id: string | null
+  email: string | null
+  rating: number | null
+  category: string | null
+  message: string | null
+  context: Record<string, string>
+  source: string
+}
+
 export interface Db {
   /** Проверяет access token Supabase Auth (запрос к Auth-серверу) */
   getUser(token: string): Promise<AuthUser | null>
@@ -39,6 +50,7 @@ export interface Db {
   applySubscription(args: ApplySubscriptionArgs): Promise<boolean>
   webhookSeen(id: string): Promise<boolean>
   markWebhook(id: string, type: string): Promise<void>
+  insertFeedback(row: FeedbackRow): Promise<void>
 }
 
 export const ACTIVE_STATUSES = new Set(['active', 'trialing'])
@@ -97,6 +109,10 @@ export const supabaseDb: Db = {
   async markWebhook(id, type) {
     const { error } = await client().from('webhook_events').upsert({ id, type }, { onConflict: 'id', ignoreDuplicates: true })
     if (error) throw new Error(`webhook_events insert failed: ${error.code ?? ''}`)
+  },
+  async insertFeedback(row) {
+    const { error } = await client().from('feedback').insert(row)
+    if (error) throw new Error(`feedback insert failed: ${error.code ?? ''}`)
   },
 }
 

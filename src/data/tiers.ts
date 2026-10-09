@@ -5,6 +5,7 @@
  */
 import type { Exercise, Lesson, Unit, UnitColor } from './types'
 import { UNITS } from './course'
+import { t } from '../i18n/core'
 import { HOMEWORKS, homeworkForUnit } from './homework'
 
 export type TierId = 'novice' | 'mid' | 'pro'
@@ -22,7 +23,7 @@ export interface Tier {
   skills: string[]
 }
 
-export const TIERS: Tier[] = [
+export const TIERS_RU: Tier[] = [
   {
     id: 'novice',
     num: 1,
@@ -53,7 +54,15 @@ export const TIERS: Tier[] = [
 ]
 
 /** Будущие разделы — тизер после последнего тира */
-export const SOON_TOPICS = ['ИИ-агенты', 'Оплата в своём приложении']
+export const SOON_TOPICS_RU = ['ИИ-агенты', 'Оплата в своём приложении']
+
+/** Живые (локализованные) тиры и темы «скоро» — переключает setTierContent (src/i18n/runtime.ts) */
+export let TIERS: Tier[] = TIERS_RU
+export let SOON_TOPICS: string[] = SOON_TOPICS_RU
+export function setTierContent(tiers: Tier[], soon: string[]) {
+  TIERS = tiers
+  SOON_TOPICS = soon
+}
 
 /** Минимум, что нужно знать о прогрессе (совместимо с Progress из store.tsx) */
 export interface TierProgress {
@@ -88,7 +97,7 @@ export function tierItems(tier: Tier, p: TierProgress): TierItem[] {
     const cp = checkpointOf(u)
     const hw = homeworkForUnit(u.id)
     const items: TierItem[] = [{ kind: 'test', id: cp.id, label: `${cp.title} · ${u.title}`, done: p.completed.includes(cp.id) }]
-    if (hw) items.push({ kind: 'homework', id: hw.id, label: `Домашка «${hw.short}»`, done: p.homework.includes(hw.id) })
+    if (hw) items.push({ kind: 'homework', id: hw.id, label: t('tiers.homeworkItem', { short: hw.short }), done: p.homework.includes(hw.id) })
     return items
   })
 }

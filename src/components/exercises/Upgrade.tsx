@@ -3,6 +3,7 @@ import type { UpgradeExercise } from '../../data/types'
 import { chipOrder, upgradeScore } from '../../data/exerciseLogic'
 import { Head, HintNote, type ViewProps } from './shared'
 import { vibeMood } from './meta'
+import { t } from '../../i18n/core'
 
 const polar = (v: number, r: number) => {
   const a = Math.PI * (1 - v / 100)
@@ -21,7 +22,7 @@ export function VibeMeter({ value, target, size = 190, dropped = false }: { valu
   const [tx, ty] = polar(target, 92)
   const [tx2, ty2] = polar(target, 64)
   return (
-    <div className="flex flex-col items-center" data-vibe={value} role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={value} aria-label="Вайб-метр">
+    <div className="flex flex-col items-center" data-vibe={value} role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={value} aria-label={t('x0xb3t3p')}>
       <svg viewBox="0 0 200 116" width={size} height={(size * 116) / 200} className={dropped ? 'vx-wobble' : ''}>
         <path d={arc(0, 100, 78)} stroke="#EEEAF6" strokeWidth="20" fill="none" strokeLinecap="round" />
         <path d={arc(0.5, 44, 78)} stroke="#FFC2B2" strokeWidth="20" fill="none" strokeLinecap="round" />
@@ -38,9 +39,7 @@ export function VibeMeter({ value, target, size = 190, dropped = false }: { valu
           />
         )}
         <line x1={tx2} y1={ty2} x2={tx} y2={ty} stroke="#2F2A47" strokeWidth="3.5" strokeLinecap="round" />
-        <text x={tx} y={ty - 6} textAnchor="middle" fontSize="10" fontWeight="900" fill="#2F2A47">
-          цель
-        </text>
+        <text x={tx} y={ty - 6} textAnchor="middle" fontSize="10" fontWeight="900" fill="#2F2A47">{t('x1xpzq6r')}</text>
         <g style={{ transform: `rotate(${value * 1.8 - 90}deg)`, transformOrigin: '100px 100px', transition: 'transform .6s cubic-bezier(.3,1.5,.5,1)' }}>
           <path d="M100 34 L106 100 L94 100 Z" fill="#2F2A47" />
         </g>
@@ -94,7 +93,7 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint, compact = fal
             <span className="h-2.5 w-2.5 rounded-full bg-gold" />
             <span className="h-2.5 w-2.5 rounded-full bg-teal" />
             <span className="code-font ml-2 rounded-md bg-white px-2 py-0.5 text-[11px] font-semibold text-muted">prompt.md</span>
-            <span className="ml-auto text-[11px] font-extrabold text-muted">{picked.length ? `+${picked.length} ${picked.length === 1 ? 'правка' : picked.length < 5 ? 'правки' : 'правок'}` : 'черновик'}</span>
+            <span className="ml-auto text-[11px] font-extrabold text-muted">{picked.length ? t('upgrade.edits', { n: picked.length }) : t('x0r512do')}</span>
           </div>
           <div className="min-h-[96px] px-3.5 py-3 text-[15px] font-semibold leading-relaxed text-ink md:text-[16px]" data-prompt-text>
             <span>{ex.base}</span>
@@ -120,7 +119,7 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint, compact = fal
       </div>
 
       <div className="mb-2 mt-4 flex items-center justify-between gap-2">
-        <div className="text-[15px] font-black">Нажимай улучшения — они впишутся в промпт</div>
+        <div className="text-[15px] font-black">{t('x1w3kwsx')}</div>
       </div>
       <HintNote hint={hint} />
       <div className="flex flex-wrap gap-2.5" data-chips>
@@ -142,7 +141,7 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint, compact = fal
             >
               <span className="flex items-center gap-1 text-[10.5px] font-black uppercase tracking-wider opacity-70">
                 {on ? '✓' : '+'} {c.tag}
-                {marked && <span className="ml-1 rounded bg-coral px-1 text-[10px] text-white">🚩 ловушка</span>}
+                {marked && <span className="ml-1 rounded bg-coral px-1 text-[10px] text-white">{t('x1nv5xco')}</span>}
               </span>
               <span className="text-[14px] font-bold leading-snug">{c.text}</span>
             </button>

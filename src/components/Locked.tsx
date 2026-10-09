@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { TIERS, tierItems, type Tier } from '../data/tiers'
 import { Mascot } from './Mascot'
 import { TierBadge } from './TierBadge'
+import { t } from '../i18n/core'
 
 /** Экран для прямого перехода по ссылке на урок/домашку закрытого тира */
 export function LockedScreen({ tier }: { tier: Tier }) {
@@ -18,19 +19,13 @@ export function LockedScreen({ tier }: { tier: Tier }) {
           <TierBadge tier={tier} size={56} locked />
         </span>
       </div>
-      <h1 className="text-[26px] font-black leading-tight">Тир «{tier.name}» пока закрыт</h1>
+      <h1 className="text-[26px] font-black leading-tight">{t('x0sn18rr', { name: tier.name })}</h1>
       {prev && (
-        <p className="max-w-[380px] text-[16px] font-semibold text-muted">
-          Заверши тир {prev.name}, чтобы открыть: {done}/{items.length} — итоговые тесты и домашки. Или докажи знания тестом на уровень.
-        </p>
+        <p className="max-w-[380px] text-[16px] font-semibold text-muted">{t('x0m3s23k', { name: prev.name, done, length: items.length })}</p>
       )}
       <div className="mt-2 flex w-full max-w-[360px] flex-col gap-3">
-        <button className="btn btn-block" onClick={() => navigate(`/placement/${tier.id}`)}>
-          Тест на уровень
-        </button>
-        <button className="btn btn-ghost btn-block" onClick={() => navigate('/learn')}>
-          На главную
-        </button>
+        <button className="btn btn-block" onClick={() => navigate(`/placement/${tier.id}`)}>{t('x0tw0ozv')}</button>
+        <button className="btn btn-ghost btn-block" onClick={() => navigate('/learn')}>{t('x0povobi')}</button>
       </div>
     </div>
   )

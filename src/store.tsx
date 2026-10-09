@@ -3,6 +3,9 @@ import { DEMO_MODE, REVIEW_MODE, SUPABASE_ENABLED } from './lib/config'
 import { getSupabase } from './lib/supabase'
 import { loadRemoteProgress, mergeProgress, saveRemoteProgress } from './lib/progressSync'
 import { RECHARGE_MS } from './data/economy'
+import { track } from './lib/analytics'
+import { t, isLocale, LOCALE_STORAGE_KEY } from './i18n/core'
+import { changeLocale, onUserLocaleChange } from './i18n/runtime'
 
 export interface Session {
   email: string
@@ -40,6 +43,8 @@ export interface Progress {
   placementSeen: boolean
   /** Ссылка на свой настоящий проект (домашка «Запуск»), хранится только локально */
   portfolioUrl: string
+  /** Явно выбранный язык интерфейса (синхронизируется с облаком; '' / нет — не выбирали) */
+  locale?: string
 }
 
 const SESSION_KEY = 'vaibik.session'
@@ -149,7 +154,7 @@ const Ctx = createContext<Store | null>(null)
 
 function nameFromEmail(email: string) {
   const local = email.split('@')[0].replace(/[._-]+/g, ' ').trim()
-  const first = local.split(' ')[0] || 'Друг'
+  const first = local.split(' ')[0] || t('x0oxr2kn')
   return first.charAt(0).toUpperCase() + first.slice(1)
 }
 
@@ -163,7 +168,7 @@ interface AuthUserLike {
 function sessionFromUser(u: AuthUserLike): Session {
   const email = u.email ?? ''
   const dn = typeof u.user_metadata?.display_name === 'string' ? u.user_metadata.display_name.trim() : ''
-  return { email, name: dn || nameFromEmail(email || 'друг'), since: u.created_at ?? new Date().toISOString(), id: u.id, real: true }
+  return { email, name: dn || nameFromEmail(email || t('x16kyo87')), since: u.created_at ?? new Date().toISOString(), id: u.id, real: true }
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -259,6 +264,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const base = owner === userId ? local : { ...freshProgress(), unlockAll: local.unlockAll && REVIEW_MODE }
           return rollDay(mergeProgress(base, remote))
         })
+        // язык из облака — только если на этом устройстве его ещё не выбирали явно
+        if (remote && isLocale(remote.locale) && !localStorage.getItem(LOCALE_STORAGE_KEY)) void changeLocale(remote.locale)
         localStorage.setItem(OWNER_KEY, userId)
         dirty.current = true // сразу дошлём слитую версию, если локально было больше
         setSyncedFor(userId)
@@ -328,6 +335,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    track('logout')
     localStorage.removeItem(SESSION_KEY)
     if (!SUPABASE_ENABLED) {
       setSession(null)
@@ -401,6 +409,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setUnlockAll = useCallback((on: boolean) => setProgress((p) => ({ ...p, unlockAll: on })), [])
   const setPlacementSeen = useCallback(() => setProgress((p) => ({ ...p, placementSeen: true })), [])
   const setPortfolioUrl = useCallback((url: string) => setProgress((p) => ({ ...p, portfolioUrl: url })), [])
+  // явный выбор языка → в прогресс (уедет в облако вместе с ним)
+  useEffect(() => onUserLocaleChange((l) => setProgress((p) => (p.locale === l ? p : { ...p, locale: l }))), [])
 
   const value = useMemo(
     () => ({

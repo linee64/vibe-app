@@ -6,13 +6,18 @@ import { Logo } from '../components/Layout'
 import { navigate } from '../router'
 import { DEMO_MODE } from '../lib/config'
 import * as auth from '../lib/auth'
+import { track } from '../lib/analytics'
+import { LanguageSwitcher } from '../components/LanguageSwitcher'
+import { t } from '../i18n/core'
+import { tx } from '../i18n/rich'
+
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 const MIN_PASSWORD = 6
 
 const BUBBLES = [
-  { text: '✨ Сделай лендинг для кофейни', cls: 'left-[7%] top-[7%] -rotate-3' },
-  { text: '🐞 Почему здесь NaN?', cls: 'right-[7%] top-[17%] rotate-3' },
+  { get text() { return t('x1nust21') }, cls: 'left-[7%] top-[7%] -rotate-3' },
+  { get text() { return t('x1gw6ala') }, cls: 'right-[7%] top-[17%] rotate-3' },
   { text: '</> React + Tailwind', cls: 'right-[9%] bottom-[7%] -rotate-2' },
 ]
 
@@ -35,15 +40,11 @@ function AuthLayout({ children }: { children: ReactNode }) {
           </div>
         ))}
         <div className="relative z-10 flex flex-col items-center text-center">
-          <span className="mb-3 text-[30px] font-black lowercase leading-none text-white lg:hidden">вайбик<span className="text-coral">.</span></span>
+          <span className="mb-3 text-[30px] font-black lowercase leading-none text-white lg:hidden">{tx('x1ctbm6o', {}, [(chunk) => <span className="text-coral">{chunk}</span>])}</span>
           <Mascot size={250} className="anim-float hidden drop-shadow-[0_12px_0_rgba(47,42,71,.12)] lg:block" />
           <Mascot size={120} className="anim-float lg:hidden" />
-          <h2 className="mt-4 max-w-[440px] text-[22px] font-black leading-tight text-white lg:mt-8 lg:text-[34px]">
-            Создавай приложения с&nbsp;ИИ — по&nbsp;5&nbsp;минут в&nbsp;день
-          </h2>
-          <p className="mt-2 hidden max-w-[400px] text-[17px] font-semibold text-white/80 lg:block">
-            Промпты, лендинги и отладка в Cursor, ChatGPT и Claude — короткими весёлыми уроками.
-          </p>
+          <h2 className="mt-4 max-w-[440px] text-[22px] font-black leading-tight text-white lg:mt-8 lg:text-[34px]">{t('x14h7w5u')}</h2>
+          <p className="mt-2 hidden max-w-[400px] text-[17px] font-semibold text-white/80 lg:block">{t('x0gf0mrr')}</p>
         </div>
       </div>
 
@@ -55,11 +56,11 @@ function AuthLayout({ children }: { children: ReactNode }) {
 
 type Mode = 'signin' | 'signup' | 'forgot'
 
-const TITLES: Record<Mode, [string, string]> = {
-  signin: ['С возвращением!', 'Войди, чтобы продолжить деплой-серию 🚀'],
-  signup: ['Создай аккаунт', 'Прогресс сохранится на всех устройствах ☁️'],
-  forgot: ['Забыл пароль?', 'Пришлём ссылку, чтобы задать новый 🔑'],
-}
+const TITLES = (): Record<Mode, [string, string]> => ({
+  signin: [t('login.title.1'), t('login.title.2')],
+  signup: [t('login.title.3'), t('login.title.4')],
+  forgot: [t('login.title.5'), t('login.title.6')],
+})
 
 function Notice({ tone, children }: { tone: 'info' | 'error'; children: ReactNode }) {
   const cls =
@@ -85,6 +86,7 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
   const [notice, setNotice] = useState<{ tone: 'info' | 'error'; text: string } | null>(initialError ? { tone: 'error', text: initialError } : null)
 
   const switchMode = (m: Mode) => {
+    if (m === 'signup') track('signup_started', { entry: 'login' })
     setMode(m)
     setErrors({})
     setNotice(null)
@@ -95,11 +97,11 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
     e.preventDefault()
     if (busy) return
     const next: typeof errors = {}
-    if (!email.trim()) next.email = 'Введи email'
-    else if (!EMAIL_RE.test(email.trim())) next.email = 'Похоже, в email опечатка'
+    if (!email.trim()) next.email = t('x01oatd8')
+    else if (!EMAIL_RE.test(email.trim())) next.email = t('x0vu4vur')
     if (mode !== 'forgot') {
-      if (!password) next.password = 'Введи пароль'
-      else if (!DEMO_MODE && mode === 'signup' && password.length < MIN_PASSWORD) next.password = `Минимум ${MIN_PASSWORD} символов`
+      if (!password) next.password = t('x05opgdu')
+      else if (!DEMO_MODE && mode === 'signup' && password.length < MIN_PASSWORD) next.password = t('x1cyden7', { MIN_PASSWORD })
     }
     setErrors(next)
     if (Object.keys(next).length) {
@@ -108,6 +110,7 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
     }
     const mail = email.trim().toLowerCase()
     if (DEMO_MODE) {
+      track('login_completed', { method: 'demo' })
       login(mail)
       navigate('/learn')
       return
@@ -117,6 +120,8 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
     const res =
       mode === 'signin' ? await auth.signIn(mail, password) : mode === 'signup' ? await auth.signUp(mail, password) : await auth.sendPasswordReset(mail)
     setBusy(false)
+    if (res.ok && mode === 'signin') track('login_completed', { method: 'password' })
+    if (res.ok && mode === 'signup') track('signup_completed', { needs_confirm: !!res.needsConfirm })
     if (!res.ok) {
       setNotice({ tone: 'error', text: res.error })
       setShake((s) => s + 1)
@@ -127,8 +132,8 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
     // успешный вход: сессия придёт из Supabase, App сам переведёт на /learn
   }
 
-  const [title, subtitle] = TITLES[mode]
-  const submitLabel = busy ? 'Секунду…' : mode === 'signin' ? 'Войти' : mode === 'signup' ? 'Создать аккаунт' : 'Прислать ссылку'
+  const [title, subtitle] = TITLES()[mode]
+  const submitLabel = busy ? t('x15d421k') : mode === 'signin' ? t('x1h4dl4y') : mode === 'signup' ? t('x1tq5jtz') : t('x1kq4vgj')
 
   return (
     <AuthLayout>
@@ -137,9 +142,8 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
             type="button"
             onClick={() => navigate('/')}
             className="mb-6 inline-flex items-center gap-1.5 rounded-xl px-2 py-1 -ml-2 text-[14px] font-extrabold text-muted transition-colors hover:bg-snow hover:text-ink"
-          >
-            ← На главную
-          </button>
+          >{t('x1mfdsba')}</button>
+          <LanguageSwitcher className="float-right -mr-2" />
           <br />
           <Logo className="mb-8 hidden !text-[40px] lg:inline-block" />
           <h1 className="text-[28px] font-black leading-tight">{title}</h1>
@@ -168,15 +172,13 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
               // не <label>: внутри кнопка «Забыли пароль?» — иначе label «приклеится» к ней, а не к полю
               <div className="mb-6 block">
                 <span className="mb-1.5 flex items-center justify-between text-[14px] font-extrabold text-ink">
-                  <label htmlFor="login-password">Пароль</label>
+                  <label htmlFor="login-password">{t('x1l0wi4n')}</label>
                   {mode === 'signin' && (
                     <button
                       type="button"
-                      onClick={() => (DEMO_MODE ? toast('Это тестовый вход — подойдёт любой пароль 😉') : switchMode('forgot'))}
+                      onClick={() => (DEMO_MODE ? toast(t('x0tywl6c')) : switchMode('forgot'))}
                       className="text-[13px] font-extrabold text-brand hover:opacity-80"
-                    >
-                      Забыли пароль?
-                    </button>
+                    >{t('x0w9rt0u')}</button>
                   )}
                 </span>
                 <input
@@ -203,22 +205,15 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
 
           <p className="mt-6 text-center text-[15px] font-bold text-muted">
             {mode === 'signin' ? (
-              <>
-                Нет аккаунта?{' '}
-                <button
+              <>{tx('x1q5bb39', {}, [(c) => <button
                   type="button"
-                  onClick={() => (DEMO_MODE ? toast('Регистрация скоро появится! Пока войди с любым email 🙂') : switchMode('signup'))}
+                  onClick={() => (DEMO_MODE ? toast(t('login.signupSoon')) : switchMode('signup'))}
                   className="font-extrabold text-brand hover:underline"
-                >
-                  Создать аккаунт
-                </button>
-              </>
+                >{c}</button>])}</>
             ) : (
               <>
-                {mode === 'signup' ? 'Уже есть аккаунт?' : 'Вспомнил пароль?'}{' '}
-                <button type="button" onClick={() => switchMode('signin')} className="font-extrabold text-brand hover:underline">
-                  Войти
-                </button>
+                {mode === 'signup' ? t('x09ppls0') : t('x11b1e6o')}{' '}
+                <button type="button" onClick={() => switchMode('signin')} className="font-extrabold text-brand hover:underline">{t('x1h4dl4y')}</button>
               </>
             )}
           </p>
@@ -226,9 +221,7 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
           {DEMO_MODE && (
             <div className="mt-8 flex items-start gap-3 rounded-2xl border-2 border-dashed border-brand-mid bg-brand-light/60 px-4 py-3 text-[14px] font-semibold leading-snug text-brand-dark">
               <span className="text-[18px] leading-none">🧪</span>
-              <span>
-                <b>Тестовый вход.</b> Подойдёт любой корректный email и непустой пароль — данные хранятся только в этом браузере.
-              </span>
+              <span>{tx('x0uc1035', {}, [(chunk) => <b>{chunk}</b>])}</span>
             </div>
           )}
         </form>
@@ -248,7 +241,7 @@ export function ResetPassword({ onDone }: { onDone: () => void }) {
     e.preventDefault()
     if (busy) return
     if (password.length < MIN_PASSWORD) {
-      setError(`Минимум ${MIN_PASSWORD} символов`)
+      setError(t('x1cyden7', { MIN_PASSWORD }))
       setShake((s) => s + 1)
       return
     }
@@ -260,7 +253,7 @@ export function ResetPassword({ onDone }: { onDone: () => void }) {
       setShake((s) => s + 1)
       return
     }
-    toast('Пароль обновлён — продолжаем учиться! 🎉')
+    toast(t('x1naqt0p'))
     onDone()
   }
 
@@ -268,11 +261,11 @@ export function ResetPassword({ onDone }: { onDone: () => void }) {
     <AuthLayout>
       <form onSubmit={submit} noValidate className="w-full max-w-[400px]" aria-busy={busy}>
         <Logo className="mb-8 hidden !text-[40px] lg:inline-block" />
-        <h1 className="text-[28px] font-black leading-tight">Новый пароль</h1>
-        <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">Придумай пароль понадёжнее — и сразу в урок 🚀</p>
+        <h1 className="text-[28px] font-black leading-tight">{t('x1c1fyny')}</h1>
+        <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">{t('x1on6yka')}</p>
         <div key={shake} className={shake ? 'anim-shake' : ''}>
           <label className="mb-6 block">
-            <span className="mb-1.5 block text-[14px] font-extrabold text-ink">Пароль</span>
+            <span className="mb-1.5 block text-[14px] font-extrabold text-ink">{t('x1l0wi4n')}</span>
             <input
               className={`input ${error ? 'has-error' : ''}`}
               type="password"
@@ -288,11 +281,9 @@ export function ResetPassword({ onDone }: { onDone: () => void }) {
           </label>
         </div>
         <button type="submit" disabled={busy} className="btn btn-block !min-h-[54px] !text-[16px]">
-          {busy ? 'Секунду…' : 'Сохранить пароль'}
+          {busy ? t('x15d421k') : t('x0ckqv80')}
         </button>
-        <button type="button" onClick={onDone} className="mt-4 w-full text-center text-[15px] font-extrabold text-muted hover:text-ink">
-          Пропустить
-        </button>
+        <button type="button" onClick={onDone} className="mt-4 w-full text-center text-[15px] font-extrabold text-muted hover:text-ink">{t('x1qm67sx')}</button>
       </form>
     </AuthLayout>
   )

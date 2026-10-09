@@ -7,7 +7,10 @@ import { ExerciseView } from '../components/Exercises'
 import { Mascot } from '../components/Mascot'
 import { TierBadge } from '../components/TierBadge'
 import { Check, Cross } from '../components/Icons'
+import { track } from '../lib/analytics'
 import { Confetti } from './LessonComplete'
+import { t } from '../i18n/core'
+import { tx } from '../i18n/rich'
 
 type Phase = 'intro' | 'quiz' | 'result'
 
@@ -39,7 +42,12 @@ export function PlacementScreen({ target }: { target: string }) {
     if (pos + 1 >= questions.length) {
       setPhase('result')
       setPlacementSeen()
-      if (score >= PLACEMENT_PASS && tier) passTiersByTest(tiersBefore(tier.id))
+      const ok = score >= PLACEMENT_PASS
+      track('placement_completed', { target: tier?.id, score, total: questions.length, passed: ok })
+      if (ok && tier) {
+        passTiersByTest(tiersBefore(tier.id))
+        track('tier_unlocked', { tier: tier.id, via: 'placement' })
+      }
       return
     }
     setPos((p) => p + 1)
@@ -65,6 +73,7 @@ export function PlacementScreen({ target }: { target: string }) {
   }, [phase, ex, status, check, next])
 
   const restart = () => {
+    if (tier) track('placement_started', { target: tier.id, retry: true })
     setPos(0)
     setScore(0)
     setAnswer(null)
@@ -80,10 +89,8 @@ export function PlacementScreen({ target }: { target: string }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
         <Mascot mood="think" size={140} />
-        <h1 className="text-[24px] font-black">Этот тир открыт с самого начала</h1>
-        <button className="btn" onClick={() => navigate('/learn')}>
-          На главную
-        </button>
+        <h1 className="text-[24px] font-black">{t('x1e66agn')}</h1>
+        <button className="btn" onClick={() => navigate('/learn')}>{t('x0povobi')}</button>
       </div>
     )
 
@@ -96,25 +103,25 @@ export function PlacementScreen({ target }: { target: string }) {
             <TierBadge tier={tier} size={64} />
           </span>
         </div>
-        <div className="text-[13px] font-extrabold uppercase tracking-wider text-muted">Тест на уровень</div>
-        <h1 className="max-w-[520px] text-[28px] font-black leading-tight md:text-[34px]">Уже что-то умеешь? Сразу в тир «{tier.name}»</h1>
+        <div className="text-[13px] font-extrabold uppercase tracking-wider text-muted">{t('x0tw0ozv')}</div>
+        <h1 className="max-w-[520px] text-[28px] font-black leading-tight md:text-[34px]">{t('x06dbmxr', { name: tier.name })}</h1>
         <p className="max-w-[460px] text-[16px] font-semibold text-muted">
-          {questions.length} вопросов по {skipped.length > 1 ? 'тирам' : 'тиру'} {skipped.map((t) => `«${t.name}»`).join(' и ')}. Ответь верно хотя бы на {PLACEMENT_PASS} — и{' '}
-          {skipped.length > 1 ? 'они засчитаются' : 'он засчитается'}, а «{tier.name}» откроется. Заряд Бипи не тратится, штрафов нет.
-        </p>
+          {t(skipped.length > 1 ? 'placement.introMany' : 'placement.introOne', { count: questions.length, tiers: skipped.map((s) => t('common.quote', { s: s.name })).join(t('x1ts2ohr')), pass: PLACEMENT_PASS, name: tier.name })}</p>
         <div className="mt-2 flex w-full max-w-[360px] flex-col gap-3">
-          <button className="btn btn-block" onClick={() => setPhase('quiz')}>
-            Начать тест
-          </button>
+          <button
+            className="btn btn-block"
+            onClick={() => {
+              track('placement_started', { target: tier.id })
+              setPhase('quiz')
+            }}
+          >{t('x0u5ylwp')}</button>
           <button
             className="btn btn-ghost btn-block"
             onClick={() => {
               setPlacementSeen()
               navigate('/learn')
             }}
-          >
-            Не сейчас
-          </button>
+          >{t('x1khd85k')}</button>
         </div>
       </div>
     )
@@ -133,14 +140,12 @@ export function PlacementScreen({ target }: { target: string }) {
               </span>
             )}
           </div>
-          <div className="mt-4 text-[13px] font-extrabold uppercase tracking-wider text-muted">
-            Тест на уровень · {score} из {questions.length}
-          </div>
-          <h1 className="mt-1 text-[30px] font-black leading-tight text-brand md:text-[36px]">{passed ? `Тир «${unlocked.name}» открыт!` : 'Почти получилось!'}</h1>
+          <div className="mt-4 text-[13px] font-extrabold uppercase tracking-wider text-muted">{t('x0tcw5ft', { score, length: questions.length })}</div>
+          <h1 className="mt-1 text-[30px] font-black leading-tight text-brand md:text-[36px]">{passed ? t('x1looyjc', { name: unlocked.name }) : t('x0tou6bo')}</h1>
           <p className="mt-1 max-w-[460px] text-[17px] font-semibold text-muted">
             {passed
-              ? `${skipped.map((t) => `«${t.name}»`).join(' и ')} — засчитано тестом. Уроки оттуда остаются открытыми, если захочешь повторить.`
-              : `Нужно ${PLACEMENT_PASS} из ${questions.length}. Начни с тира «${skipped[0].name}» — он быстрый, а тест можно пройти ещё раз.`}
+              ? t('placement.passedTiers', { tiers: skipped.map((tier) => t('common.quote', { s: tier.name })).join(t('x1ts2ohr')) })
+              : t('x1q4ce5a', { PLACEMENT_PASS, length: questions.length, name: skipped[0].name })}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-1.5">
             {questions.map((_, i) => (
@@ -151,14 +156,12 @@ export function PlacementScreen({ target }: { target: string }) {
         <footer className="border-t-2 border-line">
           <div className="mx-auto flex max-w-[1040px] flex-col-reverse gap-3 px-4 py-5 md:flex-row md:items-center md:justify-between md:px-8 md:py-8">
             {!passed ? (
-              <button className="btn btn-ghost w-full md:w-[220px]" onClick={restart}>
-                Попробовать снова
-              </button>
+              <button className="btn btn-ghost w-full md:w-[220px]" onClick={restart}>{t('x173j3r6')}</button>
             ) : (
               <span />
             )}
             <button className="btn w-full md:w-[220px]" onClick={toPath} autoFocus>
-              {passed ? `К тиру «${unlocked.name}»` : 'На путь'}
+              {passed ? t('x0ztonvh', { name: unlocked.name }) : t('x0odeypg')}
             </button>
           </div>
         </footer>
@@ -170,15 +173,13 @@ export function PlacementScreen({ target }: { target: string }) {
   return (
     <div className="flex h-[100dvh] flex-col bg-white" data-placement="quiz">
       <header className="mx-auto flex w-full max-w-[1040px] items-center gap-4 px-4 pt-5 md:gap-5 md:px-8 md:pt-10">
-        <button onClick={() => navigate('/learn')} className="rounded-xl p-1 text-[#B3ADC8] transition-colors hover:text-muted" aria-label="Закрыть тест">
+        <button onClick={() => navigate('/learn')} className="rounded-xl p-1 text-[#B3ADC8] transition-colors hover:text-muted" aria-label={t('x07zg883')}>
           <Cross size={30} />
         </button>
         <div className="progress-track flex-1 !h-[18px]">
           <div className="progress-fill bg-brand" style={{ width: `${Math.max(((pos + (status === 'idle' ? 0 : 1)) / questions.length) * 100, 3)}%` }} />
         </div>
-        <span className="shrink-0 rounded-xl bg-brand-light px-2.5 py-1 text-[13px] font-black text-brand-dark">
-          Тест · {pos + 1}/{questions.length}
-        </span>
+        <span className="shrink-0 rounded-xl bg-brand-light px-2.5 py-1 text-[13px] font-black text-brand-dark">{tx('x1h9qcv3', { v: pos + 1, length: questions.length })}</span>
       </header>
       <main className="flex min-h-0 flex-1 justify-center overflow-y-auto px-4 md:px-8">
         <div key={pos} className="anim-fade-up w-full max-w-[620px] py-5 md:py-7">
@@ -192,27 +193,21 @@ export function PlacementScreen({ target }: { target: string }) {
               <div className={`flex min-w-0 items-start gap-4 ${sheet.text}`}>
                 <span className="hidden h-[64px] w-[64px] shrink-0 items-center justify-center rounded-full bg-white sm:flex">{status === 'correct' ? <Check size={36} /> : <Cross size={34} />}</span>
                 <div className="min-w-0">
-                  <div className="text-[22px] font-black leading-tight md:text-[24px]">{status === 'correct' ? 'Верно!' : 'Не совсем так'}</div>
+                  <div className="text-[22px] font-black leading-tight md:text-[24px]">{status === 'correct' ? t('x1o7ltri') : t('x1i1nft2')}</div>
                   {status === 'wrong' && (
-                    <div className="mt-1 text-[16px] font-extrabold">
-                      Правильный ответ: <span className="font-bold [overflow-wrap:anywhere]">{correctText(ex)}</span>
-                    </div>
+                    <div className="mt-1 text-[16px] font-extrabold">{tx('x03h2ydh', { ex: correctText(ex) }, [(chunk) => <span className="font-bold [overflow-wrap:anywhere]">{chunk}</span>])}</div>
                   )}
                   <p className="mt-1 max-w-[640px] text-[15px] font-semibold leading-snug opacity-90">{ex.explain}</p>
                 </div>
               </div>
               <button className={`btn ${sheet.btn} w-full shrink-0 md:w-[180px]`} onClick={next} autoFocus>
-                {status === 'correct' ? 'Продолжить' : 'Понятно'}
+                {status === 'correct' ? t('x1kpmy5f') : t('x0kpnyn9')}
               </button>
             </>
           ) : (
             <>
-              <button className="btn btn-ghost hidden md:inline-flex md:w-[160px]" onClick={() => check(true)}>
-                Не знаю
-              </button>
-              <button className="btn w-full md:w-[180px]" disabled={!canCheck(ex, answer)} onClick={() => check()}>
-                Проверить
-              </button>
+              <button className="btn btn-ghost hidden md:inline-flex md:w-[160px]" onClick={() => check(true)}>{t('x1x6qy5j')}</button>
+              <button className="btn w-full md:w-[180px]" disabled={!canCheck(ex, answer)} onClick={() => check()}>{t('x11ht3eb')}</button>
             </>
           )}
         </div>

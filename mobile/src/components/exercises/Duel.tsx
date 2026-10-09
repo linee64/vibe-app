@@ -4,10 +4,12 @@ import type { DuelExercise } from '@web/data/types'
 import { C, font } from '../../theme'
 import { Tile } from '../ui'
 import { Head, HintNote, Letter, OutcomeView, toneColor, type ViewProps } from './shared'
+import { t } from '@web/i18n/core'
+import { tx } from '@web/i18n/rich'
 
 const SIDE = [
-  { name: 'Промпт A', color: C.brand, light: C.brandLight, mid: C.brandMid },
-  { name: 'Промпт B', color: C.coral, light: C.coralLight, mid: C.coralMid },
+  { get name() { return t('x1iky1xu') }, color: C.brand, light: C.brandLight, mid: C.brandMid },
+  { get name() { return t('x1iayg8v') }, color: C.coral, light: C.coralLight, mid: C.coralMid },
 ]
 
 /** «Дуэль промптов»: два промпта и что они дали → кто победил → почему */
@@ -42,11 +44,9 @@ export function DuelView({ ex, answer, setAnswer, status, hint }: ViewProps<Duel
                     <Text style={[font(900, 12, C.white), { textTransform: 'uppercase', letterSpacing: 0.8 }]}>{c.name}</Text>
                   </View>
                   {win ? (
-                    <Animated.Text entering={ZoomIn} style={font(900, 13, C.tealDark)}>
-                      🏆 Победитель
-                    </Animated.Text>
+                    <Animated.Text entering={ZoomIn} style={font(900, 13, C.tealDark)}>{t('x0rdm5ay')}</Animated.Text>
                   ) : on && idle ? (
-                    <Text style={font(900, 12, c.color)}>Мой выбор</Text>
+                    <Text style={font(900, 12, c.color)}>{t('x1cb5utu')}</Text>
                   ) : null}
                 </View>
                 <View style={{ borderRadius: 16, borderBottomRightRadius: 6, backgroundColor: c.color, paddingHorizontal: 12, paddingVertical: 8 }}>
@@ -54,7 +54,7 @@ export function DuelView({ ex, answer, setAnswer, status, hint }: ViewProps<Duel
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 8 }}>
                   <View style={{ flex: 1, height: 2, backgroundColor: C.line }} />
-                  <Text style={[font(900, 11, C.muted), { textTransform: 'uppercase', letterSpacing: 0.8 }]}>ИИ выдал</Text>
+                  <Text style={[font(900, 11, C.muted), { textTransform: 'uppercase', letterSpacing: 0.8 }]}>{t('x0guqhtl')}</Text>
                   <View style={{ flex: 1, height: 2, backgroundColor: C.line }} />
                 </View>
                 <View pointerEvents="none">
@@ -75,7 +75,7 @@ export function DuelView({ ex, answer, setAnswer, status, hint }: ViewProps<Duel
 
       {side >= 0 ? (
         <Animated.View entering={FadeInUp} style={{ marginTop: 22 }}>
-          <Text style={[font(900, 16), { marginBottom: 10 }]}>Почему {SIDE[side].name} сильнее?</Text>
+          <Text style={[font(900, 16), { marginBottom: 10 }]}>{tx('x0hzkppy', { name: SIDE[side].name })}</Text>
           <HintNote hint={hint} />
           <View style={{ gap: 10 }}>
             {ex.reasons.map((r, i) => {
@@ -96,7 +96,7 @@ export function DuelView({ ex, answer, setAnswer, status, hint }: ViewProps<Duel
           </View>
         </Animated.View>
       ) : (
-        <Text style={[font(700, 14, C.muted), { marginTop: 18, textAlign: 'center' }]}>Нажми на карточку промпта, который победил</Text>
+        <Text style={[font(700, 14, C.muted), { marginTop: 18, textAlign: 'center' }]}>{t('x1whnsvz')}</Text>
       )}
     </View>
   )

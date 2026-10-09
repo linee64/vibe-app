@@ -1,7 +1,7 @@
 {
   "name": "vibe-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,8 +13,10 @@
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/nunito": "^5.3.0",
+    "@sentry/react": "^11.6.0",
     "@supabase/supabase-js": "^2.117.3",
     "@tailwindcss/vite": "^4.3.3",
+    "posthog-js": "^1.438.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3"

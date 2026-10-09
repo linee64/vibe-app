@@ -1,3 +1,4 @@
+import { t } from '../i18n/core'
 type Mood = 'default' | 'happy' | 'think'
 
 interface Props {
@@ -25,7 +26,7 @@ export function Mascot({ mood = 'default', size = 160, className, laptop }: Prop
       height={(size * 220) / 200}
       className={className}
       role="img"
-      aria-label="Бипи — робот-талисман Вайбика"
+      aria-label={t('x1ragu8w')}
     >
       <ellipse cx="100" cy="211" rx="58" ry="7" fill={INK} opacity=".08" />
 

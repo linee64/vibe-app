@@ -5,6 +5,8 @@ import type { PipelineExercise } from '@web/data/types'
 import { pipelineBank, pipelineCards } from '@web/data/exerciseLogic'
 import { C, font } from '../../theme'
 import { Head, HintNote, type ViewProps } from './shared'
+import { t } from '@web/i18n/core'
+import { tx } from '@web/i18n/rich'
 
 /**
  * «Собери пайплайн»: тап по карточке — в первый свободный слот, тап по слоту — вернуть.
@@ -62,20 +64,20 @@ export function PipelineView({ ex, answer, setAnswer, status, hint }: ViewProps<
                       <Text style={[font(700, 14.5, ok ? C.tealDark : bad ? C.coralDark : C.brandDark), { flex: 1, lineHeight: 19 }]}>{cards[card]}</Text>
                       {idle ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                          <Arrow testID={`up-${i}`} label="Выше" disabled={i === 0 || slots[i - 1] < 0} onPress={() => move(i, -1)}>
+                          <Arrow testID={`up-${i}`} label={t('x0vwp8d5')} disabled={i === 0 || slots[i - 1] < 0} onPress={() => move(i, -1)}>
                             ↑
                           </Arrow>
-                          <Arrow testID={`down-${i}`} label="Ниже" disabled={i === n - 1 || slots[i + 1] < 0} onPress={() => move(i, 1)}>
+                          <Arrow testID={`down-${i}`} label={t('x067t1r9')} disabled={i === n - 1 || slots[i + 1] < 0} onPress={() => move(i, 1)}>
                             ↓
                           </Arrow>
-                          <Pressable testID={`remove-${i}`} accessibilityLabel="Убрать карточку" onPress={() => remove(i)} hitSlop={4} style={{ paddingHorizontal: 6 }}>
+                          <Pressable testID={`remove-${i}`} accessibilityLabel={t('x0tasx89')} onPress={() => remove(i)} hitSlop={4} style={{ paddingHorizontal: 6 }}>
                             <Text style={font(900, 14, 'rgba(47,42,71,0.5)')}>✕</Text>
                           </Pressable>
                         </View>
                       ) : null}
                     </Animated.View>
                   ) : (
-                    <Text style={[font(700, 13, 'rgba(124,77,255,0.5)'), { paddingHorizontal: 12, paddingVertical: 13 }]}>{i === 0 ? 'Первый шаг' : `Шаг ${i + 1}`}</Text>
+                    <Text style={[font(700, 13, 'rgba(124,77,255,0.5)'), { paddingHorizontal: 12, paddingVertical: 13 }]}>{i === 0 ? t('x146n632') : t('x0wxry6y', { v: i + 1 })}</Text>
                   )}
                 </View>
               </View>
@@ -86,7 +88,7 @@ export function PipelineView({ ex, answer, setAnswer, status, hint }: ViewProps<
 
       {idle ? (
         <>
-          <Text style={[font(700, 14, C.muted), { marginTop: 14, marginBottom: 8 }]}>Нажми на карточку — она встанет на первый свободный шаг. Стрелки ↑↓ меняют шаги местами. Одна-две карточки — лишние.</Text>
+          <Text style={[font(700, 14, C.muted), { marginTop: 14, marginBottom: 8 }]}>{t('x0mj45pi')}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9 }}>
             {bank.map((card) =>
               placed.has(card) ? (
@@ -98,7 +100,7 @@ export function PipelineView({ ex, answer, setAnswer, status, hint }: ViewProps<
                   <Text style={[font(700, 14.5), { lineHeight: 19 }]}>{cards[card]}</Text>
                   {hint?.mark === card ? (
                     <View style={{ borderRadius: 5, backgroundColor: C.brand, paddingHorizontal: 6 }}>
-                      <Text style={font(900, 11, C.white)}>начни с этого</Text>
+                      <Text style={font(900, 11, C.white)}>{t('x0vxnpo1')}</Text>
                     </View>
                   ) : null}
                 </Pressable>
@@ -107,9 +109,7 @@ export function PipelineView({ ex, answer, setAnswer, status, hint }: ViewProps<
           </View>
         </>
       ) : (ex.extra?.length ?? 0) > 0 ? (
-        <Animated.Text entering={FadeIn} style={[font(700, 13.5, C.muted), { marginTop: 12 }]}>
-          Лишние карточки: {ex.extra!.map((x) => `«${x}»`).join(', ')}
-        </Animated.Text>
+        <Animated.Text entering={FadeIn} style={[font(700, 13.5, C.muted), { marginTop: 12 }]}>{tx('x19ryy5f', { v: ex.extra!.map((x) => `«${x}»`).join(', ') })}</Animated.Text>
       ) : null}
     </View>
   )

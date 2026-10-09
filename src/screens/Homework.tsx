@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSP
 import { UNITS, UNIT_COLORS } from '../data/course'
 import { HOMEWORK_XP, findHomework, type BlockColor, type HomeworkDef, type PromptBlock } from '../data/homework'
 import { isUnitLocked, tierOfUnit } from '../data/tiers'
-import { cardSim, debugSim, deploySim, formSim, landingSim, type Sim, type Tone } from '../homework/sims'
+import { type Sim, type Tone } from '../homework/sims'
+import { getLocalizedSims } from '../i18n/homework/sims'
+import { getLocale } from '../i18n/core'
 import { CardPreview, DeployPreview, FormPreview, LandingPreview, TodoPreview, type PreviewProps } from '../homework/previews'
 import { useStore } from '../store'
 import { navigate } from '../router'
@@ -15,7 +17,11 @@ import { Confetti } from './LessonComplete'
 import { AI_ENABLED } from '../lib/config'
 import { reviewPrompt, type ReviewOutcome } from '../lib/review'
 import { buildReviewRequest, mergeAiIntoPrompt } from '../homework/ai'
+import { track } from '../lib/analytics'
+import { requestMicroPrompt } from '../lib/feedback'
 import { recordHomeworkSubmission } from '../lib/progressSync'
+import { t } from '../i18n/core'
+import { tx } from '../i18n/rich'
 
 interface Msg {
   id: number
@@ -46,7 +52,7 @@ const TONE_BG: Record<NonNullable<Msg['tone']>, string> = {
   intro: 'bg-brand-light text-brand-dark',
 }
 
-const STEP_LABELS = ['Читаю промпт…', 'Думаю над задачей…', 'Пишу код…', 'Собираю превью…']
+const STEP_LABELS = () => [t('homework.step.1'), t('homework.step.2'), t('homework.step.3'), t('homework.step.4')]
 const THINK_MS = 1500
 
 function Modal({ children }: { children: ReactNode }) {
@@ -87,7 +93,7 @@ function Bubble({ m, onPreview, onUseImproved }: { m: Msg; onPreview: () => void
           <MascotHead size={26} />
         </span>
         <div className={`max-w-[88%] rounded-2xl rounded-bl-md px-3.5 py-2.5 text-[14px] font-bold leading-snug ${TONE_BG[m.tone ?? 'intro']}`}>
-          <div className="mb-0.5 text-[11px] font-black uppercase tracking-wider opacity-70">Бипи</div>
+          <div className="mb-0.5 text-[11px] font-black uppercase tracking-wider opacity-70">{t('x09e28wz')}</div>
           {m.text}
           {m.bullets && m.bullets.length > 0 && (
             <ul className="mt-1.5 space-y-1" data-ai-feedback>
@@ -104,9 +110,7 @@ function Bubble({ m, onPreview, onUseImproved }: { m: Msg; onPreview: () => void
               type="button"
               onClick={() => onUseImproved(m.improved!)}
               className="mt-2 rounded-lg bg-white/70 px-2 py-1 text-[12px] font-black uppercase tracking-wider text-brand hover:bg-white"
-            >
-              ✨ Вставить улучшенный промпт
-            </button>
+            >{t('x1t5ei25')}</button>
           )}
         </div>
       </div>
@@ -115,7 +119,7 @@ function Bubble({ m, onPreview, onUseImproved }: { m: Msg; onPreview: () => void
     <div className="anim-fade-up flex items-start gap-2">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-coral text-[15px] text-white">✨</span>
       <div className="min-w-0 max-w-[88%] rounded-2xl rounded-tl-md border-2 border-line bg-white px-3.5 py-2.5">
-        <div className="mb-0.5 text-[11px] font-black uppercase tracking-wider text-muted">ИИ</div>
+        <div className="mb-0.5 text-[11px] font-black uppercase tracking-wider text-muted">{t('x1crlu99')}</div>
         <p className="text-[14px] font-bold leading-snug text-ink">{m.text}</p>
         {m.code && (
           <div className="mt-2 overflow-x-auto rounded-xl bg-[#272239] py-1.5">
@@ -136,9 +140,7 @@ function Bubble({ m, onPreview, onUseImproved }: { m: Msg; onPreview: () => void
             ))}
           </ul>
         )}
-        <button onClick={onPreview} className="mt-2 text-[12px] font-black uppercase tracking-wider text-brand lg:hidden">
-          Смотреть превью ↓
-        </button>
+        <button onClick={onPreview} className="mt-2 text-[12px] font-black uppercase tracking-wider text-brand lg:hidden">{t('x0zwl7js')}</button>
       </div>
     </div>
   )
@@ -164,7 +166,7 @@ interface RunnerProps<S, U> {
   def: HomeworkDef
   sim: Sim<S, U>
   Preview: ComponentType<PreviewProps<S, U>>
-  onSubmit: (iterations: number, prompts: string[]) => void
+  onSubmit: (iterations: number, prompts: string[], usedAi: boolean) => void
 }
 
 function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
@@ -175,7 +177,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   const [draft, setDraft] = useState('')
   const [msgs, setMsgs] = useState<Msg[]>(() => [{ id: 0, role: 'bipi', text: def.intro, tone: 'intro' }])
   const [busy, setBusy] = useState(false)
-  const [label, setLabel] = useState(STEP_LABELS[0])
+  const [label, setLabel] = useState(STEP_LABELS()[0])
   const [version, setVersion] = useState(0)
   const [hint, setHint] = useState(false)
   const [quit, setQuit] = useState(false)
@@ -193,6 +195,14 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   const fallbackNoted = useRef(false)
   /** Номер текущего запроса: ответы от «старых» (после «Заново»/выхода) игнорируем */
   const runId = useRef(0)
+  /** Хоть одна проверка прошла через настоящий ИИ (для аналитики ai_or_sim) */
+  const usedAi = useRef(false)
+  const started = useRef(false)
+  useEffect(() => {
+    if (started.current) return
+    started.current = true
+    track('homework_started', { homework_id: def.id, unit: unit.num })
+  }, [def.id, unit.num])
 
   const checks = sim.check(state, ui)
   const doneCount = def.requirements.filter((r) => checks[r.id]).length
@@ -216,7 +226,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   useEffect(() => {
     if (allDone && !announced.current && !busy) {
       announced.current = true
-      setMsgs((m) => [...m, { id: nextId.current++, role: 'bipi', text: 'Все требования выполнены! 🎉 Жми «Сдать домашку».', tone: 'good' }])
+      setMsgs((m) => [...m, { id: nextId.current++, role: 'bipi', text: t('x129mn8u'), tone: 'good' }])
     }
   }, [allDone, busy])
 
@@ -226,6 +236,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
     let text = prompt
     let review = null
     if (outcome?.ok) {
+      usedAi.current = true
       review = outcome.review
       text = mergeAiIntoPrompt(sim, def, stateRef.current, prompt, review).text
     }
@@ -233,10 +244,18 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
     const ck = sim.check(turn.state, uiRef.current)
     const missing = def.requirements.find((r) => !ck[r.id])
     const done = !missing
+    // ни текста промпта, ни ответа — только факт проверки и кто проверял
+    track('homework_submitted', {
+      homework_id: def.id,
+      ai_or_sim: outcome?.ok ? 'ai' : 'sim',
+      iteration: msgs.filter((m) => m.role === 'user').length + 1,
+      requirements_done: def.requirements.filter((r) => ck[r.id]).length,
+      requirements_total: def.requirements.length,
+    })
     let bipi = turn.bipi
     const tip = missing ? (sim.hint?.(turn.state, uiRef.current, missing.id) ?? missing.hint) : ''
-    if (!bipi && review) bipi = done ? 'Все требования выполнены! 🎉 Жми «Сдать домашку».' : `Промпт на ${review.score}/100. Вот что подскажу:`
-    if (!bipi) bipi = done ? 'Все требования выполнены! 🎉 Жми «Сдать домашку».' : `${turn.tone === 'good' ? 'Отлично! Осталось ещё чуть-чуть. ' : turn.tone === 'meh' ? 'Уже лучше! ' : 'Хм, результат так себе. '}${tip}`
+    if (!bipi && review) bipi = done ? t('x129mn8u') : t('x16jvi98', { score: review.score })
+    if (!bipi) bipi = done ? t('x129mn8u') : `${turn.tone === 'good' ? t('x0yd8eh2') : turn.tone === 'meh' ? t('x0q6hiae') : t('x1ymh4to')}${tip}`
     if (done) announced.current = true
     setState(turn.state)
     setVersion((v) => v + 1)
@@ -258,8 +277,8 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
         tone: 'meh',
         text:
           outcome.reason === 'limit'
-            ? `${outcome.message} Дальше проверяю офлайн — превью и чек-лист работают как обычно.`
-            : 'ИИ-ментор сейчас недоступен — проверяю офлайн, всё работает как обычно 🙂',
+            ? t('x0bxtzq8', { message: outcome.message })
+            : t('x1l48nak'),
       })
     }
     if (outcome && !outcome.ok && (outcome.reason === 'limit' || outcome.reason === 'disabled' || outcome.reason === 'auth')) setAiMode('off')
@@ -276,7 +295,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
     setBusy(true)
     setHint(false)
     const run = ++runId.current
-    const labels = aiMode === 'on' ? [...STEP_LABELS.slice(0, 3), 'Бипи проверяет промпт…'] : STEP_LABELS
+    const labels = aiMode === 'on' ? [...STEP_LABELS().slice(0, 3), t('x1vew32d')] : STEP_LABELS()
     labels.forEach((l, i) => timers.current.push(window.setTimeout(() => setLabel(l), (i * THINK_MS) / labels.length)))
     // ИИ-разбор идёт параллельно с «анимацией размышления»; без ИИ — ровно THINK_MS, как раньше
     const ai: Promise<ReviewOutcome | null> = aiMode === 'on' ? reviewPrompt(buildReviewRequest(def, prompt, history)) : Promise.resolve(null)
@@ -303,7 +322,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
     setUi(sim.initUi())
     setDraft('')
     announced.current = false
-    setMsgs([{ id: nextId.current++, role: 'bipi', text: 'Начнём с чистого листа! ' + def.intro, tone: 'intro' }])
+    setMsgs([{ id: nextId.current++, role: 'bipi', text: t('x0qr06tw') + def.intro, tone: 'intro' }])
     setVersion((v) => v + 1)
   }
   const scrollToPreview = () => previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -316,28 +335,24 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   }
 
   const submitBtn = (cls = '') => (
-    <button className={`btn btn-gold ${cls}`} onClick={() => onSubmit(sends, msgs.filter((m) => m.role === 'user').map((m) => m.text))}>
-      Сдать домашку
-    </button>
+    <button className={`btn btn-gold ${cls}`} onClick={() => onSubmit(sends, msgs.filter((m) => m.role === 'user').map((m) => m.text), usedAi.current)}>{t('x1ggawkn')}</button>
   )
 
   return (
     <div className="min-h-screen bg-white" data-homework={def.id} data-hw-busy={busy ? '1' : '0'}>
       <header className="sticky top-0 z-30 border-b-2 border-line bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1480px] items-center gap-3 px-4 py-2.5 md:px-6">
-          <button onClick={() => (sends ? setQuit(true) : navigate('/learn'))} className="rounded-xl p-1 text-[#B3ADC8] transition-colors hover:text-muted" aria-label="Закрыть домашку">
+          <button onClick={() => (sends ? setQuit(true) : navigate('/learn'))} className="rounded-xl p-1 text-[#B3ADC8] transition-colors hover:text-muted" aria-label={t('x1uhk62u')}>
             <Cross size={28} />
           </button>
           <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white sm:flex" style={{ background: c.main, boxShadow: `0 3px 0 ${c.dark}` }}>
             <House size={24} />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[11px] font-black uppercase tracking-wider text-muted sm:text-[12px]">
-              Домашка · Раздел {unit.num} · {unit.title}
-            </div>
+            <div className="truncate text-[11px] font-black uppercase tracking-wider text-muted sm:text-[12px]">{t('x0shuer6', { num: unit.num, title: unit.title })}</div>
             <div className="truncate text-[15px] font-black leading-tight sm:text-[17px]">{def.short}</div>
           </div>
-          <div className="flex shrink-0 items-center gap-2" aria-label={`Выполнено ${doneCount} из ${def.requirements.length}`}>
+          <div className="flex shrink-0 items-center gap-2" aria-label={t('x093abip', { doneCount, length: def.requirements.length })}>
             <div className="progress-track hidden !h-[14px] w-[120px] sm:block">
               <div className="progress-fill bg-teal" style={{ width: `${Math.max((doneCount / def.requirements.length) * 100, 4)}%` }} />
             </div>
@@ -356,22 +371,18 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
             <div className="relative overflow-hidden px-4 pb-4 pt-3.5 text-white" style={{ background: c.main }}>
               <span className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15" />
               <div className="flex items-center justify-between gap-2">
-                <span className="rounded-lg bg-white/25 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">Домашка {def.num}</span>
-                <span className="flex items-center gap-1 rounded-lg bg-white px-2 py-0.5 text-[12px] font-black" style={{ color: c.dark }}>
-                  <Spark size={14} /> +{HOMEWORK_XP} ВП
-                </span>
+                <span className="rounded-lg bg-white/25 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">{t('x0prn23d', { num: def.num })}</span>
+                <span className="flex items-center gap-1 rounded-lg bg-white px-2 py-0.5 text-[12px] font-black" style={{ color: c.dark }}>{tx('x1xwzzdf', { HOMEWORK_XP }, [() => <Spark size={14} />])}</span>
               </div>
               <h1 className="mt-2 text-[21px] font-black leading-tight">{def.title}</h1>
             </div>
             <p className="bg-white px-4 py-3.5 text-[14px] font-semibold leading-snug text-ink">{def.brief}</p>
           </section>
 
-          <section className="card p-4" aria-label="Чек-лист требований">
+          <section className="card p-4" aria-label={t('x1em24lc')}>
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-[17px] font-black">Чек-лист</h2>
-              <span className="text-[13px] font-extrabold text-muted">
-                {doneCount} из {def.requirements.length}
-              </span>
+              <h2 className="text-[17px] font-black">{t('x04kdke8')}</h2>
+              <span className="text-[13px] font-extrabold text-muted">{tx('x0pt6j5v', { doneCount, length: def.requirements.length })}</span>
             </div>
             <ul className="space-y-2">
               {def.requirements.map((r) => {
@@ -393,13 +404,13 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
           </section>
 
           <section className="card relative overflow-hidden bg-brand-light/40 p-4 pr-[92px]">
-            <h3 className="text-[15px] font-black">Бипи подскажет</h3>
+            <h3 className="text-[15px] font-black">{t('x0fgtmhi')}</h3>
             <p className="mt-1 text-[13.5px] font-semibold leading-snug text-muted">
-              {hint && firstMissing ? (sim.hint?.(state, ui, firstMissing.id) ?? firstMissing.hint) : allDone ? 'Ты справился! Можно ещё поиграть с промптами — или сдавай.' : 'Застрял? Нажми — подскажу, что добавить в промпт.'}
+              {hint && firstMissing ? (sim.hint?.(state, ui, firstMissing.id) ?? firstMissing.hint) : allDone ? t('x0kooc1e') : t('x1aqyjrm')}
             </p>
             {!allDone && (
               <button className="mt-2 text-[13px] font-black uppercase tracking-wider text-brand hover:opacity-80" onClick={() => setHint((h) => !h)}>
-                {hint ? 'Скрыть подсказку' : 'Подсказка'}
+                {hint ? t('x077wqhz') : t('x0nx08cc')}
               </button>
             )}
             <Mascot size={86} mood={allDone ? 'happy' : 'think'} className="absolute -bottom-2 right-2" />
@@ -407,18 +418,16 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
         </aside>
 
         {/* ----- Рабочее место: чат и промпт ----- */}
-        <section className="card flex min-w-0 flex-col overflow-hidden lg:col-start-1 lg:row-start-2 xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:self-start" aria-label="Промпт для ИИ">
+        <section className="card flex min-w-0 flex-col overflow-hidden lg:col-start-1 lg:row-start-2 xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:self-start" aria-label={t('x08e7kex')}>
           <div className="flex items-center justify-between gap-2 border-b-2 border-line px-4 py-2.5">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="shrink-0 whitespace-nowrap text-[16px] font-black">Чат с ИИ</span>
+              <span className="shrink-0 whitespace-nowrap text-[16px] font-black">{t('x0lc5f4x')}</span>
               <span className={`truncate rounded-full px-2 py-0.5 text-[11px] font-extrabold ${aiMode === 'on' ? 'bg-brand-light text-brand-dark' : 'bg-snow text-muted'}`} data-ai-mode={aiMode}>
-                {aiMode === 'on' ? 'ИИ-ментор · онлайн' : 'симуляция · без интернета'}
+                {aiMode === 'on' ? t('x0q9piu5') : t('x05eop5y')}
               </span>
             </div>
             {sends > 0 && (
-              <button onClick={restart} className="shrink-0 text-[12px] font-black uppercase tracking-wider text-muted hover:text-ink">
-                ↺ Заново
-              </button>
+              <button onClick={restart} className="shrink-0 text-[12px] font-black uppercase tracking-wider text-muted hover:text-ink">{t('x0ojwwlb')}</button>
             )}
           </div>
           <div ref={chatRef} className="min-h-[170px] max-h-[380px] space-y-3 overflow-y-auto bg-snow/60 p-3.5 lg:max-h-[44vh]" data-chat>
@@ -430,7 +439,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
           <div className="border-t-2 border-line p-3.5">
             {sends > 0 && (
               <div className="mb-3">
-                <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-muted">Уточни</div>
+                <div className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-muted">{t('x1xi86r6')}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {def.followUps.map((f) => (
                     <button key={f} onClick={() => setDraft((d) => (d.trim() ? `${d.trimEnd()} ${f}.` : `${f}.`))} className="rounded-full border-2 border-line bg-white px-2.5 py-0.5 text-[12.5px] font-bold text-ink hover:bg-snow">
@@ -440,7 +449,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
                 </div>
               </div>
             )}
-            <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-muted">Собери из блоков</div>
+            <div className="mb-2 text-[11px] font-black uppercase tracking-wider text-muted">{t('x0zueca3')}</div>
             <div className="space-y-1.5" data-blocks>
               {groups.map((g) => (
                 <div key={g.name} className="flex flex-wrap items-center gap-1.5">
@@ -453,9 +462,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
                 </div>
               ))}
             </div>
-            <label className="mb-1.5 mt-3 block text-[11px] font-black uppercase tracking-wider text-muted" htmlFor="hw-prompt">
-              …или напиши сам
-            </label>
+            <label className="mb-1.5 mt-3 block text-[11px] font-black uppercase tracking-wider text-muted" htmlFor="hw-prompt">{t('x1ger32h')}</label>
             <textarea
               id="hw-prompt"
               value={draft}
@@ -472,22 +479,20 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
             />
             <div className="mt-2.5 flex items-center gap-2">
               <span className="hidden text-[12px] font-bold text-muted sm:inline">Ctrl + Enter</span>
-              <button className="btn btn-ghost btn-sm ml-auto" disabled={!draft || busy} onClick={() => setDraft('')}>
-                Очистить
-              </button>
+              <button className="btn btn-ghost btn-sm ml-auto" disabled={!draft || busy} onClick={() => setDraft('')}>{t('x0n0bii9')}</button>
               <button className="btn btn-sm" disabled={!draft.trim() || busy} onClick={send}>
-                {busy ? 'ИИ думает…' : 'Отправить ИИ'}
+                {busy ? t('x1f2ryxl') : t('x1tygon6')}
               </button>
             </div>
           </div>
         </section>
 
         {/* ----- Живое превью ----- */}
-        <section ref={previewRef} className="min-w-0 scroll-mt-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 xl:col-start-3" aria-label="Превью результата">
+        <section ref={previewRef} className="min-w-0 scroll-mt-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 xl:col-start-3" aria-label={t('x09vtc27')}>
           <div className="lg:sticky lg:top-[78px]">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-[17px] font-black">Превью</h2>
-              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${busy ? 'bg-gold-light text-[#8a6a1e]' : 'bg-teal-light text-teal-dark'}`}>{busy ? 'обновляется…' : 'вживую'}</span>
+              <h2 className="text-[17px] font-black">{t('x0ufv6o7')}</h2>
+              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${busy ? 'bg-gold-light text-[#8a6a1e]' : 'bg-teal-light text-teal-dark'}`}>{busy ? t('x09usa7k') : t('x10grg9m')}</span>
             </div>
             <div className={`transition-opacity duration-300 ${busy ? 'opacity-60' : ''}`}>
               <Preview state={state} ui={ui} setUi={setUi} insert={insert} version={version} />
@@ -505,14 +510,10 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
       {quit && (
         <Modal>
           <Mascot mood="think" size={120} className="mx-auto" />
-          <h2 className="mt-3 text-[22px] font-black">Уходишь с домашки?</h2>
-          <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">Диалог с ИИ не сохранится — придётся начать заново.</p>
-          <button className="btn btn-block" onClick={() => setQuit(false)}>
-            Продолжить
-          </button>
-          <button className="mt-4 w-full py-2 text-[15px] font-extrabold uppercase tracking-wider text-coral-dark hover:opacity-80" onClick={() => navigate('/learn')}>
-            Выйти
-          </button>
+          <h2 className="mt-3 text-[22px] font-black">{t('x1q06dhz')}</h2>
+          <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">{t('x0lm4vvj')}</p>
+          <button className="btn btn-block" onClick={() => setQuit(false)}>{t('x1kpmy5f')}</button>
+          <button className="mt-4 w-full py-2 text-[15px] font-extrabold uppercase tracking-wider text-coral-dark hover:opacity-80" onClick={() => navigate('/learn')}>{t('x0c80x6j')}</button>
         </Modal>
       )}
     </div>
@@ -535,18 +536,14 @@ function HomeworkDone({ def, iterations, again, onContinue }: { def: HomeworkDef
             {def.badge.emoji}
           </div>
         </div>
-        <div className="mt-4 text-[13px] font-extrabold uppercase tracking-wider text-muted">
-          Раздел {unit.num} · {unit.title}
-        </div>
-        <h1 className="mt-1 text-[32px] font-black leading-tight text-brand md:text-[38px]">Домашка сдана!</h1>
-        <p className="mt-1 max-w-[460px] text-[17px] font-semibold text-muted">
-          <b className="text-ink">{def.title}</b> — готово. Новый значок: <b style={{ color: c.dark }}>«{def.badge.name}»</b>
-        </p>
+        <div className="mt-4 text-[13px] font-extrabold uppercase tracking-wider text-muted">{t('x11mxrex', { num: unit.num, title: unit.title })}</div>
+        <h1 className="mt-1 text-[32px] font-black leading-tight text-brand md:text-[38px]">{t('x17ri3ns')}</h1>
+        <p className="mt-1 max-w-[460px] text-[17px] font-semibold text-muted">{tx('x1aihbm3', { title: def.title, name: def.badge.name }, [(chunk) => <b className="text-ink">{chunk}</b>, (chunk) => <b style={{ color: c.dark }}>{chunk}</b>])}</p>
         <div className="mt-8 grid w-full max-w-[540px] grid-cols-3 gap-3 md:gap-4">
           {[
-            { label: 'Вайб-поинты', value: `+${again ? 10 : HOMEWORK_XP}`, icon: <Spark size={26} />, color: '#FFB61D', edge: '#E5A100' },
-            { label: 'Требования', value: `${def.requirements.length}/${def.requirements.length}`, icon: <Target size={24} />, color: '#13C2AE', edge: '#0E9C8C' },
-            { label: 'Промптов', value: String(iterations), icon: <span className="text-[22px]">✨</span>, color: '#7C4DFF', edge: '#5B2FD6' },
+            { label: t('x0r86dp9'), value: `+${again ? 10 : HOMEWORK_XP}`, icon: <Spark size={26} />, color: '#FFB61D', edge: '#E5A100' },
+            { label: t('x0gfdsyj'), value: `${def.requirements.length}/${def.requirements.length}`, icon: <Target size={24} />, color: '#13C2AE', edge: '#0E9C8C' },
+            { label: t('x1v11oy9'), value: String(iterations), icon: <span className="text-[22px]">✨</span>, color: '#7C4DFF', edge: '#5B2FD6' },
           ].map((s) => (
             <div key={s.label} className="anim-pop rounded-[18px] border-2 p-[2px]" style={{ background: s.color, borderColor: s.color, boxShadow: `0 4px 0 ${s.edge}` } as CSSProperties}>
               <div className="px-2 pb-1.5 pt-1 text-center text-[11px] font-black uppercase tracking-wider text-white md:text-[13px]">{s.label}</div>
@@ -560,21 +557,22 @@ function HomeworkDone({ def, iterations, again, onContinue }: { def: HomeworkDef
       </main>
       <footer className="border-t-2 border-line">
         <div className="mx-auto flex max-w-[1040px] justify-end px-4 py-5 md:px-8 md:py-8">
-          <button className="btn w-full md:w-[180px]" onClick={onContinue} autoFocus>
-            Продолжить
-          </button>
+          <button className="btn w-full md:w-[180px]" onClick={onContinue} autoFocus>{t('x1kpmy5f')}</button>
         </div>
       </footer>
     </div>
   )
 }
 
-const RUNNERS: Record<string, (def: HomeworkDef, onSubmit: (n: number, prompts: string[]) => void) => ReactNode> = {
-  hw1: (def, onSubmit) => <Runner def={def} sim={cardSim} Preview={CardPreview} onSubmit={onSubmit} />,
-  hw2: (def, onSubmit) => <Runner def={def} sim={landingSim} Preview={LandingPreview} onSubmit={onSubmit} />,
-  hw3: (def, onSubmit) => <Runner def={def} sim={debugSim} Preview={TodoPreview} onSubmit={onSubmit} />,
-  hw4: (def, onSubmit) => <Runner def={def} sim={formSim} Preview={FormPreview} onSubmit={onSubmit} />,
-  hw5: (def, onSubmit) => <Runner def={def} sim={deploySim} Preview={DeployPreview} onSubmit={onSubmit} />,
+/** Симуляторы на языке ученика (ключевые слова ru + en + язык) */
+const sims = () => getLocalizedSims(getLocale())
+
+const RUNNERS: Record<string, (def: HomeworkDef, onSubmit: (n: number, prompts: string[], usedAi: boolean) => void) => ReactNode> = {
+  hw1: (def, onSubmit) => <Runner def={def} sim={sims().hw1} Preview={CardPreview} onSubmit={onSubmit} />,
+  hw2: (def, onSubmit) => <Runner def={def} sim={sims().hw2} Preview={LandingPreview} onSubmit={onSubmit} />,
+  hw3: (def, onSubmit) => <Runner def={def} sim={sims().hw3} Preview={TodoPreview} onSubmit={onSubmit} />,
+  hw4: (def, onSubmit) => <Runner def={def} sim={sims().hw4} Preview={FormPreview} onSubmit={onSubmit} />,
+  hw5: (def, onSubmit) => <Runner def={def} sim={sims().hw5} Preview={DeployPreview} onSubmit={onSubmit} />,
 }
 
 export function HomeworkScreen({ id }: { id: string }) {
@@ -586,16 +584,16 @@ export function HomeworkScreen({ id }: { id: string }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
         <Mascot mood="think" size={140} />
-        <h1 className="text-[24px] font-black">Домашка не найдена</h1>
-        <button className="btn" onClick={() => navigate('/learn')}>
-          На главную
-        </button>
+        <h1 className="text-[24px] font-black">{t('x0uob23t')}</h1>
+        <button className="btn" onClick={() => navigate('/learn')}>{t('x0povobi')}</button>
       </div>
     )
   if (isUnitLocked(def.unitId, progress)) return <LockedScreen tier={tierOfUnit(def.unitId)} />
   if (done) return <HomeworkDone def={def} iterations={done.iterations} again={done.again} onContinue={() => continueAfter(progress, def.id)} />
-  return RUNNERS[def.id](def, (iterations, prompts) => {
+  return RUNNERS[def.id](def, (iterations, prompts, usedAi) => {
     const again = progress.homework.includes(def.id)
+    track('homework_passed', { homework_id: def.id, ai_or_sim: usedAi ? 'ai' : 'sim', iterations, repeat: again })
+    if (!again) requestMicroPrompt('homework')
     // настоящий аккаунт: сохраняем сданную домашку (история промптов) — для аналитики и будущих проверок
     if (session?.real) void recordHomeworkSubmission(def.id, prompts, true)
     completeHomework(def.id, HOMEWORK_XP)

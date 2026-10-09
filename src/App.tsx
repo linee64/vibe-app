@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useStore } from './store'
 import { navigate, useRoute } from './router'
 import { AppShell } from './components/Layout'
@@ -21,6 +21,10 @@ import { consumeAuthRedirect } from './lib/auth'
 import { SubscriptionProvider, usePaywall, useSubscription } from './lib/billing'
 import { PaywallScreen } from './components/Paywall'
 import { useToast } from './components/Toast'
+import { CrashTest } from './components/ErrorBoundary'
+import { identify, resetAnalytics, track, trackPage } from './lib/analytics'
+import { setSentryUser } from './lib/sentry'
+import { t } from './i18n/core'
 
 // Домашки (симулятор ИИ + превью) — отдельный чанк, грузится при первом открытии
 const HomeworkScreen = lazy(() => import('./screens/Homework').then((m) => ({ default: m.HomeworkScreen })))
@@ -34,6 +38,7 @@ export default function App() {
   // ссылки из писем Supabase (?reset=1, ошибки) — разбираем один раз при старте
   const [redirect] = useState(() => (SUPABASE_ENABLED ? consumeAuthRedirect() : { reset: false, error: null }))
   const [, rerender] = useState(0)
+  useAnalyticsBridge(session?.real ? session.id : undefined, route)
 
   // «/» — публичный лендинг для гостей; «/landing» — лендинг всегда (и для вошедших);
   // «/pricing» — лендинг, прокрученный к тарифам
@@ -68,13 +73,34 @@ export default function App() {
   )
 }
 
+/** Аналитика и Sentry: id пользователя Supabase при входе, сброс при выходе, просмотры экранов */
+function useAnalyticsBridge(userId: string | undefined, route: string) {
+  const prev = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (userId) {
+      identify(userId)
+      setSentryUser(userId)
+    } else if (prev.current) {
+      resetAnalytics()
+      setSentryUser(null)
+    }
+    prev.current = userId
+  }, [userId])
+  useEffect(() => {
+    trackPage(route)
+  }, [route])
+}
+
+/** #/debug/crash — проверить экран ошибки и отчёт в Sentry (только dev или localStorage vaibik.debug=1) */
+const debugRoutes = () => import.meta.env.DEV || localStorage.getItem('vaibik.debug') === '1'
+
 /** Урок/домашка: сначала блокировка тира, потом пейвол Pro */
 function Gate({ unitId, children }: { unitId: string; children: ReactNode }) {
   const { progress } = useStore()
   const pay = usePaywall(needsPro(unitId))
   if (isUnitLocked(unitId, progress)) return <LockedScreen tier={tierOfUnit(unitId)} />
   if (pay.loading) return <Blank />
-  if (pay.blocked) return <PaywallScreen title={UNITS.find((u) => u.id === unitId)?.title} />
+  if (pay.blocked) return <PaywallScreen title={UNITS.find((u) => u.id === unitId)?.title} unitId={unitId} />
   return <>{children}</>
 }
 
@@ -88,13 +114,15 @@ function useCheckoutReturn() {
     if (!url.searchParams.has('checkout_id')) return
     url.searchParams.delete('checkout_id')
     window.history.replaceState(null, '', url.toString())
-    toast('Оплата прошла! Включаю Pro… 🎉')
+    toast(t('x0vyw476'))
+    track('checkout_completed', {})
     let tries = 0
     let timer: number | undefined
     const poll = async () => {
       const sub = await refresh()
       if (sub && (sub.status === 'active' || sub.status === 'trialing')) {
-        toast('Pro включён — все разделы открыты 🚀')
+        if (sub.status === 'trialing') track('trial_started', { plan: sub.plan ?? undefined })
+        toast(t('x0rcuyls'))
         return
       }
       if (++tries < 10) timer = window.setTimeout(poll, 2000)
@@ -107,6 +135,7 @@ function useCheckoutReturn() {
 function AppRoutes({ route }: { route: string }) {
   useCheckoutReturn()
 
+  if (route === '/debug/crash' && debugRoutes()) return <CrashTest />
   if (route.startsWith('/lesson/')) {
     const id = route.slice('/lesson/'.length)
     // уроки закрытого тира по прямой ссылке не открываются

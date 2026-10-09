@@ -2,7 +2,8 @@
  * POST /api/ai/review — ИИ-разбор промпта ученика (Бипи-ментор на DeepSeek).
  *
  * Запрос:  { task: {id,title,brief}, requirements: [{id,label,ui?}], features?: [{id,label}],
- *            values?: [{key,label}], prompt, history?: string[] }
+ *            values?: [{key,label}], prompt, history?: string[], locale?: 'ru'|'en'|'kk'|'es'|'zh' }
+ *          locale — язык ученика: на нём Бипи пишет feedback и improved_prompt (по умолчанию ru).
  * Ответ:   { review: { score, requirements: {id: bool}, feedback: string[], improved_prompt,
  *            detected_features: string[], values: {key: string} }, usage: { used, limit } }
  * Ошибки:  401 unauthorized · 400 bad_request · 429 limit_reached · 503 ai_not_configured · 502/504 ai_failed/ai_timeout
@@ -19,7 +20,12 @@ export interface ReviewInput {
   values: { key: string; label: string }[]
   prompt: string
   history: string[]
+  /** Язык ответа (feedback, improved_prompt) */
+  locale: ReviewLocale
 }
+
+export const REVIEW_LOCALES = ['ru', 'en', 'kk', 'es', 'zh'] as const
+export type ReviewLocale = (typeof REVIEW_LOCALES)[number]
 
 export interface ReviewResult {
   score: number
@@ -81,7 +87,12 @@ export function validateReviewInput(raw: unknown): { ok: true; input: ReviewInpu
   if (!prompt) return bad('Промпт пустой или слишком длинный (до 4000 символов).')
   const history = list(raw.history, 8, (v) => (typeof v === 'string' && v.length <= 2000 ? v : null))
   if (!history || history.join('').length > 8000) return bad('Слишком длинная история.')
-  return { ok: true, input: { task: { id, title, brief }, requirements, features, values, prompt, history } }
+  let locale: ReviewLocale = 'ru'
+  if (raw.locale !== undefined) {
+    if (typeof raw.locale !== 'string' || !(REVIEW_LOCALES as readonly string[]).includes(raw.locale)) return bad('Неизвестный язык.')
+    locale = raw.locale as ReviewLocale
+  }
+  return { ok: true, input: { task: { id, title, brief }, requirements, features, values, prompt, history, locale } }
 }
 
 export const SYSTEM_PROMPT = `Ты — Бипи, добрый и честный ментор курса «Вайбик» по вайб-кодингу (создание софта через общение с ИИ). Ученик выполняет домашку: пишет промпт для ИИ-ассистента. Твоя задача — оценить промпт ученика, а не выполнять его.
@@ -97,6 +108,24 @@ export const SYSTEM_PROMPT = `Ты — Бипи, добрый и честный 
 
 Ответь ТОЛЬКО JSON-объектом:
 {"score": 70, "requirements": {"<id>": true}, "feedback": ["…", "…"], "improved_prompt": "…", "detected_features": ["<id>"], "values": {"<key>": "…"}}`
+
+/** Как назвать язык ответа в инструкции модели */
+const LANGUAGE_NAMES: Record<Exclude<ReviewLocale, 'ru'>, string> = {
+  en: 'английском (English)',
+  kk: 'казахском (қазақ тілі, кириллица)',
+  es: 'испанском (español, нейтральный латиноамериканский, на «tú»)',
+  zh: 'китайском (简体中文, упрощённые иероглифы)',
+}
+
+/** Системный промпт под язык ученика; для ru — ровно SYSTEM_PROMPT */
+export function systemPromptFor(locale: ReviewLocale): string {
+  if (locale === 'ru') return SYSTEM_PROMPT
+  const lang = LANGUAGE_NAMES[locale]
+  return (
+    SYSTEM_PROMPT.replace('по-русски, на «ты»', `на ${lang} языке, неформально`).replace('промпта ученика по-русски', `промпта ученика на ${lang} языке`) +
+    `\n\nЯзык ученика: ${lang}. Пиши feedback и improved_prompt ТОЛЬКО на этом языке, даже если задание или требования ниже даны на другом языке. Ключи JSON и id не переводи.`
+  )
+}
 
 /** Текст ученика не должен «закрывать» наши теги */
 const fence = (t: string) => t.replace(/</g, '‹').replace(/>/g, '›')
@@ -124,7 +153,7 @@ export function buildMessages(input: ReviewInput): ChatMessage[] {
   }
   lines.push(`<prompt>${fence(input.prompt)}</prompt>`)
   return [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: systemPromptFor(input.locale) },
     { role: 'user', content: lines.join('\n') },
   ]
 }

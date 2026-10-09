@@ -8,3 +8,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/** Подставляет vite.config.ts в вебе; в мобильном рантайме веб-config подменён адаптером */
+declare const __APP_VERSION__: string

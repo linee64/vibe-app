@@ -2,6 +2,9 @@ import type { ReactNode } from 'react'
 import { Mascot } from '../components/Mascot'
 import { Clock, Spark, Target, Token } from '../components/Icons'
 import { useToast } from '../components/Toast'
+import { t } from '../i18n/core'
+import { tx } from '../i18n/rich'
+
 
 export interface LessonResult {
   xp: number
@@ -64,27 +67,19 @@ export function LessonComplete({ result, lessonTitle, unitLabel, onContinue }: {
           <Mascot mood="happy" size={210} className="anim-pop relative" />
         </div>
         {unitLabel && <div className="mt-4 text-[13px] font-extrabold uppercase tracking-wider text-muted">{unitLabel}</div>}
-        <h1 className={`${unitLabel ? 'mt-1' : 'mt-4'} text-[30px] font-black leading-tight text-brand md:text-[36px]`}>{perfect ? 'Безупречно!' : 'Урок пройден!'}</h1>
-        <p className="mt-1 max-w-[460px] text-[17px] font-semibold text-muted">
-          <b className="text-ink">{lessonTitle}</b> — готово! Ты на шаг ближе к своему первому приложению.
-        </p>
-        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-teal-light px-3 py-1 text-[15px] font-black text-teal-dark" data-reward-tokens>
-          <Token size={20} /> +{result.gems} токенов
-        </p>
+        <h1 className={`${unitLabel ? 'mt-1' : 'mt-4'} text-[30px] font-black leading-tight text-brand md:text-[36px]`}>{perfect ? t('x04sz8f0') : t('x0w4ioxt')}</h1>
+        <p className="mt-1 max-w-[460px] text-[17px] font-semibold text-muted">{tx('x0koxje8', { lessonTitle }, [(chunk) => <b className="text-ink">{chunk}</b>])}</p>
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-teal-light px-3 py-1 text-[15px] font-black text-teal-dark" data-reward-tokens>{tx('x0anpi05', { gems: result.gems }, [() => <Token size={20} />])}</p>
         <div className="mt-8 grid w-full max-w-[540px] grid-cols-3 gap-3 md:gap-4">
-          <StatCard label="Вайб-поинты" value={`+${result.xp}`} icon={<Spark size={26} />} color="#FFB61D" edge="#E5A100" />
-          <StatCard label="Точность" value={`${result.accuracy}%`} icon={<Target size={24} />} color="#13C2AE" edge="#0E9C8C" />
-          <StatCard label="Время" value={fmt(result.seconds)} icon={<Clock size={24} />} color="#7C4DFF" edge="#5B2FD6" />
+          <StatCard label={t('x0r86dp9')} value={`+${result.xp}`} icon={<Spark size={26} />} color="#FFB61D" edge="#E5A100" />
+          <StatCard label={t('x0ngco8m')} value={`${result.accuracy}%`} icon={<Target size={24} />} color="#13C2AE" edge="#0E9C8C" />
+          <StatCard label={t('x14ec53v')} value={fmt(result.seconds)} icon={<Clock size={24} />} color="#7C4DFF" edge="#5B2FD6" />
         </div>
       </main>
       <footer className="border-t-2 border-line">
         <div className="mx-auto flex max-w-[1040px] flex-col-reverse gap-3 px-4 py-5 md:flex-row md:items-center md:justify-between md:px-8 md:py-8">
-          <button className="btn btn-ghost w-full md:w-[180px]" onClick={() => toast('Скопировали ссылку… шутка, это демо 😄')}>
-            Поделиться
-          </button>
-          <button className="btn w-full md:w-[180px]" onClick={onContinue} autoFocus>
-            Продолжить
-          </button>
+          <button className="btn btn-ghost w-full md:w-[180px]" onClick={() => toast(t('x19064zg'))}>{t('x0nv9ya6')}</button>
+          <button className="btn w-full md:w-[180px]" onClick={onContinue} autoFocus>{t('x1kpmy5f')}</button>
         </div>
       </footer>
     </div>

@@ -7,6 +7,8 @@ import { BILLING_ENABLED, PAYWALL_ACTIVE } from './config'
 import { ApiError, apiPost } from './api'
 import { getSupabase } from './supabase'
 import { useStore } from '../store'
+import { track } from './analytics'
+import { t } from '../i18n/core'
 
 export type Plan = 'monthly' | 'annual'
 
@@ -93,13 +95,14 @@ export function usePaywall(needsPro: boolean): { blocked: boolean; loading: bool
 
 /** Открыть оплату Polar (редирект). Возвращает текст ошибки, если не вышло. */
 // eslint-disable-next-line react-refresh/only-export-components
-export async function startCheckout(plan: Plan): Promise<string | null> {
+export async function startCheckout(plan: Plan, source = 'unknown'): Promise<string | null> {
+  track('checkout_started', { plan, source })
   try {
     const { url } = await apiPost<{ url: string }>('/api/billing/checkout', { plan })
     window.location.assign(url)
     return null
   } catch (e) {
-    return e instanceof ApiError ? e.message : 'Не получилось открыть оплату.'
+    return e instanceof ApiError ? e.message : t('x1vxi7bb')
   }
 }
 
@@ -111,6 +114,6 @@ export async function openPortal(): Promise<string | null> {
     window.location.assign(url)
     return null
   } catch (e) {
-    return e instanceof ApiError ? e.message : 'Не получилось открыть управление подпиской.'
+    return e instanceof ApiError ? e.message : t('x0ogcmbc')
   }
 }

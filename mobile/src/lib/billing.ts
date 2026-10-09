@@ -8,6 +8,7 @@
 import { Platform } from 'react-native'
 import { PRICES, TRIAL_DAYS, annualSavePct, usd } from '@web/data/pricing'
 import { ENV } from './env'
+import { t } from '@web/i18n/core'
 
 export const ENTITLEMENT = 'pro'
 /** Идентификаторы продуктов в App Store Connect / Play Console — совпадают с тарифами веба */
@@ -93,8 +94,8 @@ async function loadSdk(): Promise<RCModule | null> {
 }
 
 const PLAN_META: Record<Plan, { title: string; per: string }> = {
-  monthly: { title: 'Месяц', per: 'в месяц' },
-  annual: { title: 'Год', per: 'в год' },
+  monthly: { get title() { return t('x1i7og0k') }, get per() { return t('x1g6bvjm') } },
+  annual: { get title() { return t('x0468b34') }, get per() { return t('x0pcpi1q') } },
 }
 
 function planOf(p: RCPackage): Plan | null {
@@ -129,7 +130,7 @@ export function createBilling(): Billing {
       if (!sdk) {
         return {
           mode: 'demo',
-          reason: Platform.OS === 'web' ? 'На вебе покупки внутри приложения недоступны.' : platformKey() ? 'Нужна сборка dev build — в Expo Go нативный SDK не работает.' : 'Ключ RevenueCat не задан.',
+          reason: Platform.OS === 'web' ? t('x06e94q2') : platformKey() ? t('x1msfcvt') : t('x1al1pw1'),
           pro: false,
           offers: demoOffers(),
         }
@@ -146,30 +147,30 @@ export function createBilling(): Billing {
         const info = await sdk.default.getCustomerInfo()
         return { mode: 'live', pro: isPro(info), offers: offers.length ? offers : demoOffers() }
       } catch {
-        return { mode: 'demo', reason: 'Не удалось получить цены из стора.', pro: false, offers: demoOffers() }
+        return { mode: 'demo', reason: t('x0qp34vx'), pro: false, offers: demoOffers() }
       }
     },
     async purchase(offer) {
       const sdk = await loadSdk()
-      if (!sdk || !offer.pkg) return { ok: false, message: 'Покупки доступны в сборке приложения с ключом RevenueCat. Сейчас это демо — ничего не списано.' }
+      if (!sdk || !offer.pkg) return { ok: false, message: t('x05fnbyp') }
       try {
         const res = await sdk.default.purchasePackage(offer.pkg as RCPackage)
         return { ok: isPro(res.customerInfo) }
       } catch (e) {
         const err = e as { code?: string; userCancelled?: boolean }
         if (err.userCancelled || err.code === sdk.PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) return { ok: false, cancelled: true }
-        return { ok: false, message: 'Покупка не прошла. Попробуй ещё раз или восстанови покупки.' }
+        return { ok: false, message: t('x0lirfw2') }
       }
     },
     async restore() {
       const sdk = await loadSdk()
-      if (!sdk) return { ok: false, pro: false, message: 'Восстановление доступно в сборке приложения с ключом RevenueCat.' }
+      if (!sdk) return { ok: false, pro: false, message: t('x1akua1l') }
       try {
         const info = await sdk.default.restorePurchases()
         const pro = isPro(info)
-        return { ok: true, pro, message: pro ? 'Pro восстановлен ✨' : 'Активных покупок не нашлось.' }
+        return { ok: true, pro, message: pro ? t('x1ipg9fm') : t('x139ci0e') }
       } catch {
-        return { ok: false, pro: false, message: 'Не получилось связаться со стором.' }
+        return { ok: false, pro: false, message: t('x05t8lkw') }
       }
     },
     async identify(userId) {

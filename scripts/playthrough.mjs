@@ -9,6 +9,7 @@
 // node scripts/playthrough.mjs [baseUrl] [--desktop]
 import { chromium } from 'playwright'
 import { UNITS, watch, login, playLesson, BASE, findLesson, currentExercise, pick, check } from './lib/solver.mjs'
+import { T, L, LANG, plain } from './lib/i18n.mjs'
 import { HOMEWORKS, TIERS, PLACEMENT_PASS, readProgress, unlockAll, dismissFirstRun, playHomework, playPlacement } from './lib/vibe.mjs'
 
 const desktop = process.argv.includes('--desktop')
@@ -59,7 +60,7 @@ const lockedNodes = (page) => page.evaluate(() => [...document.querySelectorAll(
   // попап закрытого узла
   await page.evaluate(() => document.querySelector('[data-lesson="u3-1"]').scrollIntoView({ block: 'center', behavior: 'instant' }))
   await page.locator('[data-lesson="u3-1"] > div > button').click()
-  const pop = page.locator('[data-lesson="u3-1"]').getByText('Заверши тир Новичок, чтобы открыть')
+  const pop = page.locator('[data-lesson="u3-1"]').getByText(plain(T('x068m9kf', { name: TIERS[0].name })))
   assert(await pop.isVisible(), 'A: нет попапа «Заверши тир Новичок, чтобы открыть»')
   const popText = await page.locator('[data-lesson="u3-1"]').innerText()
   assert(/0\/4/.test(popText), `A: в попапе нет прогресса 0/4: ${popText.replace(/\n/g, ' ')}`)
@@ -73,29 +74,29 @@ const lockedNodes = (page) => page.evaluate(() => [...document.querySelectorAll(
   await go(page, '/learn')
   await page.waitForSelector('[data-lesson]')
   // тест на уровень из предложения после входа: провал → не открывает
-  await page.locator('[data-first-run]').getByRole('button', { name: 'Пройти тест' }).click()
+  await page.locator('[data-first-run]').getByRole('button', { name: T('x1qewgb1') }).click()
   await page.waitForSelector('[data-placement="intro"]')
   await overflowCheck(page, 'A placement intro')
   let passed = await playPlacement(page, 'mid', { correct: PLACEMENT_PASS - 2, hooks: { beforeCheck: (ex, i) => (i === 0 ? overflowCheck(page, `A placement q${i} (${ex.kind})`) : null) } })
   assert(!passed, 'A: тест с 4/8 не должен засчитываться')
   await overflowCheck(page, 'A placement fail')
   // повтор — успех
-  await page.getByRole('button', { name: 'Попробовать снова' }).click()
+  await page.getByRole('button', { name: T('x173j3r6') }).click()
   passed = await playPlacement(page, 'mid', { correct: 8, start: false })
   assert(passed, 'A: тест с 8/8 должен засчитываться')
   let prog = await readProgress(page)
   assert(prog.tiersByTest.includes('novice'), 'A: Новичок не отмечен «пройден тестом»')
-  await page.getByRole('button', { name: 'К тиру «Средний»' }).click()
+  await page.getByRole('button', { name: T('x0ztonvh', { name: TIERS[1].name }) }).click()
   await page.waitForSelector('[data-lesson]')
   assert(!(await tierLocked(page, 'mid')), 'A: после теста Средний должен открыться')
   assert(await tierLocked(page, 'pro'), 'A: после теста Продвинутый всё ещё закрыт')
   assert(!(await page.locator('[data-first-run]').count()), 'A: предложение теста должно скрыться')
   // тест с баннера закрытого тира Продвинутый (порог — ровно 6/8)
-  await page.locator('[data-tier="pro"]').getByRole('button', { name: 'Тест на уровень' }).click()
+  await page.locator('[data-tier="pro"]').getByRole('button', { name: T('x0tw0ozv') }).click()
   await page.waitForSelector('[data-placement="intro"]')
   passed = await playPlacement(page, 'pro', { correct: PLACEMENT_PASS })
   assert(passed, 'A: тест Продвинутого с 6/8 должен засчитываться')
-  await page.getByRole('button', { name: 'К тиру «Продвинутый»' }).click()
+  await page.getByRole('button', { name: T('x0ztonvh', { name: TIERS[2].name }) }).click()
   await page.waitForSelector('[data-lesson]')
   assert(!(await tierLocked(page, 'pro')), 'A: после теста Продвинутый должен открыться')
   assert((await lockedNodes(page)).length === 0, 'A: остались закрытые узлы')
@@ -148,14 +149,14 @@ for (const tier of TIERS) {
           // одну домашку открываем через попап на пути
           await page.evaluate(() => document.querySelector('[data-lesson="hw1"]').scrollIntoView({ block: 'center', behavior: 'instant' }))
           await page.locator('[data-lesson="hw1"] > div > button').click()
-          await page.locator('[data-lesson="hw1"]').getByRole('button', { name: /^Открыть \+50 ВП$/ }).click()
+          await page.locator('[data-lesson="hw1"]').getByRole('button', { name: T('x0vp3igd', { HOMEWORK_XP: 50 }), exact: true }).click()
         } else await go(page, `/homework/${id}`)
         const log = await playHomework(page, id, {
           vagueFirst: true,
           hooks: { beforeSubmit: () => overflowCheck(page, `${id} all done`) },
         })
         await overflowCheck(page, `${id} complete`)
-        await page.locator('footer').getByRole('button', { name: 'Продолжить', exact: true }).click()
+        await page.locator('footer').getByRole('button', { name: L('Продолжить'), exact: true }).click()
         await afterContinue(null)
         const p = await readProgress(page)
         assert(p.homework.includes(id), `${id}: домашка не отмечена сданной`)
@@ -170,7 +171,7 @@ for (const tier of TIERS) {
         hooks: { beforeCheck: (ex, step) => overflowCheck(page, `${id} step ${step} (${ex.kind})`) },
       })
       await overflowCheck(page, `${id} complete`)
-      await page.locator('footer').getByRole('button', { name: 'Продолжить', exact: true }).click()
+      await page.locator('footer').getByRole('button', { name: L('Продолжить'), exact: true }).click()
       await afterContinue(lastOfTier ? tier.id : null)
       const done = await page.evaluate((lid) => JSON.parse(localStorage.getItem('vaibik.progress')).completed.includes(lid), id)
       assert(done, `${id}: not marked completed`)
@@ -215,7 +216,7 @@ await ctx.close()
   const ex = await currentExercise(page, lesson)
   await pick(page, ex, { wrong: true })
   await check(page)
-  await page.locator('footer').getByRole('button', { name: 'Понятно', exact: true }).click()
+  await page.locator('footer').getByRole('button', { name: L('Понятно'), exact: true }).click()
   const modal = page.locator('[data-empty="review"]')
   if (assert(await modal.isVisible().catch(() => false), 'D: нет модалки «Бипи на нуле»')) {
     await overflowCheck(page, 'D empty modal')
@@ -248,5 +249,5 @@ await ctx.close()
 await browser.close()
 console.log(issues.length ? 'ISSUES:\n' + issues.join('\n') : 'No overflow/logic issues')
 console.log(errors.length ? 'CONSOLE ISSUES:\n' + errors.join('\n') : 'No console errors/warnings')
-console.log('base', BASE, desktop ? '(desktop 1280)' : '(mobile 375)')
+console.log('base', BASE, desktop ? '(desktop 1280)' : '(mobile 375)', 'lang', LANG)
 if (issues.length || errors.length) process.exitCode = 1

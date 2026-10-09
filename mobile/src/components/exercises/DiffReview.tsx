@@ -3,6 +3,8 @@ import Animated, { FadeInUp } from 'react-native-reanimated'
 import type { DiffExercise } from '@web/data/types'
 import { C, MONO, font } from '../../theme'
 import { Head, HintNote, type ViewProps } from './shared'
+import { t } from '@web/i18n/core'
+import { tx } from '@web/i18n/rich'
 
 function lineStyle(l: string) {
   if (l.startsWith('+')) return { bg: C.tealLight, sign: C.tealDark, text: '#0B5E55' }
@@ -28,10 +30,10 @@ export function DiffView({ ex, answer, setAnswer, status, hint }: ViewProps<Diff
     <View>
       <Head kind="diff" title={ex.title} prompt={ex.prompt} />
       <View style={{ marginBottom: 12, borderRadius: 16, borderWidth: 2, borderColor: C.line, backgroundColor: C.snow, paddingHorizontal: 14, paddingVertical: 10 }}>
-        <Text style={[font(900, 11, C.muted), { textTransform: 'uppercase', letterSpacing: 0.8 }]}>Ты просил ИИ</Text>
+        <Text style={[font(900, 11, C.muted), { textTransform: 'uppercase', letterSpacing: 0.8 }]}>{t('x0jne507')}</Text>
         <Text style={[font(700, 15), { lineHeight: 20 }]}>«{ex.request}»</Text>
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
-          <Text style={font(800, 12, C.muted)}>ИИ изменил {ex.hunks.length} {ex.hunks.length < 5 ? 'места' : 'мест'}:</Text>
+          <Text style={font(800, 12, C.muted)}>{t('diff.changedPlaces', { n: ex.hunks.length })}</Text>
           <Text style={font(800, 12, C.tealDark)}>+{plus}</Text>
           <Text style={font(800, 12, C.coralDark)}>−{minus}</Text>
         </View>
@@ -47,12 +49,12 @@ export function DiffView({ ex, answer, setAnswer, status, hint }: ViewProps<Diff
             <View key={i} testID={`hunk-${i}`} style={{ overflow: 'hidden', borderRadius: 18, borderWidth: 2, borderColor: border, borderBottomWidth: 5, borderBottomColor: border, backgroundColor: C.white }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', borderBottomWidth: 2, borderBottomColor: C.line, backgroundColor: C.snow, paddingHorizontal: 12, paddingVertical: 6 }}>
                 <View style={{ borderRadius: 6, backgroundColor: C.white, paddingHorizontal: 6 }}>
-                  <Text style={font(900, 11, C.muted)}>Правка {i + 1}</Text>
+                  <Text style={font(900, 11, C.muted)}>{tx('x0gn7dpy', { v: i + 1 })}</Text>
                 </View>
                 <Text numberOfLines={1} style={{ fontFamily: MONO, fontSize: 11.5, color: 'rgba(47,42,71,0.8)', flexShrink: 1 }}>{h.file}</Text>
                 {safeMark ? (
                   <View style={{ borderRadius: 5, backgroundColor: C.teal, paddingHorizontal: 6 }}>
-                    <Text style={font(900, 11, C.white)}>💡 безопасна</Text>
+                    <Text style={font(900, 11, C.white)}>{t('x097x1dq')}</Text>
                   </View>
                 ) : null}
               </View>
@@ -68,7 +70,7 @@ export function DiffView({ ex, answer, setAnswer, status, hint }: ViewProps<Diff
                 })}
               </View>
               <View style={{ flexDirection: 'row', gap: 8, borderTopWidth: 2, borderTopColor: C.line, paddingHorizontal: 10, paddingVertical: 8 }}>
-                {[{ v: 1, label: '✓ Принять', on: d === 1, color: C.teal, fg: C.tealDark }, { v: 2, label: '✕ Отклонить', on: d === 2, color: C.coral, fg: C.coralDark }].map((b) => (
+                {[{ v: 1, label: t('x10znzux'), on: d === 1, color: C.teal, fg: C.tealDark }, { v: 2, label: t('x1ualmbs'), on: d === 2, color: C.coral, fg: C.coralDark }].map((b) => (
                   <Pressable key={b.v} testID={`hunk-${i}-${b.v}`} accessibilityRole="button" accessibilityState={{ selected: b.on }} disabled={!idle} onPress={() => decide(i, b.v)} style={{ flex: 1, borderRadius: 12, borderWidth: 2, borderColor: b.on ? b.color : C.line, backgroundColor: b.on ? b.color : C.white, paddingVertical: 8 }}>
                     <Text style={[font(900, 13, b.on ? C.white : b.fg), { textAlign: 'center' }]}>{b.label}</Text>
                   </Pressable>
@@ -83,7 +85,7 @@ export function DiffView({ ex, answer, setAnswer, status, hint }: ViewProps<Diff
           )
         })}
       </View>
-      {idle && left > 0 ? <Text style={[font(700, 14, C.muted), { marginTop: 14, textAlign: 'center' }]}>Реши судьбу каждой правки: осталось {left}</Text> : null}
+      {idle && left > 0 ? <Text style={[font(700, 14, C.muted), { marginTop: 14, textAlign: 'center' }]}>{t('x1257hue', { left })}</Text> : null}
     </View>
   )
 }

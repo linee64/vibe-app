@@ -22,6 +22,9 @@ import { Book, Check, Chest, Dumbbell, House, Lock, Star, Trophy } from '../comp
 import { Mascot } from '../components/Mascot'
 import { TierBadge } from '../components/TierBadge'
 import { BrowserArt, BugArt, DatabaseArt, RocketArt } from '../components/Illustrations'
+import { t } from '../i18n/core'
+import { tx } from '../i18n/rich'
+
 
 /**
  * done — пройден, current — следующий по порядку, upcoming — впереди (открыт),
@@ -64,11 +67,9 @@ function UnitBanner({ unit, label, locked }: { unit: Unit; label: string; locked
       >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-extrabold uppercase tracking-wider text-white/80">
-            <span>
-              Раздел {unit.num} · {label}
-            </span>
+            <span>{t('x1jr1m8h', { num: unit.num, label })}</span>
             {unit.pro && (
-              <span className="rounded-md bg-white/25 px-1.5 py-[1px] text-[11px] font-black tracking-wider text-white" title="Раздел из тарифа Pro — в демо открыт бесплатно">
+              <span className="rounded-md bg-white/25 px-1.5 py-[1px] text-[11px] font-black tracking-wider text-white" title={t('x0cqe408')}>
                 Pro
               </span>
             )}
@@ -77,18 +78,18 @@ function UnitBanner({ unit, label, locked }: { unit: Unit; label: string; locked
           <p className="mt-0.5 line-clamp-2 text-[14px] font-bold leading-snug text-white/85">{unit.description}</p>
         </div>
         {locked ? (
-          <span className="flex shrink-0 items-center gap-2 rounded-2xl border-2 border-white/40 px-3 py-2.5 text-[13px] font-extrabold uppercase tracking-wider" aria-label="Раздел закрыт">
+          <span className="flex shrink-0 items-center gap-2 rounded-2xl border-2 border-white/40 px-3 py-2.5 text-[13px] font-extrabold uppercase tracking-wider" aria-label={t('x09hg17m')}>
             <Lock size={20} />
-            <span className="hidden sm:inline">Закрыт</span>
+            <span className="hidden sm:inline">{t('x0vqp3cx')}</span>
           </span>
         ) : (
           <button
-            onClick={() => toast(`Руководство «${unit.title}» скоро появится 📘`)}
+            onClick={() => toast(t('x0xn1iho', { title: unit.title }))}
             className="flex shrink-0 items-center gap-2 rounded-2xl border-2 border-white/40 px-3 py-2.5 text-[13px] font-extrabold uppercase tracking-wider transition-colors hover:bg-white/10 md:px-4"
-            aria-label={`Руководство по разделу «${unit.title}»`}
+            aria-label={t('x14u0jyk', { title: unit.title })}
           >
             <Book size={20} />
-            <span className="hidden sm:inline">Руководство</span>
+            <span className="hidden sm:inline">{t('x0i1dkz3')}</span>
           </button>
         )}
       </div>
@@ -122,11 +123,9 @@ function LockedPop({ tier }: { tier: Tier }) {
   const nodes = tierNodeProgress(prev, progress)
   return (
     <>
-      <div className="flex items-center gap-2 text-[18px] font-black leading-tight">
-        <Lock size={20} className="shrink-0 text-muted" /> Заверши тир {prev.name}, чтобы открыть
-      </div>
+      <div className="flex items-center gap-2 text-[18px] font-black leading-tight">{tx('x068m9kf', { name: prev.name }, [() => <Lock size={20} className="shrink-0 text-muted" />])}</div>
       <div className="mb-1.5 mt-3 flex items-center justify-between text-[13px] font-extrabold text-muted">
-        <span>Итоговые тесты и домашки</span>
+        <span>{t('x08hocmv')}</span>
         <span className="text-ink">
           {done}/{items.length}
         </span>
@@ -134,12 +133,8 @@ function LockedPop({ tier }: { tier: Tier }) {
       <div className="progress-track !h-[12px]">
         <div className="progress-fill bg-brand" style={{ width: `${Math.max((done / items.length) * 100, 4)}%` }} />
       </div>
-      <div className="mt-1.5 text-[12px] font-bold text-muted">
-        Всего узлов тира: {nodes.done}/{nodes.total}
-      </div>
-      <button className="btn btn-block mt-4" onClick={() => navigate(`/placement/${tier.id}`)}>
-        Тест на уровень
-      </button>
+      <div className="mt-1.5 text-[12px] font-bold text-muted">{t('x193ptrk', { done: nodes.done, total: nodes.total })}</div>
+      <button className="btn btn-block mt-4" onClick={() => navigate(`/placement/${tier.id}`)}>{t('x0tw0ozv')}</button>
     </>
   )
 }
@@ -184,43 +179,41 @@ function PathNode({
   } else if (open && hw) {
     pop = (
       <Popover offset={offset} solid={!soft} color={c.main} border={c.mid}>
-        <div className={`text-[12px] font-black uppercase tracking-wider ${soft ? 'text-muted' : 'text-white/75'}`}>Домашка · мини-проект</div>
+        <div className={`text-[12px] font-black uppercase tracking-wider ${soft ? 'text-muted' : 'text-white/75'}`}>{t('x0klzw38')}</div>
         <div className="mt-0.5 text-[18px] font-black leading-tight">{hw.title}</div>
         <div className={`mb-4 mt-1 text-[15px] font-bold ${soft ? 'text-muted' : 'text-white/80'}`}>
-          {state === 'done' ? `Сдано! Значок «${hw.badge.name}» ${hw.badge.emoji}` : `Промпт → ИИ → живое превью · ${hw.requirements.length} требований`}
+          {state === 'done' ? t('x1abu6o4', { name: hw.badge.name, emoji: hw.badge.emoji }) : t('x1129dql', { length: hw.requirements.length })}
         </div>
         <button
           className={`btn btn-block ${soft ? '' : 'btn-white'}`}
           style={soft ? ({ '--c': c.main, '--e': c.dark } as CSSProperties) : { color: c.main }}
           onClick={() => navigate(`/homework/${hw.id}`)}
         >
-          {state === 'done' ? 'Открыть снова +10 ВП' : `Открыть +${HOMEWORK_XP} ВП`}
+          {state === 'done' ? t('x1al1xcn') : t('x0vp3igd', { HOMEWORK_XP })}
         </button>
       </Popover>
     )
   } else if (open && item.type === 'lesson') {
     const lesson = item.lesson
-    const label = isReward(lesson.kind) ? 'Итоговый тест раздела' : `Урок ${item.index + 1} из ${lessonCount}`
+    const label = isReward(lesson.kind) ? t('x12zyds7') : t('x06td5dg', { v: item.index + 1, lessonCount })
     pop = (
       <Popover offset={offset} solid={!soft} color={c.main} border={c.mid}>
         <div className="text-[18px] font-black leading-tight">{lesson.title}</div>
         <div className={`mb-4 mt-1 text-[15px] font-bold ${soft ? 'text-muted' : 'text-white/80'}`}>
-          {state === 'done' ? 'Пройдено! Можно повторить' : `${label} · ${lesson.exercises.length} заданий`}
+          {state === 'done' ? t('x1ohea2y') : t('x07lcnjn', { label, length: lesson.exercises.length })}
         </div>
         {soft ? (
-          <button className="btn btn-block" style={{ '--c': c.main, '--e': c.dark } as CSSProperties} onClick={() => navigate(`/lesson/${lesson.id}`)}>
-            Начать +15 ВП
-          </button>
+          <button className="btn btn-block" style={{ '--c': c.main, '--e': c.dark } as CSSProperties} onClick={() => navigate(`/lesson/${lesson.id}`)}>{t('x1jn8q2x')}</button>
         ) : (
           <button className="btn btn-white btn-block" style={{ color: c.main }} onClick={() => navigate(`/lesson/${lesson.id}`)}>
-            {state === 'done' ? 'Повторить +5 ВП' : 'Начать +15 ВП'}
+            {state === 'done' ? t('x1j8rthb') : t('x1jn8q2x')}
           </button>
         )}
       </Popover>
     )
   }
 
-  const title = hw ? `Домашка: ${hw.short}` : item.type === 'lesson' ? item.lesson.title : ''
+  const title = hw ? t('x0a5c8tb', { short: hw.short }) : item.type === 'lesson' ? item.lesson.title : ''
   return (
     <div
       data-lesson={item.id}
@@ -234,7 +227,7 @@ function PathNode({
           className="anim-bob pointer-events-none absolute -top-[54px] left-1/2 z-[5] whitespace-nowrap rounded-xl border-2 border-line bg-white px-3.5 py-2 text-[15px] font-black uppercase tracking-wider"
           style={{ color: c.main }}
         >
-          {hw ? 'Домашка' : 'Начать'}
+          {hw ? t('x1b55y4z') : t('x1y49sih')}
           <span className="absolute -bottom-[7px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b-2 border-r-2 border-line bg-white" />
         </div>
       )}
@@ -244,7 +237,7 @@ function PathNode({
         )}
         <button
           onClick={onToggle}
-          aria-label={locked ? `${title} — закрыто` : title}
+          aria-label={locked ? t('x0liqy8t', { title }) : title}
           aria-expanded={open}
           className={`relative flex items-center justify-center transition-[transform,box-shadow] duration-75 active:translate-y-[6px] ${hw ? 'h-[72px] w-[84px] rounded-[24px]' : 'h-[66px] w-[72px] rounded-[50%]'}`}
           style={{ background: bg, boxShadow: `0 8px 0 ${edge}`, color: iconColor }}
@@ -259,9 +252,7 @@ function PathNode({
           <span
             className="pointer-events-none absolute -bottom-[30px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider"
             style={locked ? { background: '#F2F0F7', color: LOCK.icon } : { background: c.light, color: c.dark }}
-          >
-            Домашка{state === 'done' ? ' ✓' : ''}
-          </span>
+          >{tx('x0rld579', { v: state === 'done' ? ' ✓' : '' })}</span>
         )}
       </div>
       {hw && <div className="h-6" />}
@@ -298,9 +289,7 @@ function Interlude({ next, dir }: { next: Unit; dir: number }) {
   return (
     <div className={`-mt-8 mb-10 flex items-center gap-3 ${dir === 1 ? 'justify-end pr-2 sm:pr-10' : 'justify-start pl-2 sm:pl-10'}`}>
       {dir === -1 && <Mascot mood="happy" size={70} className="shrink-0" />}
-      <div className="relative max-w-[230px] rounded-2xl border-2 border-line bg-white px-3.5 py-2.5 text-[14px] font-bold leading-snug text-ink">
-        Дальше: <b style={{ color: c.dark }}>{next.title}</b>
-      </div>
+      <div className="relative max-w-[230px] rounded-2xl border-2 border-line bg-white px-3.5 py-2.5 text-[14px] font-bold leading-snug text-ink">{tx('x1bo80fq', { title: next.title }, [(chunk) => <b style={{ color: c.dark }}>{chunk}</b>])}</div>
       {dir === 1 && <Mascot mood="happy" size={70} className="shrink-0" />}
     </div>
   )
@@ -320,7 +309,7 @@ function TierBanner({ tier }: { tier: Tier }) {
   const prevItems = prev ? tierItems(prev, progress) : []
   const prevDone = prevItems.filter((i) => i.done).length
   const units = unitsOf(tier)
-  const status = complete ? 'Пройден ✓' : byTest ? 'Засчитан тестом ✓' : openFair ? 'Открыт' : open ? 'Открыт в демо' : 'Закрыт'
+  const status = complete ? t('x1gyh9b2') : byTest ? t('x0uzej6s') : openFair ? t('x121hzbq') : open ? t('x08qbke9') : t('x0vqp3cx')
   return (
     <section
       id={`tier-${tier.id}`}
@@ -334,20 +323,18 @@ function TierBanner({ tier }: { tier: Tier }) {
         <TierBadge tier={tier} size={76} locked={!open} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-[12px] font-black uppercase tracking-wider" style={{ color: open ? c.dark : '#8C86A3' }}>
-            <span>Тир {tier.num}</span>
+            <span>{t('x1vbkjkz', { num: tier.num })}</span>
             <span className={`rounded-full px-2 py-0.5 ${open ? 'bg-white' : 'bg-line'}`}>
               {!open && <Lock size={11} className="-mt-0.5 mr-1 inline" />}
               {status}
             </span>
           </div>
           <h2 className="text-[28px] font-black leading-tight md:text-[32px]">{tier.name}</h2>
-          <p className="mt-0.5 text-[14px] font-bold leading-snug text-muted">
-            Разделы {units.map((u) => u.num).join('–')}: {units.map((u) => u.title).join(' · ')}
-          </p>
+          <p className="mt-0.5 text-[14px] font-bold leading-snug text-muted">{tx('x1knv19l', { v: units.map((u) => u.num).join('–'), v2: units.map((u) => u.title).join(' · ') })}</p>
         </div>
       </div>
       <div className="relative mt-4 rounded-2xl bg-white/80 px-4 py-3">
-        <div className="text-[12px] font-black uppercase tracking-wider text-muted">После тира ты сможешь</div>
+        <div className="text-[12px] font-black uppercase tracking-wider text-muted">{t('x01rxjb2')}</div>
         <div className="mt-0.5 text-[16px] font-extrabold leading-snug">{tier.outcome}</div>
       </div>
       {open ? (
@@ -355,18 +342,12 @@ function TierBanner({ tier }: { tier: Tier }) {
           <div className="progress-track !h-[14px] flex-1 !bg-white">
             <div className="progress-fill" style={{ width: `${Math.max((done / items.length) * 100, 4)}%`, background: c.main }} />
           </div>
-          <span className="shrink-0 text-[13px] font-extrabold text-muted">
-            Тесты и домашки: <b className="text-ink">{done}/{items.length}</b>
-          </span>
+          <span className="shrink-0 text-[13px] font-extrabold text-muted">{tx('x0btwvc6', { done, length: items.length }, [(chunk) => <b className="text-ink">{chunk}</b>])}</span>
         </div>
       ) : (
         <div className="relative mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1 text-[14px] font-bold text-muted">
-            Заверши тир {prev?.name}: <b className="text-ink">{prevDone}/{prevItems.length}</b> — итоговые тесты и домашки. Уже умеешь? Пройди тест.
-          </div>
-          <button className="btn btn-sm shrink-0" style={{ '--c': c.main, '--e': c.dark } as CSSProperties} onClick={() => navigate(`/placement/${tier.id}`)}>
-            Тест на уровень
-          </button>
+          <div className="min-w-0 flex-1 text-[14px] font-bold text-muted">{tx('x1vzf5np', { name: prev?.name, prevDone, length: prevItems.length }, [(chunk) => <b className="text-ink">{chunk}</b>])}</div>
+          <button className="btn btn-sm shrink-0" style={{ '--c': c.main, '--e': c.dark } as CSSProperties} onClick={() => navigate(`/placement/${tier.id}`)}>{t('x0tw0ozv')}</button>
         </div>
       )}
     </section>
@@ -381,8 +362,8 @@ function SoonCard() {
       <div className="flex items-center gap-4">
         <Mascot mood="think" size={84} className="shrink-0" />
         <div className="min-w-0">
-          <div className="text-[12px] font-black uppercase tracking-wider text-brand">Скоро</div>
-          <h3 className="text-[22px] font-black leading-tight">Новые разделы уже в работе</h3>
+          <div className="text-[12px] font-black uppercase tracking-wider text-brand">{t('x036ap5y')}</div>
+          <h3 className="text-[22px] font-black leading-tight">{t('x077e0kk')}</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {SOON_TOPICS.map((t, i) => (
               <span key={t} className="rounded-full px-3 py-1 text-[14px] font-extrabold text-white" style={{ background: i === 0 ? '#7C4DFF' : '#FF7A59' }}>
@@ -393,9 +374,7 @@ function SoonCard() {
           </div>
         </div>
       </div>
-      <button className="btn btn-ghost btn-sm mt-4 w-full sm:w-auto" onClick={() => toast('Напомним, когда появятся новые разделы 🔔')}>
-        Напомнить о новых разделах
-      </button>
+      <button className="btn btn-ghost btn-sm mt-4 w-full sm:w-auto" onClick={() => toast(t('x1djf9tz'))}>{t('x0k6jpmb')}</button>
     </section>
   )
 }
@@ -410,23 +389,19 @@ function FirstRun() {
       <div className="relative flex items-center gap-4">
         <Mascot size={70} mood="happy" className="shrink-0" />
         <div className="min-w-0 flex-1">
-          <h3 className="text-[19px] font-black leading-tight">Уже пробовал вайб-кодинг?</h3>
-          <p className="mt-1 text-[14px] font-semibold leading-snug text-white/85">Пройди тест из 8 вопросов — и начни сразу с тира «{mid.name}». Это по желанию.</p>
+          <h3 className="text-[19px] font-black leading-tight">{t('x0eqr04a')}</h3>
+          <p className="mt-1 text-[14px] font-semibold leading-snug text-white/85">{t('x1yuo809', { name: mid.name })}</p>
         </div>
       </div>
       <div className="relative mt-4 flex gap-2">
-        <button className="btn btn-sm flex-1 border-2 border-white/40" style={{ '--c': 'transparent', '--e': 'transparent' } as CSSProperties} onClick={setPlacementSeen}>
-          Пропустить
-        </button>
+        <button className="btn btn-sm flex-1 border-2 border-white/40" style={{ '--c': 'transparent', '--e': 'transparent' } as CSSProperties} onClick={setPlacementSeen}>{t('x1qm67sx')}</button>
         <button
           className="btn btn-white btn-sm flex-1"
           onClick={() => {
             setPlacementSeen()
             navigate(`/placement/${mid.id}`)
           }}
-        >
-          Пройти тест
-        </button>
+        >{t('x1qewgb1')}</button>
       </div>
     </section>
   )
@@ -479,7 +454,7 @@ export function Home() {
               const nodes = unitNodes(unit)
               const doneCount = nodes.filter((n) => isNodeDone(n, progress)).length
               const cur = nodes.find((n) => n.id === current)
-              const label = locked ? 'закрыт' : cur ? (cur.type === 'homework' ? 'Домашка' : `Урок ${cur.index + 1}`) : `${doneCount}/${nodes.length}`
+              const label = locked ? t('x1ys55r5') : cur ? (cur.type === 'homework' ? t('x1b55y4z') : t('x00adsxa', { v: cur.index + 1 })) : `${doneCount}/${nodes.length}`
               const next = units[k + 1]
               return (
                 <section key={unit.id} className={k > 0 ? 'mt-6' : ''}>
@@ -512,14 +487,10 @@ export function Home() {
       })}
       <SoonCard />
       <div className="flex flex-col items-center gap-3 pb-6 text-center">
-        <div className="flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-wider text-[#b5b0c8]">
-          <span className="h-[2px] w-12 bg-line" /> Финиш <span className="h-[2px] w-12 bg-line" />
-        </div>
+        <div className="flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-wider text-[#b5b0c8]">{tx('x1i7hg7b', {}, [() => <span className="h-[2px] w-12 bg-line" />, () => <span className="h-[2px] w-12 bg-line" />])}</div>
         <Mascot mood={doneLessons >= totalLessons ? 'happy' : 'think'} size={96} />
-        <h3 className="text-[20px] font-black">
-          Пройдено {doneLessons} из {totalLessons} уроков · домашек {progress.homework.length} из {UNITS.length}
-        </h3>
-        <p className="max-w-[360px] text-[15px] font-semibold text-muted">Пройди все три тира — и твой первый проект будет в сети.</p>
+        <h3 className="text-[20px] font-black">{tx('x1b3h82i', { doneLessons, totalLessons, length: progress.homework.length, length2: UNITS.length })}</h3>
+        <p className="max-w-[360px] text-[15px] font-semibold text-muted">{t('x1f33be5')}</p>
       </div>
     </div>
   )

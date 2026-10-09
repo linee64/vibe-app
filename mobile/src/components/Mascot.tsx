@@ -1,4 +1,5 @@
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg'
+import { t } from '@web/i18n/core'
 
 type Mood = 'default' | 'happy' | 'think'
 
@@ -14,7 +15,7 @@ export function Mascot({ mood = 'default', size = 160, laptop }: { mood?: Mood; 
   const think = mood === 'think'
   const showLaptop = laptop ?? !happy
   return (
-    <Svg viewBox="0 0 200 220" width={size} height={(size * 220) / 200} accessibilityLabel="Бипи — робот-талисман Вайбика">
+    <Svg viewBox="0 0 200 220" width={size} height={(size * 220) / 200} accessibilityLabel={t('x1ragu8w')}>
       <Ellipse cx="100" cy="211" rx="58" ry="7" fill={INK} opacity={0.08} />
       <Path d="M100 42 V22" stroke={VD} strokeWidth={6} strokeLinecap="round" />
       <Circle cx="100" cy="17" r="10" fill={CORAL} />

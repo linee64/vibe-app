@@ -4,6 +4,7 @@ import type { Answer, Hint, Status } from '../../data/exerciseLogic'
 import { KIND_META } from './meta'
 import { Mascot } from '../Mascot'
 import { highlight } from '../Code'
+import { t } from '../../i18n/core'
 
 export interface ViewProps<E> {
   ex: E
@@ -75,7 +76,7 @@ export function AiAvatar({ size = 30 }: { size?: number }) {
     <span
       className="flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-[#B18CFF] text-white shadow-[0_2px_0_#5B2FD6]"
       style={{ width: size, height: size, fontSize: size * 0.5 }}
-      aria-label="ИИ"
+      aria-label={t('x1crlu99')}
     >
       ✦
     </span>

@@ -9,7 +9,10 @@ import { VP, days, waitText } from '@web/data/economy'
 import { useStore } from '../../store/Store'
 import { Battery, ProgressBar, Token, Txt } from '../../components/ui'
 import { MascotHead } from '../../components/Mascot'
+import { FeedbackButton } from '../../components/Feedback'
 import { C, font } from '../../theme'
+import { t } from '@web/i18n/core'
+import { tx } from '@web/i18n/rich'
 
 const NODE_ICON: Record<string, string> = { star: '⭐', book: '📘', dumbbell: '💪', chest: '🎁', trophy: '🏆' }
 
@@ -33,9 +36,8 @@ export default function LearnScreen() {
     <ScrollView style={{ flex: 1, backgroundColor: C.snow }} contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 30 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 10 }}>
         <MascotHead size={38} />
-        <Txt w={900} size={22} style={{ flex: 1 }}>
-          Вайбик
-        </Txt>
+        <Txt w={900} size={22} style={{ flex: 1 }}>{t('x0c6ksvf')}</Txt>
+        <FeedbackButton entry="header" />
         <Pressable onPress={() => router.push('/shop')} testID="open-shop" style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 99, backgroundColor: C.white, borderWidth: 2, borderColor: C.line, paddingHorizontal: 10, paddingVertical: 5 }}>
           <Token size={16} />
           <Text style={font(900, 14)}>{progress.gems}</Text>
@@ -47,29 +49,21 @@ export default function LearnScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 12 }}>
-        <Stat emoji="🔥" label="деплой-серия" value={days(progress.streak)} />
-        <Stat emoji="✨" label="вайб-поинты" value={`${progress.xp} ${VP}`} />
+        <Stat emoji="🔥" label={t('x1epijl3')} value={days(progress.streak)} />
+        <Stat emoji="✨" label={t('x0f019kt')} value={`${progress.xp} ${VP}`} />
       </View>
 
       {!progress.placementSeen ? (
         <Pressable testID="placement-banner" onPress={() => router.push('/placement')} style={{ marginHorizontal: 16, marginBottom: 12, borderRadius: 18, backgroundColor: C.brand, padding: 14, borderBottomWidth: 4, borderBottomColor: C.brandDark }}>
-          <Txt w={900} size={16} color={C.white}>
-            🎯 Тест на уровень
-          </Txt>
-          <Txt w={700} size={13} color="#E8E0FF">
-            8 вопросов — и сразу откроем подходящий тир
-          </Txt>
+          <Txt w={900} size={16} color={C.white}>{t('x0wyu2fe')}</Txt>
+          <Txt w={700} size={13} color="#E8E0FF">{t('x1re5hkw')}</Txt>
         </Pressable>
       ) : null}
 
       {celebration ? (
         <Pressable testID="tier-up-banner" onPress={() => router.push(`/tier-up/${celebration.id}`)} style={{ marginHorizontal: 16, marginBottom: 12, borderRadius: 18, backgroundColor: C.gold, padding: 14, borderBottomWidth: 4, borderBottomColor: C.goldDark }}>
-          <Txt w={900} size={16}>
-            🎉 Новый тир: {celebration.name}
-          </Txt>
-          <Txt w={700} size={13}>
-            Нажми, чтобы отметить
-          </Txt>
+          <Txt w={900} size={16}>{t('x1wc7ege', { name: celebration.name })}</Txt>
+          <Txt w={700} size={13}>{t('x0nrcu0i')}</Txt>
         </Pressable>
       ) : null}
 
@@ -103,10 +97,8 @@ function TierBlock({ tier, current, onOpen }: { tier: Tier; current: string | nu
     <View style={{ marginBottom: 8 }}>
       <View testID={`tier-${tier.id}`} style={{ marginHorizontal: 16, marginBottom: 8, borderRadius: 20, backgroundColor: color.main, padding: 14, borderBottomWidth: 5, borderBottomColor: color.dark, opacity: open ? 1 : 0.75 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Txt w={900} size={18} color={C.white} style={{ flex: 1 }}>
-            {open ? '' : '🔒 '}Тир {tier.num}: {tier.name}
-          </Txt>
-          {passed ? <Text style={font(900, 12, C.white)}>пройден ✓</Text> : byTest ? <Text style={font(900, 12, C.white)}>по тесту ✓</Text> : null}
+          <Txt w={900} size={18} color={C.white} style={{ flex: 1 }}>{tx('x00sbg42', { v: open ? '' : '🔒 ', num: tier.num, name: tier.name })}</Txt>
+          {passed ? <Text style={font(900, 12, C.white)}>{t('x0zlgs72')}</Text> : byTest ? <Text style={font(900, 12, C.white)}>{t('x11cu9j6')}</Text> : null}
         </View>
         <Txt w={700} size={13} color={color.light} style={{ marginTop: 2 }}>
           {tier.outcome}
@@ -117,7 +109,7 @@ function TierBlock({ tier, current, onOpen }: { tier: Tier; current: string | nu
         </View>
         {!open ? (
           <Pressable testID={`tier-locked-${tier.id}`} onPress={() => router.push('/placement')} style={{ marginTop: 8, alignSelf: 'flex-start', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Text style={font(900, 13, C.white)}>Пройти тест на уровень</Text>
+            <Text style={font(900, 13, C.white)}>{t('x0pnkiit')}</Text>
           </Pressable>
         ) : null}
       </View>

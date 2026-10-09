@@ -4,6 +4,7 @@ import type { BugExercise } from '@web/data/types'
 import { C, font } from '../../theme'
 import { highlight, mono } from '../code'
 import { AiAvatar, Head, HintNote, type ViewProps } from './shared'
+import { t } from '@web/i18n/core'
 
 /** «Найди баг» (код) и «Красный флаг» (фраза в ответе ИИ): тап по строке */
 export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugExercise>) {
@@ -19,7 +20,7 @@ export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugEx
             <AiAvatar size={22} />
             <Text numberOfLines={1} style={[font(900, 13), { flexShrink: 1 }]}>{ex.file}</Text>
             <View style={{ marginLeft: 'auto', borderRadius: 99, backgroundColor: C.coralLight, paddingHorizontal: 8, paddingVertical: 2 }}>
-              <Text style={font(900, 11, C.coralDark)}>найди 🚩</Text>
+              <Text style={font(900, 11, C.coralDark)}>{t('x1ng1cus')}</Text>
             </View>
           </View>
           <View style={{ gap: 6, padding: 10 }}>
@@ -45,7 +46,7 @@ export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugEx
             ))}
             <Text numberOfLines={1} style={[mono(12, 'rgba(255,255,255,0.8)'), { marginLeft: 8, flexShrink: 1, borderBottomWidth: 2, borderBottomColor: C.brand, paddingHorizontal: 8 }]}>{ex.file}</Text>
             <View style={{ marginLeft: 'auto', borderRadius: 99, backgroundColor: 'rgba(124,77,255,0.3)', paddingHorizontal: 8, paddingVertical: 3 }}>
-              <Text style={font(800, 10, '#C9A8FF')}>✦ КОД ОТ ИИ</Text>
+              <Text style={font(800, 10, '#C9A8FF')}>{t('x1mj9nf1')}</Text>
             </View>
           </View>
           <View style={{ paddingVertical: 8 }}>
@@ -69,7 +70,7 @@ export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugEx
           </View>
         </View>
       )}
-      <Text style={[font(700, 14, C.muted), { marginTop: 12, textAlign: 'center' }]}>{text ? 'Нажми на фразу, которой нельзя верить' : 'Нажми на строку, где спрятался баг'}</Text>
+      <Text style={[font(700, 14, C.muted), { marginTop: 12, textAlign: 'center' }]}>{text ? t('x0k81lf8') : t('x1o415sx')}</Text>
     </View>
   )
 }

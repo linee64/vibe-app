@@ -11,16 +11,27 @@ import { unit4 } from './units/u4-backend'
 import { unit5 } from './units/u5-launch'
 
 export * from './types'
-export { DEMO_EXERCISE } from './units/u1-first-prompt'
+import { DEMO_EXERCISE as DEMO_RU } from './units/u1-first-prompt'
 
 const prepare = (u: Unit): Unit => ({
   ...u,
   lessons: u.lessons.map((l) => ({ ...l, exercises: l.exercises.map((ex, i) => prepareExercise(ex, `${l.id}:${i}:${ex.title}`)) })),
 })
 
-export const UNITS: Unit[] = [unit1, unit2, unit3, unit4, unit5].map(prepare)
+export const UNITS_RU: Unit[] = [unit1, unit2, unit3, unit4, unit5].map(prepare)
 
-export const ALL_LESSONS = UNITS.flatMap((u) => u.lessons.map((l, i) => ({ ...l, unit: u, index: i })))
+const lessonsOf = (units: Unit[]) => units.flatMap((u) => u.lessons.map((l, i) => ({ ...l, unit: u, index: i })))
+
+/** Живые (локализованные) данные курса — переключает setCourseContent (src/i18n/runtime.ts) */
+export let UNITS: Unit[] = UNITS_RU
+export let ALL_LESSONS = lessonsOf(UNITS)
+export let DEMO_EXERCISE = DEMO_RU
+
+export function setCourseContent(units: Unit[], demo: typeof DEMO_RU) {
+  UNITS = units
+  ALL_LESSONS = lessonsOf(units)
+  DEMO_EXERCISE = demo
+}
 
 export const TOTAL_EXERCISES = ALL_LESSONS.reduce((n, l) => n + l.exercises.length, 0)
 

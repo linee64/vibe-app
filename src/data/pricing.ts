@@ -7,6 +7,8 @@
  */
 export const TRIAL_DAYS = 3
 
+import { t } from '../i18n/core'
+
 export const PRICES = {
   monthly: 999, // $9.99 в месяц
   annual: 5999, // $59.99 в год
@@ -27,17 +29,17 @@ export const usd = (cents: number) => {
   return `$${value}`
 }
 
-export const FREE_FEATURES = [
-  'Раздел «Первый промпт» целиком',
-  'Заряд Бипи: 5 делений, +1 каждые 20 минут',
-  'Деплой-серия, вайб-поинты и лиги',
-  'Ежедневные задания',
+export const FREE_FEATURES = () => [
+  t('pricing.free.1'),
+  t('pricing.free.2'),
+  t('pricing.free.3'),
+  t('pricing.free.4'),
 ]
 
-export const PRO_FEATURES = [
-  'Все разделы и каждый новый курс',
-  'Безлимитный заряд Бипи',
-  'ИИ-разбор твоих ошибок и кода',
-  'Мини-проекты с проверкой',
-  'Заморозка деплой-серии, если пропустил день',
+export const PRO_FEATURES = () => [
+  t('pricing.pro.1'),
+  t('pricing.pro.2'),
+  t('pricing.pro.3'),
+  t('pricing.pro.4'),
+  t('pricing.pro.5'),
 ]

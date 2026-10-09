@@ -3,6 +3,7 @@ import type { ChoiceExercise } from '@web/data/types'
 import { C, font } from '../../theme'
 import { Tile } from '../ui'
 import { Head, HintNote, Letter, optTone, toneColor, type ViewProps } from './shared'
+import { t } from '@web/i18n/core'
 
 /** «Ситуация»: карточка-сценарий → что сделаешь? */
 export function ScenarioView({ ex, answer, setAnswer, status, hint }: ViewProps<ChoiceExercise>) {
@@ -12,10 +13,10 @@ export function ScenarioView({ ex, answer, setAnswer, status, hint }: ViewProps<
       <Head kind="choice" title={ex.title} prompt={ex.situation ? ex.prompt : undefined} />
       <View style={{ marginBottom: 14, overflow: 'hidden', borderRadius: 20, borderWidth: 2, borderColor: '#FFD58C', borderBottomWidth: 5, backgroundColor: '#FFF8EA', paddingHorizontal: 16, paddingVertical: 13 }}>
         <Text style={{ position: 'absolute', right: -6, top: -10, fontSize: 56, opacity: 0.15 }}>🧭</Text>
-        <Text style={[font(900, 11, C.amberDark), { textTransform: 'uppercase', letterSpacing: 0.8 }]}>Ситуация</Text>
+        <Text style={[font(900, 11, C.amberDark), { textTransform: 'uppercase', letterSpacing: 0.8 }]}>{t('x0mg5v7s')}</Text>
         <Text style={[font(700, 16), { marginTop: 2, lineHeight: 22 }]}>{ex.situation ?? ex.prompt}</Text>
       </View>
-      <Text style={[font(900, 15), { marginBottom: 10 }]}>Что сделаешь?</Text>
+      <Text style={[font(900, 15), { marginBottom: 10 }]}>{t('x0qv5swp')}</Text>
       <HintNote hint={hint} />
       <View style={{ gap: 10 }}>
         {ex.options.map((o, i) => {

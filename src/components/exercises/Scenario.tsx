@@ -1,6 +1,7 @@
 import type { ChoiceExercise } from '../../data/types'
 import { Head, HintNote, Letter, type ViewProps } from './shared'
 import { optState } from './meta'
+import { t } from '../../i18n/core'
 
 /** «Ситуация»: карточка-сценарий → что сделаешь? */
 export function ScenarioView({ ex, answer, setAnswer, status, hint }: ViewProps<ChoiceExercise>) {
@@ -12,10 +13,10 @@ export function ScenarioView({ ex, answer, setAnswer, status, hint }: ViewProps<
         <span className="absolute -right-3 -top-3 text-[56px] opacity-15" aria-hidden>
           🧭
         </span>
-        <div className="text-[11px] font-black uppercase tracking-wider text-[#B86A00]">Ситуация</div>
+        <div className="text-[11px] font-black uppercase tracking-wider text-[#B86A00]">{t('x0mg5v7s')}</div>
         <div className="relative mt-0.5 text-[16px] font-bold leading-snug text-ink md:text-[17px]">{ex.situation ?? ex.prompt}</div>
       </div>
-      <div className="mb-2.5 text-[15px] font-black text-ink">Что сделаешь?</div>
+      <div className="mb-2.5 text-[15px] font-black text-ink">{t('x0qv5swp')}</div>
       <HintNote hint={hint} />
       <div className="grid gap-2.5">
         {ex.options.map((o, i) => {

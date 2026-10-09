@@ -1,9 +1,11 @@
 import type { DuelExercise } from '../../data/types'
 import { Head, HintNote, Letter, OutcomeView, type ViewProps } from './shared'
+import { t } from '../../i18n/core'
+import { tx } from '../../i18n/rich'
 
 const SIDE = [
-  { name: 'Промпт A', color: '#7C4DFF', light: '#EFE9FF', mid: '#C7B6FF' },
-  { name: 'Промпт B', color: '#FF7A59', light: '#FFE9E2', mid: '#FFC2B2' },
+  { get name() { return t('x1iky1xu') }, color: '#7C4DFF', light: '#EFE9FF', mid: '#C7B6FF' },
+  { get name() { return t('x1iayg8v') }, color: '#FF7A59', light: '#FFE9E2', mid: '#FFC2B2' },
 ]
 
 /** «Дуэль промптов»: два промпта и что они дали → кто победил → почему */
@@ -41,15 +43,13 @@ export function DuelView({ ex, answer, setAnswer, status, hint }: ViewProps<Duel
                 <span className="rounded-full px-2.5 py-0.5 text-[12px] font-black uppercase tracking-wider text-white" style={{ background: c.color }}>
                   {c.name}
                 </span>
-                {win && <span className="anim-pop text-[13px] font-black text-teal-dark">🏆 Победитель</span>}
-                {on && idle && <span className="text-[12px] font-black" style={{ color: c.color }}>Мой выбор</span>}
+                {win && <span className="anim-pop text-[13px] font-black text-teal-dark">{t('x0rdm5ay')}</span>}
+                {on && idle && <span className="text-[12px] font-black" style={{ color: c.color }}>{t('x1cb5utu')}</span>}
               </div>
               <div className="rounded-2xl rounded-br-md px-3 py-2 text-[13.5px] font-bold leading-snug text-white md:text-[14px]" style={{ background: c.color }}>
                 {s.prompt}
               </div>
-              <div className="my-2 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-muted">
-                <span className="h-[2px] flex-1 rounded bg-line" /> ИИ выдал <span className="h-[2px] flex-1 rounded bg-line" />
-              </div>
+              <div className="my-2 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-muted">{tx('x0iq992e', {}, [() => <span className="h-[2px] flex-1 rounded bg-line" />, () => <span className="h-[2px] flex-1 rounded bg-line" />])}</div>
               <div className="pointer-events-none">
                 <OutcomeView o={s.result} />
               </div>
@@ -63,7 +63,7 @@ export function DuelView({ ex, answer, setAnswer, status, hint }: ViewProps<Duel
 
       {side >= 0 && (
         <div className="anim-fade-up mt-6">
-          <div className="mb-2.5 text-[16px] font-black text-ink">Почему {SIDE[side].name} сильнее?</div>
+          <div className="mb-2.5 text-[16px] font-black text-ink">{tx('x0hzkppy', { name: SIDE[side].name })}</div>
           <HintNote hint={hint} />
           <div className="grid gap-2.5">
             {ex.reasons.map((r, i) => {
@@ -91,7 +91,7 @@ export function DuelView({ ex, answer, setAnswer, status, hint }: ViewProps<Duel
           </div>
         </div>
       )}
-      {side < 0 && <p className="mt-5 text-center text-[14px] font-bold text-muted">Нажми на карточку промпта, который победил</p>}
+      {side < 0 && <p className="mt-5 text-center text-[14px] font-bold text-muted">{t('x1whnsvz')}</p>}
     </div>
   )
 }

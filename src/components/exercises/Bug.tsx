@@ -1,6 +1,7 @@
 import type { BugExercise } from '../../data/types'
 import { highlight } from '../Code'
 import { AiAvatar, Head, HintNote, type ViewProps } from './shared'
+import { t } from '../../i18n/core'
 
 /** «Найди баг» (код) и «Красный флаг» (фраза в ответе ИИ): тап по строке */
 export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugExercise>) {
@@ -15,7 +16,7 @@ export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugEx
           <div className="flex items-center gap-2 border-b-2 border-line bg-snow px-3.5 py-2">
             <AiAvatar size={22} />
             <span className="min-w-0 truncate text-[13px] font-black">{ex.file}</span>
-            <span className="ml-auto shrink-0 rounded-full bg-coral-light px-2 py-0.5 text-[11px] font-black text-coral-dark">найди 🚩</span>
+            <span className="ml-auto shrink-0 rounded-full bg-coral-light px-2 py-0.5 text-[11px] font-black text-coral-dark">{t('x1ng1cus')}</span>
           </div>
           <div className="space-y-1.5 p-2.5">
             {ex.code.map((line, i) => {
@@ -48,7 +49,7 @@ export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugEx
             <span className="h-3 w-3 rounded-full bg-gold" />
             <span className="h-3 w-3 rounded-full bg-teal" />
             <span className="code-font ml-2 min-w-0 truncate rounded-t-lg border-b-2 border-brand bg-white/10 px-2.5 py-1 text-[12px] text-white/80">{ex.file}</span>
-            <span className="ml-auto shrink-0 rounded-full bg-brand/30 px-2 py-1 text-[10.5px] font-extrabold uppercase tracking-wider text-[#C9A8FF]">✦ код от ИИ</span>
+            <span className="ml-auto shrink-0 rounded-full bg-brand/30 px-2 py-1 text-[10.5px] font-extrabold uppercase tracking-wider text-[#C9A8FF]">{t('x1syoofh')}</span>
           </div>
           <div className="relative py-2.5">
             {idle && <div className="vx-scan" aria-hidden />}
@@ -75,7 +76,7 @@ export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugEx
           </div>
         </div>
       )}
-      <p className="mt-3 text-center text-[14px] font-bold text-muted">{text ? 'Нажми на фразу, которой нельзя верить' : 'Нажми на строку, где спрятался баг'}</p>
+      <p className="mt-3 text-center text-[14px] font-bold text-muted">{text ? t('x0k81lf8') : t('x1o415sx')}</p>
     </div>
   )
 }

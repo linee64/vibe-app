@@ -55,7 +55,7 @@ export interface HomeworkDef {
 
 export const HOMEWORK_XP = 50
 
-export const HOMEWORKS: HomeworkDef[] = [
+export const HOMEWORKS_RU: HomeworkDef[] = [
   {
     id: 'hw1',
     unitId: 'u1',
@@ -258,6 +258,12 @@ export const HOMEWORKS: HomeworkDef[] = [
     vague: 'Просто выложи сайт куда-нибудь.',
   },
 ]
+
+/** Живые (локализованные) домашки — переключает setHomeworkContent (src/i18n/runtime.ts) */
+export let HOMEWORKS: HomeworkDef[] = HOMEWORKS_RU
+export function setHomeworkContent(list: HomeworkDef[]) {
+  HOMEWORKS = list
+}
 
 export const findHomework = (id: string) => HOMEWORKS.find((h) => h.id === id)
 export const homeworkForUnit = (unitId: string) => HOMEWORKS.find((h) => h.unitId === unitId)

@@ -8,6 +8,7 @@ import { CHARGE_MAX, RECHARGE_MS } from '@web/data/economy'
 import { loadRemoteProgress, mergeProgress, recordHomeworkSubmission, saveRemoteProgress } from '@web/lib/progressSync'
 import type { Progress as WebProgress, Session as WebSession } from '@web/store'
 import { DEMO_MODE, REVIEW_MODE } from '../lib/env'
+import { t } from '@web/i18n/core'
 
 /** Та же форма, что в вебе (src/store.tsx) — тип берём оттуда, чтобы не разъехались */
 export type Progress = WebProgress
@@ -74,7 +75,7 @@ export function accruedCharge(hearts: number, chargeAt: number | null, now = Dat
 }
 
 export function nameFromEmail(email: string) {
-  const first = (email.split('@')[0] ?? '').replace(/[._-]+/g, ' ').trim().split(' ')[0] || 'Друг'
+  const first = (email.split('@')[0] ?? '').replace(/[._-]+/g, ' ').trim().split(' ')[0] || t('x0oxr2kn')
   return first.charAt(0).toUpperCase() + first.slice(1)
 }
 

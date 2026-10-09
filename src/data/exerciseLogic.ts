@@ -1,4 +1,5 @@
 import type { DuelExercise, Exercise, Outcome, PipelineExercise, UpgradeExercise } from './types'
+import { t } from '../i18n/core'
 
 /**
  * Ответ пользователя:
@@ -155,17 +156,17 @@ export function correctText(ex: Exercise): string {
     case 'predict':
       return outcomeLabel(ex.outcomes[ex.correct])
     case 'bug':
-      return ex.mode === 'text' ? `«${ex.code[ex.correct].trim()}»` : `строка ${ex.correct + 1}: ${ex.code[ex.correct].trim()}`
+      return ex.mode === 'text' ? `«${ex.code[ex.correct].trim()}»` : t('x1qqmec0', { v: ex.correct + 1, v2: ex.code[ex.correct].trim() })
     case 'duel':
-      return `промпт ${ex.winner === 0 ? 'A' : 'B'} — ${ex.reasons[ex.reason]}`
+      return t('x1l66ozv', { v: ex.winner === 0 ? 'A' : 'B', v2: ex.reasons[ex.reason] })
     case 'upgrade': {
       const good = ex.chips.filter((c) => !c.trap).map((c) => c.tag)
       const traps = ex.chips.filter((c) => c.trap).map((c) => `«${c.text}»`)
-      return `добавить ${good.join(', ')}; ловушки — ${traps.join(', ')}`
+      return t('x1wz03xd', { v: good.join(', '), v2: traps.join(', ') })
     }
     case 'diff': {
-      const bad = ex.hunks.map((h, i) => (h.harmful ? `правку ${i + 1}` : null)).filter(Boolean)
-      return `отклонить ${bad.join(' и ')}, остальное принять`
+      const bad = ex.hunks.map((h, i) => (h.harmful ? t('x09mru73', { v: i + 1 }) : null)).filter(Boolean)
+      return t('logic.rejectEdits', { list: bad.join(t('x1ts2ohr')) })
     }
     case 'pipeline':
       return ex.steps.join(' → ')
@@ -197,20 +198,20 @@ export function hintFor(ex: Exercise): Hint {
   switch (ex.kind) {
     case 'choice':
     case 'nextmove':
-      return { dim: [wrongAfter(ex.options.length, ex.correct)], text: 'Бипи вычеркнул один неверный вариант' }
+      return { dim: [wrongAfter(ex.options.length, ex.correct)], text: t('x03kq78j') }
     case 'predict':
-      return { dim: [wrongAfter(ex.outcomes.length, ex.correct)], text: 'Бипи вычеркнул один неверный результат' }
+      return { dim: [wrongAfter(ex.outcomes.length, ex.correct)], text: t('x1o3bqag') }
     case 'duel':
-      return { dim: [wrongAfter(ex.reasons.length, ex.reason)], text: 'Бипи вычеркнул одну неверную причину' }
+      return { dim: [wrongAfter(ex.reasons.length, ex.reason)], text: t('x1bfgogg') }
     case 'bug': {
       const others = ex.code.map((_, i) => i).filter((i) => i !== ex.correct && ex.code[i].trim())
-      return { dim: seededShuffle(others, ex.title).slice(0, Math.ceil(others.length / 2)), text: 'Бипи погасил строки, где бага точно нет' }
+      return { dim: seededShuffle(others, ex.title).slice(0, Math.ceil(others.length / 2)), text: t('x1skfjjw') }
     }
     case 'upgrade':
-      return { mark: ex.chips.findIndex((c) => c.trap), text: 'Бипи пометил одну ловушку' }
+      return { mark: ex.chips.findIndex((c) => c.trap), text: t('x0526yqd') }
     case 'diff':
-      return { mark: ex.hunks.findIndex((h) => !h.harmful), text: 'Бипи проверил одну правку — она безопасна' }
+      return { mark: ex.hunks.findIndex((h) => !h.harmful), text: t('x1crpsg7') }
     case 'pipeline':
-      return { mark: 0, text: 'Бипи подсказал, с чего начать' }
+      return { mark: 0, text: t('x0c1wtod') }
   }
 }

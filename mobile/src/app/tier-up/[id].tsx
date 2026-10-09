@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -7,13 +8,22 @@ import { useStore } from '../../store/Store'
 import { Mascot } from '../../components/Mascot'
 import { Btn, Txt } from '../../components/ui'
 import { C } from '../../theme'
+import { track } from '../../lib/analytics'
+import { t } from '@web/i18n/core'
 
 export default function TierUpScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const { markTierCelebrated } = useStore()
+  const { markTierCelebrated, progress } = useStore()
   const tier = findTier(id)
+  const sent = useRef(false)
+  useEffect(() => {
+    // экран показывается один раз на тир — момент «тир пройден, следующий открыт»
+    if (!tier || sent.current || progress.tiersCelebrated.includes(tier.id)) return
+    sent.current = true
+    track('tier_unlocked', { tier: nextTier(tier)?.id ?? 'soon', via: 'progress', completed_tier: tier.id })
+  }, [tier, progress.tiersCelebrated])
   if (!tier) return null
   const color = UNIT_COLORS[tier.color]
   const nxt = nextTier(tier)
@@ -22,7 +32,7 @@ export default function TierUpScreen() {
       <View style={{ alignItems: 'center' }}>
         <Mascot mood="happy" size={160} />
       </View>
-      <Txt w={900} size={14} color={color.dark} center>НОВЫЙ ТИР</Txt>
+      <Txt w={900} size={14} color={color.dark} center>{t('x0dit57q')}</Txt>
       <Txt w={900} size={30} center>{tier.name}</Txt>
       <Txt w={700} size={15} color={C.muted} center>{tier.outcome}</Txt>
       <View style={{ gap: 6, marginTop: 6 }}>
@@ -33,8 +43,8 @@ export default function TierUpScreen() {
         ))}
       </View>
       <View style={{ flex: 1 }} />
-      {nxt ? <Txt w={700} size={13} color={C.muted} center>Дальше — тир «{nxt.name}»</Txt> : null}
-      <Btn label="На путь" block onPress={() => { markTierCelebrated(tier.id); router.replace('/(tabs)/learn') }} />
+      {nxt ? <Txt w={700} size={13} color={C.muted} center>{t('x0ajifv4', { name: nxt.name })}</Txt> : null}
+      <Btn label={t('x0odeypg')} block onPress={() => { markTierCelebrated(tier.id); router.replace('/(tabs)/learn') }} />
     </View>
   )
 }

@@ -13,9 +13,13 @@
 | ИИ-проверка домашек (DeepSeek) | `DEEPSEEK_API_KEY` (+ Supabase) | офлайн-симуляция |
 | Оплата Pro (Polar) и пейвол разделов 2–5 | `VITE_BILLING_ENABLED=true` и `POLAR_*` (+ Supabase) | кнопки «скоро» |
 | Режим ревью (всё открыто, пейвола нет) | `VITE_REVIEW_MODE` — по умолчанию `true` | — |
+| Аналитика воронки (PostHog) | `VITE_POSTHOG_KEY` (+ `EXPO_PUBLIC_POSTHOG_KEY` в мобилке) | выключена, ничего не отправляется |
+| Отчёты об ошибках (Sentry) | `VITE_SENTRY_DSN`, `SENTRY_DSN` (+ `EXPO_PUBLIC_SENTRY_DSN`) | выключены |
+| Отзывы в базу / в Telegram | Supabase (+ миграция `0002`) и/или `FEEDBACK_WEBHOOK_URL` | отзывы хранятся в браузере |
 
 **Правило безопасности:** переменные с `VITE_` видны в браузере всем. Секретные ключи (`SUPABASE_SECRET_KEY`,
-`DEEPSEEK_API_KEY`, `POLAR_*`) — **только без** `VITE_`. Никогда не коммить `.env` (он уже в `.gitignore`).
+`DEEPSEEK_API_KEY`, `POLAR_*`, `FEEDBACK_WEBHOOK_URL`) — **только без** `VITE_`. Ключ проекта PostHog (`phc_…`) и DSN Sentry
+публичны по замыслу — их можно класть в `VITE_*` / `EXPO_PUBLIC_*`. Никогда не коммить `.env` (он уже в `.gitignore`).
 
 ---
 
@@ -35,8 +39,9 @@
 2. [ ] **Схема базы.** Слева *SQL Editor → New query* → открой файл `supabase/migrations/0001_init.sql`,
    скопируй **весь** текст → *Run*. Должно быть «Success. No rows returned».
    Скрипт можно запускать повторно — данные он не удаляет.
+   Затем так же выполни **`supabase/migrations/0002_feedback.sql`** (таблица отзывов).
 3. [ ] **Проверка.** *Table Editor* → таблицы `profiles`, `progress`, `homework_submissions`, `ai_usage`,
-   `subscriptions`, `webhook_events`; у каждой значок «RLS enabled».
+   `subscriptions`, `webhook_events`, `feedback`; у каждой значок «RLS enabled».
 4. [ ] **Ключи.** *Project Settings → API Keys*:
    - **Project URL** (`https://xxxx.supabase.co`) → пойдёт в `VITE_SUPABASE_URL` и `SUPABASE_URL`;
    - **Publishable key** (`sb_publishable_…`) → `VITE_SUPABASE_PUBLISHABLE_KEY`;
@@ -180,6 +185,65 @@
 
 ---
 
+## 7. Аналитика — PostHog (10 минут, можно позже)
+
+1. [ ] [posthog.com](https://posthog.com) → **Sign up** → создай организацию и проект `Вайбик`
+   (регион **EU** или **US** — запомни). Мастер установки сниппета пропусти: код уже встроен.
+2. [ ] *Project settings → General*: скопируй **Project API key** (`phc_…`, публичный).
+   В том же разделе: *Autocapture* — **выключи**, *Session replay* — оставь выключенным,
+   *IP data capture* — **Discard client IP data** (меньше персональных данных).
+3. [ ] Vercel → Environment Variables:
+   - `VITE_POSTHOG_KEY` = `phc_…`;
+   - `VITE_POSTHOG_HOST` = `https://us.i.posthog.com` (US) или `https://eu.i.posthog.com` (EU).
+   Мобилка — те же значения в `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_POSTHOG_HOST` (EAS → Environment variables).
+4. [ ] **Redeploy** → пройди урок → PostHog → *Activity*: появятся `landing_viewed`, `lesson_started`, `lesson_completed`.
+5. [ ] Собери воронку *Insights → New → Funnel* по шагам из [`docs/analytics.md`](docs/analytics.md).
+
+Что не уходит в PostHog: почта, тексты промптов и отзывов, ввод в поля, query-строки URL. Запись сессий включается
+только `VITE_POSTHOG_SESSION_RECORDING=true` (с маскировкой всех текстов) — сначала обнови политику конфиденциальности.
+
+## 8. Ошибки — Sentry (10 минут, можно позже)
+
+1. [ ] [sentry.io](https://sentry.io) → организация → **три проекта**: `vaibik-web` (платформа *React*),
+   `vaibik-api` (*Node.js*), `vaibik-mobile` (*React Native*). Можно один проект на всё — тогда DSN везде одинаковый.
+2. [ ] В каждом проекте *Settings → Client Keys (DSN)* → скопируй DSN (публичный). *Settings → Security & Privacy*:
+   включи **Data Scrubber** и **Prevent Storing of IP Addresses**.
+3. [ ] Переменные:
+   - Vercel: `VITE_SENTRY_DSN` = DSN `vaibik-web`, `SENTRY_DSN` = DSN `vaibik-api`
+     (необязательно `VITE_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT`; по умолчанию production/preview из Vercel);
+   - мобилка (EAS): `EXPO_PUBLIC_SENTRY_DSN` = DSN `vaibik-mobile`. Для читаемых стеков в сборках EAS добавь
+     `SENTRY_ORG`, `SENTRY_PROJECT` и **секрет** `SENTRY_AUTH_TOKEN` (Sentry → *Settings → Auth Tokens*) — плагин
+     подключится сам.
+4. [ ] **Redeploy** → `/api/health` → `"sentry":true`. Проверка фронта: в консоли браузера
+   `localStorage.setItem('vaibik.debug','1')` → открой `#/debug/crash` — увидишь экран «Прости, Бипи споткнулся»,
+   а в Sentry — событие `CrashTest`. Потом `localStorage.removeItem('vaibik.debug')`.
+
+В Sentry не уходят: почта, IP, cookies, заголовки, тела запросов, тексты промптов и отзывов, токены (вычищаются в `beforeSend`).
+
+## 9. Отзывы и Telegram-бот (10 минут)
+
+Отзывы («Отзыв» в профиле/меню и микро-опросы после первого урока, домашки и закрытия пейвола) уходят на `POST /api/feedback`:
+сервер проверяет данные, ограничивает частоту (5 за 10 минут и 30 в сутки с IP/аккаунта), пишет в таблицу `feedback`
+и, если задан `FEEDBACK_WEBHOOK_URL`, пересылает короткое сообщение в чат (без почты автора).
+
+1. [ ] Миграция `0002_feedback.sql` выполнена (шаг 1.2). Читать отзывы: *SQL Editor* →
+   `select * from public.feedback_recent;` (или *Table Editor → feedback*). Ученики видят только свои отзывы, анонимы — ничего.
+2. [ ] **Telegram-бот:**
+   1. В Telegram открой [@BotFather](https://t.me/BotFather) → `/newbot` → имя `Вайбик отзывы` → username, например `vaibik_feedback_bot`.
+      Он пришлёт **токен** вида `123456789:AA…` — это **секрет**.
+   2. Создай группу «Вайбик — отзывы», добавь туда бота и напиши в группе любое сообщение (например `/start`).
+      (Или просто напиши боту в личку — тогда отзывы будут приходить тебе.)
+   3. Открой в браузере `https://api.telegram.org/bot<ТОКЕН>/getUpdates` → найди `"chat":{"id":…}`.
+      У группы id отрицательный (`-100…`). Если пусто — напиши в группу ещё раз и обнови страницу.
+   4. Собери адрес: `https://api.telegram.org/bot<ТОКЕН>/sendMessage?chat_id=<ID>`.
+3. [ ] Vercel → `FEEDBACK_WEBHOOK_URL` = этот адрес (**секрет**, без `VITE_`) → **Redeploy**.
+   Подходят и Discord (*Server Settings → Integrations → Webhooks*) или Slack (*Incoming Webhooks*) — просто вставь их URL.
+4. [ ] Проверка: `/api/health` → `"feedbackWebhook":true`; оставь отзыв на сайте — в чат придёт «💬 Новый отзыв · Вайбик / Оценка: 4/5 · Тема: Идея · Откуда: …».
+
+Без Supabase и без вебхука отзывы сохраняются только в браузере (демо). Только вебхук без Supabase: `VITE_FEEDBACK_API=true`.
+
+---
+
 ## Все переменные
 
 | Переменная | Где видна | Обязательна | По умолчанию | Назначение |
@@ -204,6 +268,15 @@
 | `POLAR_PRODUCT_ANNUAL_ID` | сервер | для оплаты | — | id продукта «год» |
 | `POLAR_WEBHOOK_SECRET` | сервер | для оплаты | — | секрет вебхука (секрет) |
 | `POLAR_API_VERSION` | сервер | нет | `2026-10` | заголовок `Polar-Version` |
+| `VITE_POSTHOG_KEY` | браузер | для аналитики | — | `phc_…` (публичный ключ проекта) |
+| `VITE_POSTHOG_HOST` | браузер | нет | `https://us.i.posthog.com` | регион PostHog |
+| `VITE_POSTHOG_SESSION_RECORDING` | браузер | нет | выкл. | `true` — запись сессий (с маскировкой) |
+| `VITE_SENTRY_DSN` | браузер | для ошибок | — | DSN проекта `vaibik-web` (публичный) |
+| `VITE_SENTRY_ENVIRONMENT` | браузер | нет | `production` | окружение в Sentry |
+| `VITE_FEEDBACK_API` | браузер | нет | вкл. при Supabase | `true` / `false` — слать отзывы на `/api/feedback` |
+| `SENTRY_DSN` | сервер | для ошибок /api | — | DSN проекта `vaibik-api` |
+| `SENTRY_ENVIRONMENT` | сервер | нет | `VERCEL_ENV` | окружение в Sentry |
+| `FEEDBACK_WEBHOOK_URL` | сервер | нет | — | Telegram/Discord/Slack для отзывов (секрет) |
 
 ---
 
@@ -219,4 +292,7 @@
 | «Не получилось открыть оплату» | Неверный токен/скоупы или id продукта не из того окружения (sandbox ≠ production) |
 | Оплатил, а Pro не включился | Polar → *Webhooks → Deliveries*: 403 — неверный `POLAR_WEBHOOK_SECRET`; 500 — проверь `SUPABASE_SECRET_KEY` и что SQL-миграция выполнена; 503 — нет секрета на сервере |
 | Пейвол не появляется | `VITE_REVIEW_MODE` не `false` или `VITE_BILLING_ENABLED` не `true` (и Redeploy) |
+| Отзыв «отправлен», но в базе пусто | Не выполнена `0002_feedback.sql`; `/api/feedback` отвечает 503, если нет ни Supabase, ни вебхука |
+| В Telegram ничего не приходит | Бот не добавлен в группу, неверный `chat_id` (у групп он с `-100`) или нет Redeploy после `FEEDBACK_WEBHOOK_URL` |
+| В PostHog нет событий | Нет `VITE_POSTHOG_KEY` в сборке (Redeploy), неверный регион в `VITE_POSTHOG_HOST`, или блокировщик рекламы |
 | 403 «Запрос с чужого сайта» | Фронт на другом домене → поставь `APP_URL` = адрес фронта |

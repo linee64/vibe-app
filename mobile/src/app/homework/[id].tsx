@@ -6,7 +6,11 @@ import { findHomework, HOMEWORK_XP, type BlockColor, type HomeworkDef, type Prom
 import { UNITS } from '@web/data/course'
 import { UNIT_COLORS } from '@web/data/types'
 import { buildReviewRequest, mergeAiIntoPrompt } from '@web/homework/ai'
-import { cardSim, debugSim, deploySim, formSim, landingSim, type Sim, type Tone } from '@web/homework/sims'
+import { type Sim, type Tone } from '@web/homework/sims'
+import { getLocalizedSims } from '@web/i18n/homework/sims'
+import { getLocale, t } from '@web/i18n/core'
+import { track } from '../../lib/analytics'
+import { requestMicroPrompt } from '../../lib/feedback'
 import { reviewPrompt, type ReviewOutcome } from '@web/lib/review'
 import { AI_ENABLED } from '../../lib/env'
 import { useStore } from '../../store/Store'
@@ -34,13 +38,14 @@ const TONE_BG: Record<Tone | 'intro', { bg: string; fg: string }> = {
 
 interface Msg { id: number; role: 'user' | 'ai' | 'bipi'; text: string; changes?: string[]; bullets?: string[]; improved?: string; tone?: Tone | 'intro' }
 
-const SIMS: Record<string, Sim<never, never>> = { hw1: cardSim, hw2: landingSim, hw3: debugSim, hw4: formSim, hw5: deploySim } as unknown as Record<string, Sim<never, never>>
+/** Симуляторы на языке ученика (ключевые слова ru + en + язык) */
+const sims = () => getLocalizedSims(getLocale()) as unknown as Record<string, Sim<never, never>>
 
 export default function HomeworkScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const def = findHomework(id)
   if (!def) return <Missing />
-  const sim = SIMS[def.id]
+  const sim = sims()[def.id]
   if (!sim) return <Missing />
   return <Runner def={def} sim={sim} />
 }
@@ -49,8 +54,8 @@ function Missing() {
   const router = useRouter()
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-      <Txt w={900} size={20}>Домашка не найдена</Txt>
-      <Btn label="На путь" onPress={() => router.replace('/(tabs)/learn')} />
+      <Txt w={900} size={20}>{t('x0uob23t')}</Txt>
+      <Btn label={t('x0odeypg')} onPress={() => router.replace('/(tabs)/learn')} />
     </View>
   )
 }
@@ -80,6 +85,12 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
   const announced = useRef(false)
   const fallbackNoted = useRef(false)
   const [aiMode, setAiMode] = useState<'on' | 'off'>(AI_ENABLED ? 'on' : 'off')
+  const usedAi = useRef(false)
+  const iteration = useRef(0)
+
+  useEffect(() => {
+    track('homework_started', { homework_id: def.id, unit: unit.num })
+  }, [def.id, unit.num])
 
   const checks = sim.check(state, ui)
   const doneCount = def.requirements.filter((r) => checks[r.id]).length
@@ -89,7 +100,7 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
   useEffect(() => {
     if (allDone && !announced.current && !busy) {
       announced.current = true
-      setMsgs((m) => [...m, { id: nextId.current++, role: 'bipi', text: 'Все требования выполнены! 🎉 Жми «Сдать домашку».', tone: 'good' }])
+      setMsgs((m) => [...m, { id: nextId.current++, role: 'bipi', text: t('x129mn8u'), tone: 'good' }])
     }
   }, [allDone, busy])
 
@@ -108,9 +119,18 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
     const ok = !missing
     let bipi = turn.bipi
     const tip = missing ? (sim.hint?.(turn.state, uiRef.current, missing.id) ?? missing.hint) : ''
-    if (!bipi && review) bipi = ok ? 'Все требования выполнены! 🎉 Жми «Сдать домашку».' : `Промпт на ${review.score}/100. Вот что подскажу:`
-    if (!bipi) bipi = ok ? 'Все требования выполнены! 🎉 Жми «Сдать домашку».' : `${turn.tone === 'good' ? 'Отлично! Осталось ещё чуть-чуть. ' : turn.tone === 'meh' ? 'Уже лучше! ' : 'Хм, результат так себе. '}${tip}`
+    if (!bipi && review) bipi = ok ? t('x129mn8u') : t('x16jvi98', { score: review.score })
+    if (!bipi) bipi = ok ? t('x129mn8u') : `${turn.tone === 'good' ? t('x0yd8eh2') : turn.tone === 'meh' ? t('x0q6hiae') : t('x1ymh4to')}${tip}`
     if (ok) announced.current = true
+    if (outcome?.ok) usedAi.current = true
+    iteration.current += 1
+    track('homework_submitted', {
+      homework_id: def.id,
+      ai_or_sim: outcome?.ok ? 'ai' : 'sim',
+      iteration: iteration.current,
+      requirements_done: def.requirements.filter((r) => ck[r.id]).length,
+      requirements_total: def.requirements.length,
+    })
     setState(turn.state)
     const add: Omit<Msg, 'id'>[] = [
       { role: 'ai', text: turn.reply, changes: turn.changes },
@@ -118,7 +138,7 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
     ]
     if (outcome && !outcome.ok && outcome.reason !== 'disabled' && !fallbackNoted.current) {
       fallbackNoted.current = true
-      add.push({ role: 'bipi', tone: 'meh', text: outcome.reason === 'limit' ? `${outcome.message} Дальше проверяю офлайн — превью и чек-лист работают как обычно.` : 'ИИ-ментор сейчас недоступен — проверяю офлайн, всё работает как обычно 🙂' })
+      add.push({ role: 'bipi', tone: 'meh', text: outcome.reason === 'limit' ? t('x0bxtzq8', { message: outcome.message }) : t('x1l48nak') })
     }
     if (outcome && !outcome.ok && (outcome.reason === 'limit' || outcome.reason === 'disabled' || outcome.reason === 'auth')) setAiMode('off')
     push(...add)
@@ -150,10 +170,13 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
     setUi(sim.initUi())
     setDraft('')
     announced.current = false
-    setMsgs([{ id: nextId.current++, role: 'bipi', text: 'Начнём с чистого листа! ' + def.intro, tone: 'intro' }])
+    setMsgs([{ id: nextId.current++, role: 'bipi', text: t('x0qr06tw') + def.intro, tone: 'intro' }])
   }
   const submit = () => {
     const prompts = msgs.filter((m) => m.role === 'user').map((m) => m.text)
+    const again = progress.homework.includes(def.id)
+    track('homework_passed', { homework_id: def.id, ai_or_sim: usedAi.current ? 'ai' : 'sim', iterations: prompts.length, repeat: again })
+    if (!again) void requestMicroPrompt('homework')
     completeHomework(def.id, HOMEWORK_XP)
     void recordHomeworkSubmission(def.id, prompts, true)
     setDone(true)
@@ -179,14 +202,14 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
     return (
       <View testID="hw-done" style={{ flex: 1, backgroundColor: C.goldLight, paddingTop: insets.top + 30, paddingBottom: insets.bottom + 16, paddingHorizontal: 22, alignItems: 'center', gap: 10 }}>
         <Text style={{ fontSize: 56 }}>{def.badge.emoji}</Text>
-        <Txt w={900} size={26} center>Домашка сдана!</Txt>
+        <Txt w={900} size={26} center>{t('x17ri3ns')}</Txt>
         <Txt w={800} size={16} center>{def.short}</Txt>
         <View style={{ borderRadius: 16, backgroundColor: C.white, paddingHorizontal: 16, paddingVertical: 10 }}>
-          <Txt w={900} size={15} center>{again ? '+10 ВП за повтор' : `+${HOMEWORK_XP} ВП · +20 токенов`}</Txt>
+          <Txt w={900} size={15} center>{again ? t('x1spsc8s') : t('x0awglp6', { HOMEWORK_XP })}</Txt>
         </View>
-        <Txt w={700} size={13} color={C.muted} center>Значок «{def.badge.name}» — твой</Txt>
+        <Txt w={700} size={13} color={C.muted} center>{t('x0kcar36', { name: def.badge.name })}</Txt>
         <View style={{ flex: 1 }} />
-        <Btn label="На путь" block onPress={() => router.replace('/(tabs)/learn')} style={{ alignSelf: 'stretch' }} />
+        <Btn label={t('x0odeypg')} block onPress={() => router.replace('/(tabs)/learn')} style={{ alignSelf: 'stretch' }} />
       </View>
     )
   }
@@ -195,23 +218,23 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
     <View style={{ flex: 1, backgroundColor: C.white }} testID={`homework-${def.id}`}>
       <View style={{ paddingTop: insets.top + 6, paddingHorizontal: 14, paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: C.line, gap: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Pressable testID="close-hw" accessibilityLabel="Закрыть домашку" onPress={() => (sends ? setQuit(true) : router.replace('/(tabs)/learn'))} hitSlop={8}>
+          <Pressable testID="close-hw" accessibilityLabel={t('x1uhk62u')} onPress={() => (sends ? setQuit(true) : router.replace('/(tabs)/learn'))} hitSlop={8}>
             <Text style={font(900, 24, C.muted)}>✕</Text>
           </Pressable>
           <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: color.main, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 3, borderBottomColor: color.dark }}>
             <Text style={{ fontSize: 18 }}>🏠</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={font(800, 11, C.muted)}>ДОМАШКА · РАЗДЕЛ {unit.num}</Text>
+            <Text style={font(800, 11, C.muted)}>{t('x173ou9z', { num: unit.num })}</Text>
             <Text numberOfLines={1} style={font(900, 15)}>{def.short}</Text>
           </View>
           <Text style={font(900, 15, C.tealDark)}>{doneCount}/{def.requirements.length}</Text>
         </View>
         <ProgressBar value={(doneCount / def.requirements.length) * 100} color={C.teal} height={8} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          {(['chat', 'preview'] as const).map((t) => (
-            <Pressable key={t} testID={`tab-${t}`} onPress={() => setTab(t)} style={{ flex: 1, borderRadius: 12, paddingVertical: 6, backgroundColor: tab === t ? C.brand : C.snow }}>
-              <Text style={[font(900, 13, tab === t ? C.white : C.muted), { textAlign: 'center' }]}>{t === 'chat' ? 'Чат' : 'Превью'}</Text>
+          {(['chat', 'preview'] as const).map((k) => (
+            <Pressable key={k} testID={`tab-${k}`} onPress={() => setTab(k)} style={{ flex: 1, borderRadius: 12, paddingVertical: 6, backgroundColor: tab === k ? C.brand : C.snow }}>
+              <Text style={[font(900, 13, tab === k ? C.white : C.muted), { textAlign: 'center' }]}>{k === 'chat' ? t('x19o4r9c') : t('x0ufv6o7')}</Text>
             </Pressable>
           ))}
         </View>
@@ -223,7 +246,7 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
           {busy ? (
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
               <Text style={{ fontSize: 18 }}>✨</Text>
-              <Text style={font(800, 13, C.muted)}>{aiMode === 'on' ? 'Бипи проверяет промпт…' : 'ИИ пишет…'}</Text>
+              <Text style={font(800, 13, C.muted)}>{aiMode === 'on' ? t('x1vew32d') : t('x0v55e7f')}</Text>
             </View>
           ) : null}
           <View style={{ gap: 6, marginTop: 4 }}>
@@ -252,21 +275,21 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
         </ScrollView>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
           <TextInput testID="hw-input" value={draft} onChangeText={setDraft} placeholder={def.placeholder} placeholderTextColor={C.muted} multiline style={[font(700, 14), { flex: 1, maxHeight: 110, borderRadius: 14, borderWidth: 2, borderColor: C.line, paddingHorizontal: 12, paddingVertical: 8 }]} />
-          <Pressable testID="hw-send" accessibilityLabel="Отправить промпт" disabled={!draft.trim() || busy} onPress={send} style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center', opacity: !draft.trim() || busy ? 0.4 : 1, borderBottomWidth: 4, borderBottomColor: C.brandDark }}>
+          <Pressable testID="hw-send" accessibilityLabel={t('x12pfvb2')} disabled={!draft.trim() || busy} onPress={send} style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center', opacity: !draft.trim() || busy ? 0.4 : 1, borderBottomWidth: 4, borderBottomColor: C.brandDark }}>
             <Text style={font(900, 18, C.white)}>➤</Text>
           </Pressable>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Btn label="Заново" tone="ghost" small style={{ flex: 1 }} onPress={restart} />
-          {allDone ? <Btn testID="hw-submit" label="Сдать домашку" tone="gold" small style={{ flex: 2 }} onPress={submit} /> : null}
+          <Btn label={t('x0fw0lod')} tone="ghost" small style={{ flex: 1 }} onPress={restart} />
+          {allDone ? <Btn testID="hw-submit" label={t('x1ggawkn')} tone="gold" small style={{ flex: 2 }} onPress={submit} /> : null}
         </View>
       </View>
 
-      <Sheet open={quit} onClose={() => setQuit(false)} label="Выйти из домашки">
-        <Txt w={900} size={20} center>Выйти из домашки?</Txt>
-        <Txt w={600} size={14} color={C.muted} center>Промпты этого захода не сохранятся.</Txt>
-        <Btn label="Остаться" block onPress={() => setQuit(false)} />
-        <Btn label="Выйти" tone="coral" block onPress={() => router.replace('/(tabs)/learn')} />
+      <Sheet open={quit} onClose={() => setQuit(false)} label={t('x1clm5v4')}>
+        <Txt w={900} size={20} center>{t('x1kmy6jh')}</Txt>
+        <Txt w={600} size={14} color={C.muted} center>{t('x18gt1ko')}</Txt>
+        <Btn label={t('x1ovzb8w')} block onPress={() => setQuit(false)} />
+        <Btn label={t('x0c80x6j')} tone="coral" block onPress={() => router.replace('/(tabs)/learn')} />
       </Sheet>
     </View>
   )
@@ -282,19 +305,19 @@ function Bubble({ m, onUse }: { m: Msg; onUse: (t: string) => void }) {
       </View>
     )
   if (m.role === 'bipi') {
-    const t = TONE_BG[m.tone ?? 'intro']
+    const tone = TONE_BG[m.tone ?? 'intro']
     return (
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
         <View style={{ width: 34, height: 34, borderRadius: 34, borderWidth: 2, borderColor: C.line, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }}>
           <MascotHead size={24} />
         </View>
-        <View style={{ flex: 1, borderRadius: 16, borderBottomLeftRadius: 5, backgroundColor: t.bg, paddingHorizontal: 12, paddingVertical: 8, gap: 4 }}>
-          <Text style={[font(900, 11, t.fg), { opacity: 0.7 }]}>БИПИ</Text>
-          <Text style={[font(700, 14, t.fg), { lineHeight: 19 }]}>{m.text}</Text>
+        <View style={{ flex: 1, borderRadius: 16, borderBottomLeftRadius: 5, backgroundColor: tone.bg, paddingHorizontal: 12, paddingVertical: 8, gap: 4 }}>
+          <Text style={[font(900, 11, tone.fg), { opacity: 0.7 }]}>{t('x02wumir')}</Text>
+          <Text style={[font(700, 14, tone.fg), { lineHeight: 19 }]}>{m.text}</Text>
           {m.bullets?.map((b, i) => (
-            <Text key={i} style={font(600, 13, t.fg)}>• {b}</Text>
+            <Text key={i} style={font(600, 13, tone.fg)}>• {b}</Text>
           ))}
-          {m.improved ? <Pressable onPress={() => onUse(m.improved!)} style={{ alignSelf: 'flex-start', borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.7)', paddingHorizontal: 8, paddingVertical: 4 }}><Text style={font(900, 12, C.brand)}>✨ Вставить улучшенный промпт</Text></Pressable> : null}
+          {m.improved ? <Pressable onPress={() => onUse(m.improved!)} style={{ alignSelf: 'flex-start', borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.7)', paddingHorizontal: 8, paddingVertical: 4 }}><Text style={font(900, 12, C.brand)}>{t('x1t5ei25')}</Text></Pressable> : null}
         </View>
       </View>
     )
@@ -305,7 +328,7 @@ function Bubble({ m, onUse }: { m: Msg; onUse: (t: string) => void }) {
         <Text style={{ color: C.white }}>✨</Text>
       </View>
       <View style={{ flex: 1, borderRadius: 16, borderTopLeftRadius: 5, borderWidth: 2, borderColor: C.line, paddingHorizontal: 12, paddingVertical: 8, gap: 4 }}>
-        <Text style={font(900, 11, C.muted)}>ИИ</Text>
+        <Text style={font(900, 11, C.muted)}>{t('x1crlu99')}</Text>
         <Text style={[font(700, 14), { lineHeight: 19 }]}>{m.text}</Text>
         {m.changes?.map((c, i) => (
           <Text key={i} style={font(700, 13, C.tealDark)}>✓ {c}</Text>

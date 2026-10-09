@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createReviewHandler, sanitizeReview, validateReviewInput, buildMessages } from '../../server/review.js'
+import { createReviewHandler, sanitizeReview, validateReviewInput, buildMessages, SYSTEM_PROMPT, systemPromptFor } from '../../server/review.js'
 import { BASE_ENV, jsonResponse, mockDb, req, setEnv } from './helpers.js'
 
 const BODY = {
@@ -185,5 +185,38 @@ describe('review helpers', () => {
       values: {},
     })
     expect(sanitizeReview({ score: 999 }, v.input).score).toBe(100)
+  })
+
+  it('locale: по умолчанию ru, системный промпт не меняется', () => {
+    const v = validateReviewInput(BODY)
+    if (!v.ok) throw new Error('invalid')
+    expect(v.input.locale).toBe('ru')
+    expect(buildMessages(v.input)[0].content).toBe(SYSTEM_PROMPT)
+  })
+  it('locale: en/kk/es/zh — Бипи отвечает на языке ученика', () => {
+    for (const [locale, marker] of [['en', 'English'], ['kk', 'қазақ'], ['es', 'español'], ['zh', '简体中文']] as const) {
+      const v = validateReviewInput({ ...BODY, locale })
+      if (!v.ok) throw new Error('invalid ' + locale)
+      expect(v.input.locale).toBe(locale)
+      const sys = buildMessages(v.input)[0].content
+      expect(sys).toBe(systemPromptFor(locale))
+      expect(sys).toContain(marker)
+      expect(sys).not.toContain('по-русски')
+      expect(sys).toContain('ТОЛЬКО на этом языке')
+    }
+  })
+  it('locale: неизвестный язык — 400', () => {
+    expect(validateReviewInput({ ...BODY, locale: 'de' }).ok).toBe(false)
+    expect(validateReviewInput({ ...BODY, locale: 5 }).ok).toBe(false)
+  })
+  it('handler передаёт язык в DeepSeek', async () => {
+    setEnv(BASE_ENV)
+    vi.spyOn(console, 'info').mockImplementation(() => {})
+    const { db } = mockDb()
+    const fetchImpl = vi.fn(async (..._args: unknown[]) => deepseekOk())
+    const res = await createReviewHandler({ db, fetchImpl: fetchImpl as unknown as typeof fetch })(req('/api/ai/review', { ...BODY, locale: 'en' }))
+    expect(res.status).toBe(200)
+    const sent = JSON.parse((fetchImpl.mock.calls[0] as unknown as [string, { body: string }])[1].body)
+    expect(sent.messages[0].content).toContain('English')
   })
 })

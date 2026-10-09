@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Nunito", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Nunito", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --color-brand: #7c4dff;
@@ -172,3 +172,11 @@ html { scroll-behavior: smooth; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .anim-float-tilt { animation: none; }
 }
+
+/* ---------- i18n: длинные слова (kk/es) и китайский перенос ---------- */
+/* Длинная подпись (kk/es, да и ru на 320px) не вылезает из кнопки — переносится аккуратно, по центру */
+.btn { white-space: normal; text-wrap: balance; line-height: 1.2; padding-block: 6px; text-align: center; }
+h1, h2, h3 { overflow-wrap: break-word; hyphens: auto; }
+:lang(zh) { line-break: strict; word-break: normal; }
+:lang(zh) .btn { letter-spacing: .02em; }
+:lang(zh) h1, :lang(zh) h2 { text-wrap: pretty; }

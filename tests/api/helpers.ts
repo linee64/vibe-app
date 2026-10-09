@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { Db, SubscriptionRow } from '../../server/db.js'
+import type { Db, FeedbackRow, SubscriptionRow } from '../../server/db.js'
 
 export const USER = { id: '11111111-2222-4333-8444-555555555555', email: 'aidar@example.com' }
 export const TOKEN = 'header.payload.signature-of-a-valid-looking-token'
@@ -23,6 +23,7 @@ export function mockDb(over: Partial<Db> & { sub?: SubscriptionRow | null; usage
     markWebhook: vi.fn(async (id: string) => {
       seen.add(id)
     }),
+    insertFeedback: vi.fn(async (_row: FeedbackRow) => {}),
     ...over,
   }
   return { db: db as unknown as Db & typeof db, counts }

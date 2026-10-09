@@ -11,6 +11,12 @@ export const ENV = {
   reviewMode: clean(process.env.EXPO_PUBLIC_REVIEW_MODE),
   rcIos: clean(process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY),
   rcAndroid: clean(process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY),
+  /** PostHog: ключ проекта (phc_…) — публичный по замыслу */
+  posthogKey: clean(process.env.EXPO_PUBLIC_POSTHOG_KEY),
+  posthogHost: (clean(process.env.EXPO_PUBLIC_POSTHOG_HOST) || 'https://us.i.posthog.com').replace(/\/+$/, ''),
+  /** Sentry DSN — публичный по замыслу */
+  sentryDsn: clean(process.env.EXPO_PUBLIC_SENTRY_DSN),
+  sentryEnv: clean(process.env.EXPO_PUBLIC_SENTRY_ENVIRONMENT),
 }
 
 function decodeBase64Url(part: string): string {
@@ -45,3 +51,8 @@ export const API_BASE = ENV.apiBase
 export const AI_ENABLED = SUPABASE_ENABLED && !!API_BASE
 /** Режим ревью (по умолчанию включён): тиры открыты, пейвол не мешает */
 export const REVIEW_MODE = ENV.reviewMode !== 'false'
+
+export const ANALYTICS_ENABLED = !!ENV.posthogKey
+export const SENTRY_ENABLED = !!ENV.sentryDsn
+/** Отзывы уходят на сервер, если известен адрес бэкенда; иначе хранятся на устройстве */
+export const FEEDBACK_API_ENABLED = !!API_BASE

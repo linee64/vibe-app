@@ -6,9 +6,11 @@ import { useStore } from '../../store/Store'
 import { highlight, mono } from '../code'
 import { BrowserBar } from '../exercises/shared'
 import { C, font } from '../../theme'
+import { t } from '@web/i18n/core'
+import { tx } from '@web/i18n/rich'
 
-const QUALITY = ['пусто', 'слабо', 'так себе', 'неплохо', 'хорошо', 'отлично']
-const MENU: [string, string][] = [['Эспрессо', '120 ₽'], ['Капучино', '220 ₽'], ['Раф', '260 ₽'], ['Круассан', '180 ₽']]
+const QUALITY = () => [t('m.preview.quality.1'), t('m.preview.quality.2'), t('m.preview.quality.3'), t('m.preview.quality.4'), t('m.preview.quality.5'), t('m.preview.quality.6')]
+const MENU = (): [string, string][] => [[t('m.preview.menu.1'), t('m.preview.menuPrice.1')], [t('m.preview.menu.2'), t('m.preview.menuPrice.2')], [t('m.preview.menu.3'), t('m.preview.menuPrice.3')], [t('m.preview.menu.4'), t('m.preview.menuPrice.4')]]
 
 interface Pal { bg: string; hero: string; accent: string; dark: string; text: string; soft: string }
 const PALETTES: Record<PaletteKey, Pal> = {
@@ -50,10 +52,10 @@ function Empty({ text }: { text: string }) {
 export function CardPreview({ state: s }: { state: CardState }) {
   const score = [s.role, s.goal, s.context, s.limits, s.format].filter(Boolean).length
   const wordsN = s.limits ? (s.format ? 54 : 46) : 340
-  const intro = !s.role ? (s.context ? 'Кружка. Держит тепло 6 часов. Объём 350 мл. Подходит для студентов и офиса.' : 'Это хорошая кружка. Она подходит для напитков и имеет хорошее качество.') : s.context ? `${s.friendly ? 'Твой' : 'Ваш'} утренний кофе остаётся горячим до самого обеда — даже если пары или созвоны затянулись.` : 'Этот товар точно поднимет вам настроение и станет любимым!'
-  const bullets = s.context ? ['Держит тепло 6 часов', '350 мл — как большой капучино', 'Не протекает в сумке'] : ['Высокое качество', 'Стильный дизайн', 'Удобная в использовании']
-  const cta = s.context ? (s.friendly ? 'Закажи сегодня — и завтра твой кофе уже в дороге с тобой.' : 'Закажите сегодня — и завтра ваш кофе уже поедет с вами.') : 'Купите прямо сейчас!'
-  const title = s.format ? (s.context ? 'Термокружка «Термо»: кофе горячий 6 часов' : 'Кружка — отличный выбор') : null
+  const intro = !s.role ? (s.context ? t('x1wteu36') : t('x0kdn1dy')) : s.context ? (s.friendly ? t('preview.card.introFriendly') : t('preview.card.introFormal')) : t('x0rhs48l')
+  const bullets = s.context ? [t('x07jtkk9'), t('x1jt4vnf'), t('x07s0h87')] : [t('x10d55m5'), t('x179xy6d'), t('x114f7mk')]
+  const cta = s.context ? (s.friendly ? t('x1lxv5n9') : t('x0dsakga')) : t('x0s1pywm')
+  const title = s.format ? (s.context ? t('x11pp66v') : t('x0wz1wgz')) : null
   const bar = score === 5 ? C.teal : score >= 3 ? C.gold : C.coral
   return (
     <View style={{ gap: 10 }}>
@@ -61,7 +63,7 @@ export function CardPreview({ state: s }: { state: CardState }) {
         <View style={{ padding: 12, gap: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ borderRadius: 8, backgroundColor: C.coral, paddingHorizontal: 8, paddingVertical: 2 }}>
-              <Text style={font(900, 11, C.white)}>МАРКЕТ</Text>
+              <Text style={font(900, 11, C.white)}>{t('x0log3a0')}</Text>
             </View>
             <View style={{ flex: 1, height: 26, borderRadius: 8, backgroundColor: C.snow }} />
           </View>
@@ -73,16 +75,16 @@ export function CardPreview({ state: s }: { state: CardState }) {
               {[0.8, 1, 0.9, 0.6].map((w, i) => (
                 <View key={i} style={{ height: i === 0 ? 18 : 11, width: `${w * 100}%`, borderRadius: 6, backgroundColor: i === 0 ? C.line : C.snow }} />
               ))}
-              <Text style={font(700, 12.5, C.muted)}>Здесь появится текст от ИИ</Text>
+              <Text style={font(700, 12.5, C.muted)}>{t('x1trmmw4')}</Text>
             </View>
           ) : !s.goal ? (
             <View style={{ borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', borderColor: C.line, padding: 12 }}>
-              <Text style={font(700, 13.5, C.muted)}>«Чем помочь? 🙂 Уточни задачу.» — ИИ не понял, что писать</Text>
+              <Text style={font(700, 13.5, C.muted)}>{t('x1gkwbut')}</Text>
             </View>
           ) : (
             <View style={{ gap: 6 }}>
-              <Text style={font(900, title ? 17 : 15, title ? C.ink : C.muted)}>{title ?? 'Кружка'}</Text>
-              <Text style={font(800, 12, C.goldDark)}>★★★★★ <Text style={font(800, 12, C.muted)}>4,9 · 312 отзывов</Text></Text>
+              <Text style={font(900, title ? 17 : 15, title ? C.ink : C.muted)}>{title ?? t('x1ifcvmc')}</Text>
+              <Text style={font(800, 12, C.goldDark)}>★★★★★ <Text style={font(800, 12, C.muted)}>{t('x0loduu3')}</Text></Text>
               {s.format ? (
                 <View style={{ gap: 4 }}>
                   <Text style={font(600, 13.5)}>{intro}</Text>
@@ -94,21 +96,21 @@ export function CardPreview({ state: s }: { state: CardState }) {
               ) : (
                 <Text style={font(600, 13.5)}>{intro} {bullets.join('. ')}. {cta}</Text>
               )}
-              {!s.limits ? <Text numberOfLines={3} style={font(600, 12, C.muted)}>🔥🔥 Кроме того, хотим отметить, что в современном мире очень важно иметь качественную посуду, ведь каждый день мы пьём напитки… ✨✨</Text> : null}
+              {!s.limits ? <Text numberOfLines={3} style={font(600, 12, C.muted)}>{t('x1z0a03a')}</Text> : null}
             </View>
           )}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={font(900, 18)}>1 290 ₽</Text>
             <View style={{ borderRadius: 12, backgroundColor: C.brand, paddingHorizontal: 12, paddingVertical: 6, borderBottomWidth: 3, borderBottomColor: C.brandDark }}>
-              <Text style={font(900, 12, C.white)}>В КОРЗИНУ</Text>
+              <Text style={font(900, 12, C.white)}>{t('x1wg0rhy')}</Text>
             </View>
           </View>
         </View>
       </Frame>
       <View style={{ alignSelf: 'stretch', maxWidth: '100%', borderRadius: 16, borderWidth: 2, borderColor: C.line, backgroundColor: C.white, padding: 12, gap: 8 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={[font(800, 13, C.muted), { textTransform: 'uppercase' }]}>Качество ответа</Text>
-          <Text style={font(900, 14, score === 5 ? C.tealDark : score >= 3 ? C.goldDark : C.coralDark)}>{QUALITY[score]} · {score}/5</Text>
+          <Text style={[font(800, 13, C.muted), { textTransform: 'uppercase' }]}>{t('x18lpc17')}</Text>
+          <Text style={font(900, 14, score === 5 ? C.tealDark : score >= 3 ? C.goldDark : C.coralDark)}>{QUALITY()[score]} · {score}/5</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 5 }}>
           {[0, 1, 2, 3, 4].map((i) => (
@@ -117,7 +119,7 @@ export function CardPreview({ state: s }: { state: CardState }) {
         </View>
         {s.asked && s.goal ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {[[s.limits, `≈ ${wordsN} слов`], [s.format, s.format ? 'есть структура' : 'сплошной текст'], [s.context, s.context ? 'конкретные факты' : 'общие слова'], [s.role, s.role ? 'продающий тон' : 'сухой тон']].map(([ok, label]) => (
+            {[[s.limits, t('x19fg7qy', { wordsN })], [s.format, s.format ? t('x01dktza') : t('x17vsf2w')], [s.context, s.context ? t('x1uj7jzl') : t('x0cup0mk')], [s.role, s.role ? t('x1snq3dx') : t('x08b0wsu')]].map(([ok, label]) => (
               <View key={String(label)} style={{ borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2, backgroundColor: ok ? C.tealLight : C.coralLight }}>
                 <Text style={font(800, 11.5, ok ? C.tealDark : C.coralDark)}>{label as string}</Text>
               </View>
@@ -134,7 +136,7 @@ export function CardPreview({ state: s }: { state: CardState }) {
 function LandingPage({ s }: { s: LandingState }) {
   const p = PALETTES[s.palette]
   const btn = PALETTES[s.ctaColor ?? (s.palette === 'none' ? 'none' : s.palette)]
-  const name = s.name ?? (s.coffee ? 'Кофейня' : 'Мой сайт')
+  const name = s.name ?? (s.coffee ? t('x02qydcd') : t('x1kdqii8'))
   return (
     <View style={{ backgroundColor: p.bg, paddingBottom: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10 }}>
@@ -147,25 +149,25 @@ function LandingPage({ s }: { s: LandingState }) {
         {s.adaptive && (s.nav || s.menu) ? <Text style={font(900, 18, p.dark)}>☰</Text> : null}
       </View>
       <View style={{ marginHorizontal: 12, borderRadius: 22, backgroundColor: p.hero, padding: 16, alignItems: 'center', gap: 6 }}>
-        {s.coffee ? <Text style={[font(900, 11, p.accent), { letterSpacing: 1.4 }]}>КОФЕЙНЯ · С 2026</Text> : null}
+        {s.coffee ? <Text style={[font(900, 11, p.accent), { letterSpacing: 1.4 }]}>{t('x0blozvz')}</Text> : null}
         <Text style={[font(900, 28, p.dark), { textAlign: 'center' }]}>{name}</Text>
-        <Text style={[font(700, 14, p.text), { textAlign: 'center', opacity: 0.8 }]}>{s.slogan ?? (s.coffee ? 'Лучший кофе в городе' : 'Добро пожаловать на наш сайт!')}</Text>
+        <Text style={[font(700, 14, p.text), { textAlign: 'center', opacity: 0.8 }]}>{s.slogan ?? (s.coffee ? t('x18l7aww') : t('x1cyi9lt'))}</Text>
         {s.cta ? (
           <View style={{ marginTop: 6, borderRadius: 14, backgroundColor: btn.accent, paddingHorizontal: 18, paddingVertical: 9, borderBottomWidth: 4, borderBottomColor: btn.dark }}>
             <Text style={font(900, 13, C.white)}>{s.ctaText.toUpperCase()}</Text>
           </View>
         ) : null}
         <Cup size={90} color={p.accent} dark={p.dark} />
-        {!s.adaptive ? <Text style={font(900, 12, C.coralDark)}>↔ страница шире экрана — нужен адаптив</Text> : null}
+        {!s.adaptive ? <Text style={font(900, 12, C.coralDark)}>{t('x0pr5hmp')}</Text> : null}
       </View>
       {s.menu ? (
         <View style={{ padding: 14 }}>
-          <Text style={[font(900, 20, p.dark), { marginBottom: 8 }]}>Меню</Text>
+          <Text style={[font(900, 20, p.dark), { marginBottom: 8 }]}>{t('x03ufco1')}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {MENU.map(([n, price], i) => (
+            {MENU().map(([n, price], i) => (
               <View key={n} style={{ width: '47%', flexGrow: 1, borderRadius: 14, backgroundColor: p.soft, padding: 10, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: p.hero }}>
                 <Cup size={30} color={p.accent} dark={p.dark} />
-                <Text style={font(900, 13, p.text)}>{s.coffee ? n : `Товар ${i + 1}`}</Text>
+                <Text style={font(900, 13, p.text)}>{s.coffee ? n : t('x0bh8bpx', { v: i + 1 })}</Text>
                 <Text style={font(800, 13, p.accent)}>{s.coffee ? price : '100 ₽'}</Text>
               </View>
             ))}
@@ -174,14 +176,14 @@ function LandingPage({ s }: { s: LandingState }) {
       ) : null}
       {s.about ? (
         <View style={{ paddingHorizontal: 14, paddingBottom: 8 }}>
-          <Text style={font(900, 18, p.dark)}>О нас</Text>
-          <Text style={font(600, 13, p.text)}>Обжариваем зерно сами, каждое утро. Приходи с ноутбуком — у нас быстрый Wi‑Fi.</Text>
+          <Text style={font(900, 18, p.dark)}>{t('x1xu950d')}</Text>
+          <Text style={font(600, 13, p.text)}>{t('x065fzxq')}</Text>
         </View>
       ) : null}
       {s.reviews ? (
         <View style={{ paddingHorizontal: 14, paddingBottom: 8, gap: 6 }}>
-          <Text style={font(900, 18, p.dark)}>Отзывы</Text>
-          {([['Лиза', 'Лучший раф в районе!'], ['Тимур', 'Работаю здесь по утрам — уютно.'], ['Аня', 'Круассаны тают во рту.']] as const).map(([n, q]) => (
+          <Text style={font(900, 18, p.dark)}>{t('x0554ciw')}</Text>
+          {([[t('x0rgbakp'), t('x1cvhc39')], [t('x0w5dgwi'), t('x0m1oojj')], [t('x17pka0r'), t('x0jj609v')]] as const).map(([n, q]) => (
             <View key={n} style={{ borderRadius: 14, backgroundColor: p.soft, padding: 10 }}>
               <Text style={font(900, 12, '#FFB61D')}>★★★★★</Text>
               <Text style={font(700, 13, p.text)}>«{q}»</Text>
@@ -192,8 +194,8 @@ function LandingPage({ s }: { s: LandingState }) {
       ) : null}
       {s.contacts ? (
         <View style={{ marginHorizontal: 12, borderRadius: 18, backgroundColor: p.hero, padding: 14 }}>
-          <Text style={font(900, 16, p.dark)}>Ждём в гости</Text>
-          <Text style={font(700, 13, p.text)}>ул. Кофейная, 7 · ежедневно 8:00–22:00</Text>
+          <Text style={font(900, 16, p.dark)}>{t('x1rfwz02')}</Text>
+          <Text style={font(700, 13, p.text)}>{t('x1tw6u31')}</Text>
         </View>
       ) : null}
       <Text style={[font(700, 12, p.text), { paddingHorizontal: 14, paddingTop: 8, opacity: 0.6 }]}>© 2026 {name}</Text>
@@ -212,17 +214,17 @@ export function LandingPreview({ state: s, ui, setUi }: { state: LandingState; u
       ))}
     </View>
   )
-  if (!s.built) return <Frame url={url}>{toggle}<Empty text="Отправь промпт — и здесь появится сайт кофейни" /></Frame>
+  if (!s.built) return <Frame url={url}>{toggle}<Empty text={t('x00lfllo')} /></Frame>
   return (
     <View style={{ gap: 6 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={[font(800, 12, C.muted), { textTransform: 'uppercase' }]}>Превью · {ui.device === 'phone' ? 'телефон' : 'компьютер'}</Text>
+        <Text style={[font(800, 12, C.muted), { textTransform: 'uppercase' }]}>{t('x15n7wuu')}{' '}{ui.device === 'phone' ? t('x15hbmt9') : t('x056s4ux')}</Text>
         {toggle}
       </View>
       <Frame url={url}>
         <LandingPage s={s} />
       </Frame>
-      {ui.device === 'phone' && s.adaptive ? <Text style={[font(800, 13, C.tealDark), { textAlign: 'center' }]}>✓ Всё в одну колонку, ничего не вылезает</Text> : null}
+      {ui.device === 'phone' && s.adaptive ? <Text style={[font(800, 13, C.tealDark), { textAlign: 'center' }]}>{t('x0vtg924')}</Text> : null}
     </View>
   )
 }
@@ -256,7 +258,7 @@ export function TodoPreview({ state: s, ui, setUi, insert }: { state: DebugState
   const [text, setText] = useState('')
   const [note, setNote] = useState<string | null>(null)
   const [open, setOpen] = useState(true)
-  const tasks = ['Купить зёрна для кофейни', 'Позвонить Бипи', ...ui.added]
+  const tasks = [t('x11j4ynb'), t('x1w35vuw'), ...ui.added]
   const add = () => {
     if (!s.fixed) {
       setUi((u) => ({ ...u, failedClicks: u.failedClicks + 1 }))
@@ -264,27 +266,27 @@ export function TodoPreview({ state: s, ui, setUi, insert }: { state: DebugState
       return
     }
     if (!text.trim()) {
-      setNote('Пустую задачу не добавить — ИИ добавил проверку 👌')
+      setNote(t('x1nj6q60'))
       return
     }
     setUi((u) => ({ ...u, added: [...u.added, text.trim()], verified: true }))
     setText('')
-    setNote('Задача добавлена — баг побеждён! 🎉')
+    setNote(t('x183bcyg'))
   }
   return (
     <View style={{ gap: 10 }}>
-      <Frame url="localhost:5173 — Список дел">
+      <Frame url={t('x0su2q67')}>
         <View style={{ padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={font(900, 17)}>📝 Мои задачи</Text>
+            <Text style={font(900, 17)}>{t('x09c3foy')}</Text>
             <View style={{ borderRadius: 99, paddingHorizontal: 9, paddingVertical: 2, backgroundColor: s.fixed ? C.tealLight : C.coralLight }}>
-              <Text style={font(900, 11, s.fixed ? C.tealDark : C.coralDark)}>{s.fixed ? 'РАБОТАЕТ' : 'СЛОМАНО'}</Text>
+              <Text style={font(900, 11, s.fixed ? C.tealDark : C.coralDark)}>{s.fixed ? t('x0qrhagb') : t('x1bvlxfm')}</Text>
             </View>
           </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TextInput testID="task-input" value={text} onChangeText={setText} onSubmitEditing={add} placeholder="Новая задача…" placeholderTextColor={C.muted} accessibilityLabel="Новая задача" style={[font(700, 14), { flex: 1, borderRadius: 12, borderWidth: 2, borderColor: C.line, paddingHorizontal: 12, paddingVertical: 8 }]} />
+            <TextInput testID="task-input" value={text} onChangeText={setText} onSubmitEditing={add} placeholder={t('x036reyf')} placeholderTextColor={C.muted} accessibilityLabel={t('x02zu33f')} style={[font(700, 14), { flex: 1, borderRadius: 12, borderWidth: 2, borderColor: C.line, paddingHorizontal: 12, paddingVertical: 8 }]} />
             <Pressable testID="add-task" onPress={add} style={{ borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center', backgroundColor: s.restyled && !s.fixed ? C.brand : C.teal, borderBottomWidth: 3, borderBottomColor: s.restyled && !s.fixed ? C.brandDark : C.tealDark }}>
-              <Text style={font(900, 13, C.white)}>{s.restyled && !s.fixed ? '✨ ' : ''}ДОБАВИТЬ</Text>
+              <Text style={font(900, 13, C.white)}>{tx('x0aljqus', { v: s.restyled && !s.fixed ? '✨ ' : '' })}</Text>
             </Pressable>
           </View>
           {note ? <Text style={font(800, 13, C.tealDark)}>{note}</Text> : null}
@@ -298,12 +300,12 @@ export function TodoPreview({ state: s, ui, setUi, insert }: { state: DebugState
       </Frame>
       <View style={{ borderRadius: 16, backgroundColor: '#1b1726', overflow: 'hidden' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 8 }}>
-          <Text style={font(800, 12, 'rgba(255,255,255,0.6)')}>КОНСОЛЬ</Text>
+          <Text style={font(800, 12, 'rgba(255,255,255,0.6)')}>{t('x1xoeutg')}</Text>
           {!s.fixed ? <View style={{ borderRadius: 99, backgroundColor: C.coral, paddingHorizontal: 6 }}><Text style={font(900, 11, C.white)}>{1 + ui.failedClicks}</Text></View> : null}
-          {!s.fixed ? <Pressable testID="copy-error" onPress={() => insert(BUG_ERROR)} style={{ marginLeft: 'auto', borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 9, paddingVertical: 4 }}><Text style={font(800, 12, C.white)}>Скопировать ошибку</Text></Pressable> : null}
+          {!s.fixed ? <Pressable testID="copy-error" onPress={() => insert(BUG_ERROR)} style={{ marginLeft: 'auto', borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 9, paddingVertical: 4 }}><Text style={font(800, 12, C.white)}>{t('x1rxyg3l')}</Text></Pressable> : null}
         </View>
         <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-          {s.fixed ? <Text style={mono(12, '#6FE3D3')}>✓ Ошибок нет · задач в списке: {tasks.length}</Text> : (
+          {s.fixed ? <Text style={mono(12, '#6FE3D3')}>{t('x1ajrisk', { length: tasks.length })}</Text> : (
             <View>
               <Text style={mono(12, '#FF9C85')}>✕ TypeError: Cannot read properties of undefined (reading `push`)</Text>
               <Text style={mono(11, 'rgba(255,156,133,0.7)')}>    at addTask (App.jsx:14:16)</Text>
@@ -311,10 +313,10 @@ export function TodoPreview({ state: s, ui, setUi, insert }: { state: DebugState
           )}
         </View>
       </View>
-      <Pressable onPress={() => setOpen((o) => !o)}><Text style={font(800, 13, C.muted)}>{open ? '▾' : '▸'} Код App.jsx</Text></Pressable>
+      <Pressable onPress={() => setOpen((o) => !o)}><Text style={font(800, 13, C.muted)}>{tx('x1fh8mcj', { v: open ? '▾' : '▸' })}</Text></Pressable>
       {open ? (
-        s.fixed ? <CodeBox title="App.jsx · исправлено ИИ" lines={FIX_CODE} start={13} /> : (
-          <CodeBox title="App.jsx" lines={BUG_CODE} start={11} mark={3} action={<Pressable testID="copy-code" onPress={() => insert(BUG_CODE.join('\n'))} style={{ borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 9, paddingVertical: 4 }}><Text style={font(800, 12, C.white)}>Скопировать код</Text></Pressable>} />
+        s.fixed ? <CodeBox title={t('x13ounq1')} lines={FIX_CODE} start={13} /> : (
+          <CodeBox title="App.jsx" lines={BUG_CODE} start={11} mark={3} action={<Pressable testID="copy-code" onPress={() => insert(BUG_CODE.join('\n'))} style={{ borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 9, paddingVertical: 4 }}><Text style={font(800, 12, C.white)}>{t('x0vzto2h')}</Text></Pressable>} />
         )
       ) : null}
     </View>
@@ -331,31 +333,31 @@ export function FormPreview({ state: s, ui, setUi }: { state: FormState; ui: For
   const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null)
   const anyField = s.name || s.email || s.message
   const fields: { k: 'name' | 'email' | 'message'; label: string; ph: string; on: boolean }[] = [
-    { k: 'name', label: 'Имя', ph: 'Как тебя зовут?', on: s.name },
+    { k: 'name', label: t('x143058q'), ph: t('x0t92out'), on: s.name },
     { k: 'email', label: 'Email', ph: 'you@example.com', on: s.email },
-    { k: 'message', label: anyField ? 'Сообщение' : 'Текст', ph: 'Что понравилось?', on: s.message || !anyField },
+    { k: 'message', label: anyField ? t('x0hpflgb') : t('x0extke5'), ph: t('x0mxfyil'), on: s.message || !anyField },
   ]
   const submit = () => {
     const e: Record<string, string> = {}
     if (s.validation) {
-      for (const f of fields) if (f.on && !vals[f.k].trim()) e[f.k] = 'Обязательное поле'
-      if (s.email && vals.email.trim() && !EMAIL_RE.test(vals.email.trim())) e.email = 'Похоже, email с ошибкой'
+      for (const f of fields) if (f.on && !vals[f.k].trim()) e[f.k] = t('x1yidf3v')
+      if (s.email && vals.email.trim() && !EMAIL_RE.test(vals.email.trim())) e.email = t('x1oktxfd')
     }
     setErrs(e)
     if (Object.keys(e).length) { setNote(null); return }
-    if (!s.table) { setNote({ text: 'Отправлено… но данные никуда не сохранились: таблицы нет 🤷', ok: false }); return }
+    if (!s.table) { setNote({ text: t('x0o8vhll'), ok: false }); return }
     const row = { id: ui.rows.length + 1, name: s.name ? vals.name.trim() || '—' : '—', email: s.email ? vals.email.trim() || '—' : '—', message: vals.message.trim() || '—', bad: !EMAIL_RE.test(vals.email.trim()) || !vals.message.trim() }
     setUi((u) => ({ rows: [...u.rows, row], saved: true }))
     setVals({ name: '', email: '', message: '' })
-    setNote({ text: s.thanks ? 'Спасибо за отзыв! 💜' : 'Сохранено в таблицу feedback', ok: true })
+    setNote({ text: s.thanks ? t('x1vn8pqv') : t('x1xzzaiq'), ok: true })
   }
-  if (!s.form) return <Frame url="zerno.local/feedback"><Empty text="Опиши форму — и здесь появится она и таблица в базе данных" /></Frame>
+  if (!s.form) return <Frame url="zerno.local/feedback"><Empty text={t('x1muaj3g')} /></Frame>
   return (
     <View style={{ gap: 10 }}>
       <Frame url="zerno.local/feedback">
         <View style={{ padding: 14, gap: 8 }}>
-          <Text style={font(900, 16)}>☕ Отзывы о кофейне «Зерно»</Text>
-          <Text style={font(600, 13, C.muted)}>Расскажи, как тебе у нас</Text>
+          <Text style={font(900, 16)}>{t('x1vsvra6')}</Text>
+          <Text style={font(600, 13, C.muted)}>{t('x0chjnj9')}</Text>
           {fields.filter((f) => f.on).map((f) => (
             <View key={f.k}>
               <Text style={[font(800, 12, C.muted), { textTransform: 'uppercase' }]}>{f.label}{s.validation ? <Text style={{ color: C.coral }}> *</Text> : null}</Text>
@@ -364,19 +366,19 @@ export function FormPreview({ state: s, ui, setUi }: { state: FormState; ui: For
             </View>
           ))}
           <Pressable testID="submit-form" onPress={submit} style={{ borderRadius: 14, backgroundColor: C.brand, paddingVertical: 11, borderBottomWidth: 4, borderBottomColor: C.brandDark }}>
-            <Text style={[font(900, 14, C.white), { textAlign: 'center' }]}>Отправить отзыв</Text>
+            <Text style={[font(900, 14, C.white), { textAlign: 'center' }]}>{t('x0ekdgze')}</Text>
           </Pressable>
           {note ? <Text style={font(800, 13, note.ok ? C.tealDark : C.coralDark)}>{note.text}</Text> : null}
         </View>
       </Frame>
       <View style={{ borderRadius: 16, borderWidth: 2, paddingHorizontal: 12, paddingVertical: 10, borderColor: s.keyLeaked ? C.coral : s.keySafe ? '#8be3d7' : C.line, backgroundColor: s.keyLeaked ? C.coralLight : s.keySafe ? C.tealLight : 'transparent', borderStyle: s.keyLeaked || s.keySafe ? 'solid' : 'dashed' }}>
-        <Text style={font(900, 13, s.keyLeaked ? C.coralDark : s.keySafe ? C.tealDark : C.muted)}>🔒 {s.keyLeaked ? 'Ключ вписан прямо в код — утечёт с репозиторием!' : s.keySafe ? 'Ключ в .env, а .env — в .gitignore' : 'Ключ к базе ещё не настроен'}</Text>
+        <Text style={font(900, 13, s.keyLeaked ? C.coralDark : s.keySafe ? C.tealDark : C.muted)}>🔒 {s.keyLeaked ? t('x11urnpq') : s.keySafe ? t('x165w5a1') : t('x1m1ruop')}</Text>
         {s.keyLeaked || s.keySafe ? <Text style={[mono(11, C.ink), { marginTop: 4 }]}>{s.keyLeaked ? "supabase.js: createClient(url, 'sk_live_…')" : 'supabase.js: createClient(url, import.meta.env.VITE_SUPABASE_KEY)'}</Text> : null}
       </View>
       <View style={{ overflow: 'hidden', borderRadius: 16, borderWidth: 2, borderColor: C.line }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 2, borderBottomColor: C.line, backgroundColor: C.snow, paddingHorizontal: 12, paddingVertical: 8 }}>
-          <Text style={font(900, 13)}>{s.table ? '▦ Таблица feedback' : '▦ База данных'}</Text>
-          {s.table ? <Text style={[font(700, 12, C.muted), { marginLeft: 'auto' }]}>{ui.rows.length} строк</Text> : null}
+          <Text style={font(900, 13)}>{s.table ? t('x1x9ab04') : t('x1u8jym5')}</Text>
+          {s.table ? <Text style={[font(700, 12, C.muted), { marginLeft: 'auto' }]}>{t('x1ibajk4', { length: ui.rows.length })}</Text> : null}
         </View>
         {s.table ? (
           <ScrollView horizontal>
@@ -384,7 +386,7 @@ export function FormPreview({ state: s, ui, setUi }: { state: FormState; ui: For
               <View style={{ flexDirection: 'row' }}>
                 {['id', 'name', 'email', 'message'].map((h) => <Text key={h} style={[mono(11, C.muted), { flex: 1, paddingHorizontal: 8, paddingVertical: 5, borderBottomWidth: 2, borderBottomColor: C.line }]}>{h}</Text>)}
               </View>
-              {ui.rows.length === 0 ? <Text style={[font(700, 13, C.muted), { textAlign: 'center', padding: 12 }]}>Пока пусто — отправь отзыв через форму</Text> : null}
+              {ui.rows.length === 0 ? <Text style={[font(700, 13, C.muted), { textAlign: 'center', padding: 12 }]}>{t('x1s4c65n')}</Text> : null}
               {ui.rows.map((r) => (
                 <View key={r.id} style={{ flexDirection: 'row', backgroundColor: r.bad && !s.validation ? C.coralLight : 'transparent' }}>
                   {[String(r.id), r.name, r.email, r.message + (r.bad && !s.validation ? ' ⚠' : '')].map((c, i) => <Text key={i} numberOfLines={1} style={[font(700, 12), { flex: 1, paddingHorizontal: 8, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: C.line }]}>{c}</Text>)}
@@ -392,7 +394,7 @@ export function FormPreview({ state: s, ui, setUi }: { state: FormState; ui: For
               ))}
             </View>
           </ScrollView>
-        ) : <Text style={[font(700, 13, C.muted), { textAlign: 'center', padding: 14 }]}>Таблицы ещё нет — данные формы никуда не попадают</Text>}
+        ) : <Text style={[font(700, 13, C.muted), { textAlign: 'center', padding: 14 }]}>{t('x1r5rgi2')}</Text>}
       </View>
     </View>
   )
@@ -401,11 +403,11 @@ export function FormPreview({ state: s, ui, setUi }: { state: FormState; ui: For
 /* ------------------------------------------------------------------ 5. Деплой */
 
 const STEPS: { key: 'commit' | 'push' | 'deploy' | 'domain' | 'analytics'; label: string }[] = [
-  { key: 'commit', label: 'Коммит' },
+  { key: 'commit', get label() { return t('x1f52pub') } },
   { key: 'push', label: 'GitHub' },
   { key: 'deploy', label: 'Vercel' },
-  { key: 'domain', label: 'Домен' },
-  { key: 'analytics', label: 'Аналитика' },
+  { key: 'domain', get label() { return t('x0zlixar') } },
+  { key: 'analytics', get label() { return t('x1s2h2mh') } },
 ]
 
 export function DeployPreview({ state: s, ui, setUi }: { state: DeployState; ui: DeployUi; setUi: (u: DeployUi | ((p: DeployUi) => DeployUi)) => void }) {
@@ -416,7 +418,7 @@ export function DeployPreview({ state: s, ui, setUi }: { state: DeployState; ui:
   const url = s.domain ? `https://${s.domain}` : `https://${s.repo}.vercel.app`
   const save = () => {
     const v = draft.trim()
-    if (v && !/^https?:\/\/[^\s.]+\.[^\s]{2,}/i.test(v)) { setErr('Нужна ссылка вида https://my-app.vercel.app'); return }
+    if (v && !/^https?:\/\/[^\s.]+\.[^\s]{2,}/i.test(v)) { setErr(t('x0fabp1p')); return }
     setErr('')
     setPortfolioUrl(v)
   }
@@ -433,9 +435,9 @@ export function DeployPreview({ state: s, ui, setUi }: { state: DeployState; ui:
         ))}
       </View>
       <View style={{ borderRadius: 16, backgroundColor: '#1b1726', overflow: 'hidden' }}>
-        <Text style={[font(800, 12, 'rgba(255,255,255,0.6)'), { paddingHorizontal: 12, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }]}>ТЕРМИНАЛ АГЕНТА</Text>
+        <Text style={[font(800, 12, 'rgba(255,255,255,0.6)'), { paddingHorizontal: 12, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }]}>{t('x0zmlrq3')}</Text>
         <View style={{ paddingHorizontal: 12, paddingVertical: 8, minHeight: 46 }}>
-          {s.log.length === 0 ? <Text style={mono(12, 'rgba(255,255,255,0.4)')}>$ _ ждём команду…</Text> : s.log.map((l, i) => {
+          {s.log.length === 0 ? <Text style={mono(12, 'rgba(255,255,255,0.4)')}>{t('x0o9bi0v')}</Text> : s.log.map((l, i) => {
             const c = /error/i.test(l) ? '#FF9C85' : l.startsWith('✓') ? '#6FE3D3' : l.startsWith('$') || l.startsWith('▲') || l.startsWith('+') ? '#FFFFFF' : '#B9B3CF'
             return <Text key={i} style={mono(12, c)}>{l}</Text>
           })}
@@ -445,31 +447,31 @@ export function DeployPreview({ state: s, ui, setUi }: { state: DeployState; ui:
         <View style={{ borderRadius: 18, borderWidth: 2, borderColor: '#8be3d7', borderBottomWidth: 5, backgroundColor: C.white, overflow: 'hidden' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: C.tealLight, paddingHorizontal: 12, paddingVertical: 7 }}>
             <View style={{ width: 9, height: 9, borderRadius: 9, backgroundColor: C.teal }} />
-            <Text style={font(900, 12, C.tealDark)}>САЙТ В СЕТИ</Text>
+            <Text style={font(900, 12, C.tealDark)}>{t('x1nicow7')}</Text>
             <Text numberOfLines={1} style={[mono(11, C.tealDark), { marginLeft: 'auto', flexShrink: 1 }]}>🔒 {url.replace('https://', '')}</Text>
           </View>
           <View style={{ padding: 12, gap: 8 }}>
             <View style={{ borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: C.line }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F3DFC9', padding: 10 }}>
                 <View>
-                  <Text style={font(900, 14, '#5C3A24')}>☕ Зерно</Text>
-                  <Text style={font(700, 11, 'rgba(74,51,38,0.7)')}>Свежая обжарка каждый день</Text>
+                  <Text style={font(900, 14, '#5C3A24')}>{t('x0kbjd6z')}</Text>
+                  <Text style={font(700, 11, 'rgba(74,51,38,0.7)')}>{t('x0fstw4l')}</Text>
                 </View>
-                <View style={{ borderRadius: 8, backgroundColor: C.coral, paddingHorizontal: 8, paddingVertical: 3 }}><Text style={font(900, 10, C.white)}>БРОНЬ</Text></View>
+                <View style={{ borderRadius: 8, backgroundColor: C.coral, paddingHorizontal: 8, paddingVertical: 3 }}><Text style={font(900, 10, C.white)}>{t('x13b2jxr')}</Text></View>
               </View>
               <View style={{ flexDirection: 'row', gap: 4, backgroundColor: '#FFF8F0', padding: 6 }}>
-                {MENU.map(([n]) => <View key={n} style={{ flex: 1, borderRadius: 6, backgroundColor: C.white, paddingVertical: 4 }}><Text style={[font(800, 9, '#5C3A24'), { textAlign: 'center' }]}>{n}</Text></View>)}
+                {MENU().map(([n]) => <View key={n} style={{ flex: 1, borderRadius: 6, backgroundColor: C.white, paddingVertical: 4 }}><Text style={[font(800, 9, '#5C3A24'), { textAlign: 'center' }]}>{n}</Text></View>)}
               </View>
             </View>
             <Pressable testID="open-site" onPress={() => setUi((u) => ({ ...u, opened: true }))} style={{ borderRadius: 12, backgroundColor: C.teal, paddingVertical: 9, borderBottomWidth: 3, borderBottomColor: C.tealDark }}>
-              <Text style={[font(900, 13, C.white), { textAlign: 'center' }]}>Открыть сайт</Text>
+              <Text style={[font(900, 13, C.white), { textAlign: 'center' }]}>{t('x1guc8l0')}</Text>
             </Pressable>
-            {ui.opened ? <Text style={font(800, 13, C.tealDark)}>Открылось за 0,4 с — всё работает ✨ (демо-ссылка)</Text> : null}
+            {ui.opened ? <Text style={font(800, 13, C.tealDark)}>{t('x11svcvf')}</Text> : null}
           </View>
           {s.analytics ? (
             <View style={{ borderTopWidth: 2, borderTopColor: C.line, padding: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={font(800, 12, C.muted)}>Посетители за неделю</Text>
+                <Text style={font(800, 12, C.muted)}>{t('x117it1r')}</Text>
                 <Text style={font(800, 12)}>128 👀</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 42, marginTop: 6 }}>
@@ -480,20 +482,20 @@ export function DeployPreview({ state: s, ui, setUi }: { state: DeployState; ui:
         </View>
       ) : (
         <View style={{ borderRadius: 18, borderWidth: 2, borderStyle: 'dashed', borderColor: C.line, padding: 18 }}>
-          <Text style={[font(700, 13.5, C.muted), { textAlign: 'center' }]}>Здесь появится карточка живого сайта со ссылкой</Text>
+          <Text style={[font(700, 13.5, C.muted), { textAlign: 'center' }]}>{t('x19w7320')}</Text>
         </View>
       )}
       <View style={{ borderRadius: 16, borderWidth: 2, borderColor: C.line, backgroundColor: C.white, padding: 12, gap: 6 }}>
-        <Text style={font(900, 13)}>Есть настоящий проект? <Text style={font(700, 13, C.muted)}>(по желанию)</Text></Text>
-        <Text style={font(600, 12, C.muted)}>Вставь ссылку — сохраним в портфолио у тебя в профиле.</Text>
+        <Text style={font(900, 13)}>{tx('x1iz9r6d', {}, [(chunk) => <Text style={font(700, 13, C.muted)}>{chunk}</Text>])}</Text>
+        <Text style={font(600, 12, C.muted)}>{t('x1rcqkp9')}</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TextInput testID="portfolio-url" value={draft} onChangeText={setDraft} placeholder="https://my-app.vercel.app" placeholderTextColor={C.muted} accessibilityLabel="Ссылка на мой проект" autoCapitalize="none" style={[font(700, 13), { flex: 1, borderRadius: 12, borderWidth: 2, borderColor: C.line, paddingHorizontal: 10, paddingVertical: 7 }]} />
+          <TextInput testID="portfolio-url" value={draft} onChangeText={setDraft} placeholder="https://my-app.vercel.app" placeholderTextColor={C.muted} accessibilityLabel={t('x1jekfdh')} autoCapitalize="none" style={[font(700, 13), { flex: 1, borderRadius: 12, borderWidth: 2, borderColor: C.line, paddingHorizontal: 10, paddingVertical: 7 }]} />
           <Pressable testID="save-portfolio" onPress={save} style={{ borderRadius: 12, borderWidth: 2, borderColor: C.line, paddingHorizontal: 12, justifyContent: 'center' }}>
-            <Text style={font(900, 13)}>Сохранить</Text>
+            <Text style={font(900, 13)}>{t('x04njbq2')}</Text>
           </Pressable>
         </View>
         {err ? <Text style={font(800, 12, C.coralDark)}>{err}</Text> : null}
-        {!err && progress.portfolioUrl ? <Text style={font(800, 12, C.tealDark)}>✓ В портфолио: {progress.portfolioUrl}</Text> : null}
+        {!err && progress.portfolioUrl ? <Text style={font(800, 12, C.tealDark)}>{tx('x12p6v7p', { portfolioUrl: progress.portfolioUrl })}</Text> : null}
       </View>
     </View>
   )

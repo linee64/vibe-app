@@ -1,11 +1,10 @@
 // Помощники для Playwright-скриптов: домашки, тиры, «Тест на уровень», демо-разблокировка.
 // (Не трогает scripts/lib/solver.mjs — использует его как есть.)
-import { createJiti } from 'jiti'
 import { currentExercise, pick, check, proceed } from './solver.mjs'
+import { homework, tiers, L, T } from './i18n.mjs'
 
-const jiti = createJiti(import.meta.url)
-export const { HOMEWORKS } = await jiti.import('../../src/data/homework.ts')
-export const { TIERS, placementQuestions, PLACEMENT_PASS } = await jiti.import('../../src/data/tiers.ts')
+export const { HOMEWORKS } = homework
+export const { TIERS, placementQuestions, PLACEMENT_PASS } = tiers
 
 export const readProgress = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('vaibik.progress') || '{}'))
 
@@ -13,8 +12,8 @@ export const readProgress = (page) => page.evaluate(() => JSON.parse(localStorag
 export async function unlockAll(page, { via = 'storage' } = {}) {
   if (via === 'profile') {
     await page.evaluate(() => (location.hash = '/profile'))
-    await page.getByRole('button', { name: 'Разблокировать всё (демо)' }).click()
-    await page.getByRole('button', { name: 'Вернуть блокировки' }).waitFor()
+    await page.getByRole('button', { name: L('Разблокировать всё (демо)') }).click()
+    await page.getByRole('button', { name: L('Вернуть блокировки') }).waitFor()
     await page.evaluate(() => (location.hash = '/learn'))
   } else {
     await page.evaluate(() => {
@@ -29,7 +28,7 @@ export async function unlockAll(page, { via = 'storage' } = {}) {
 /** Закрыть предложение «Тест на уровень» на пути, если оно показано */
 export async function dismissFirstRun(page) {
   const card = page.locator('[data-first-run]')
-  if (await card.count()) await card.getByRole('button', { name: 'Пропустить' }).click()
+  if (await card.count()) await card.getByRole('button', { name: L('Пропустить') }).click()
 }
 
 export async function waitAi(page) {
@@ -49,36 +48,36 @@ async function appendText(page, text) {
 }
 
 export async function send(page) {
-  await page.getByRole('button', { name: 'Отправить ИИ', exact: true }).click()
+  await page.getByRole('button', { name: L('Отправить ИИ'), exact: true }).click()
   await waitAi(page)
 }
 
-const preview = (page) => page.locator('section[aria-label="Превью результата"]')
+const preview = (page) => page.locator(`section[aria-label="${L('Превью результата')}"]`)
 
 export async function doAction(page, action) {
   const pv = preview(page)
   switch (action) {
     case 'viewMobile':
-      await pv.getByRole('button', { name: '📱 Телефон' }).click()
+      await pv.getByRole('button', { name: L('📱 Телефон') }).click()
       break
     case 'copyError':
-      await pv.getByRole('button', { name: 'Скопировать ошибку' }).click()
+      await pv.getByRole('button', { name: L('Скопировать ошибку') }).click()
       break
     case 'copyCode':
-      await pv.getByRole('button', { name: 'Скопировать код' }).click()
+      await pv.getByRole('button', { name: L('Скопировать код') }).click()
       break
     case 'addTask':
-      await pv.getByLabel('Новая задача').fill('Обжарить новую партию')
-      await pv.getByRole('button', { name: 'Добавить', exact: true }).click()
+      await pv.getByLabel(L('Новая задача')).fill('Обжарить новую партию')
+      await pv.getByRole('button', { name: T('x0629yc4', { v: '' }).trim(), exact: true }).click()
       break
     case 'submitForm':
-      await pv.getByLabel('Имя', { exact: true }).fill('Аидар')
+      await pv.getByLabel(L('Имя'), { exact: true }).fill('Аидар')
       await pv.getByLabel('Email', { exact: true }).fill('aidar@example.com')
-      await pv.getByLabel('Сообщение', { exact: true }).fill('Лучший раф в городе!')
-      await pv.getByRole('button', { name: 'Отправить отзыв' }).click()
+      await pv.getByLabel(L('Сообщение'), { exact: true }).fill('Лучший раф в городе!')
+      await pv.getByRole('button', { name: L('Отправить отзыв') }).click()
       break
     case 'openSite':
-      await pv.getByRole('button', { name: 'Открыть сайт' }).click()
+      await pv.getByRole('button', { name: L('Открыть сайт') }).click()
       break
   }
   await page.waitForTimeout(200)
@@ -100,7 +99,7 @@ export async function playHomework(page, hwId, { vagueFirst = false, hooks = {},
     const n = st.filter(([, ok]) => ok).length
     log.push(`vague→${n}/${st.length}`)
     if (n >= 2) throw new Error(`${hwId}: расплывчатый промпт засчитал ${n} требований`)
-    await page.getByRole('button', { name: '↺ Заново' }).click()
+    await page.getByRole('button', { name: L('↺ Заново') }).click()
   }
   for (const [i, step] of hw.solution.entries()) {
     if (step.block) await page.locator('[data-blocks] button').filter({ hasText: new RegExp(`^[+✓] ${step.block.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`) }).click()
@@ -115,7 +114,7 @@ export async function playHomework(page, hwId, { vagueFirst = false, hooks = {},
   log.push(`solution→${st.length}/${st.length}`)
   if (hooks.beforeSubmit) await hooks.beforeSubmit()
   if (submit) {
-    await page.getByRole('button', { name: 'Сдать домашку' }).first().click()
+    await page.getByRole('button', { name: L('Сдать домашку') }).first().click()
     await page.waitForSelector(`[data-homework-done="${hwId}"]`)
   }
   return log
@@ -124,7 +123,7 @@ export async function playHomework(page, hwId, { vagueFirst = false, hooks = {},
 /** Пройти «Тест на уровень» (уже на экране теста, фаза intro). correct — сколько ответить верно */
 export async function playPlacement(page, target, { correct = 8, hooks = {}, start = true } = {}) {
   const qs = placementQuestions(target)
-  if (start) await page.getByRole('button', { name: 'Начать тест' }).click()
+  if (start) await page.getByRole('button', { name: L('Начать тест') }).click()
   await page.waitForSelector('[data-placement="quiz"]')
   for (let i = 0; i < qs.length; i++) {
     await page.waitForSelector('main h1')

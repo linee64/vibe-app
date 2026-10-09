@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { track } from '../lib/analytics'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { CHARGE_MAX, RECHARGE_MS } from '@web/data/economy'
 import { DEMO_MODE, REVIEW_MODE, SUPABASE_ENABLED } from '../lib/env'
 import { getSupabase } from '../lib/web-adapters/supabase'
 import { CHARGE_AT_KEY, OWNER_KEY, PROGRESS_KEY, REVIEW_FLAG, SESSION_KEY, accruedCharge, defaultProgress, freshProgress, nameFromEmail, normalizeProgress, pullProgress, pushProgress, rollDay, type Progress, type Session } from './progress'
+import { t } from '@web/i18n/core'
 
 const SAVE_DEBOUNCE_MS = 1200
 
@@ -41,7 +43,7 @@ interface AuthUserLike {
 function sessionFromUser(u: AuthUserLike): Session {
   const email = u.email ?? ''
   const dn = typeof u.user_metadata?.display_name === 'string' ? u.user_metadata.display_name.trim() : ''
-  return { email, name: dn || nameFromEmail(email || 'друг'), since: u.created_at ?? new Date().toISOString(), id: u.id, real: true }
+  return { email, name: dn || nameFromEmail(email || t('x16kyo87')), since: u.created_at ?? new Date().toISOString(), id: u.id, real: true }
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -190,6 +192,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    track('logout')
     void AsyncStorage.removeItem(SESSION_KEY)
     if (!SUPABASE_ENABLED) {
       setSession(null)

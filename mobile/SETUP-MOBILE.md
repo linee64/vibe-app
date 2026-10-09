@@ -12,6 +12,11 @@
 | `EXPO_PUBLIC_REVIEW_MODE` | `true` (по умолчанию) — все тиры открыты, пейвол не мешает. Перед релизом поставь `false` | — |
 | `EXPO_PUBLIC_REVENUECAT_IOS_KEY` | публичный SDK-ключ RevenueCat для iOS (`appl_…`) | RevenueCat → Project → API keys |
 | `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` | то же для Android (`goog_…`) | там же |
+| `EXPO_PUBLIC_POSTHOG_KEY` / `EXPO_PUBLIC_POSTHOG_HOST` | аналитика воронки (те же события, что в вебе, `docs/analytics.md`); ключ `phc_…` публичный | PostHog → Project settings |
+| `EXPO_PUBLIC_SENTRY_DSN` / `EXPO_PUBLIC_SENTRY_ENVIRONMENT` | отчёты о падениях (проект `vaibik-mobile`); DSN публичный | Sentry → проект → Client Keys |
+| `SENTRY_ORG`, `SENTRY_PROJECT` (+ секрет EAS `SENTRY_AUTH_TOKEN`) | **не** `EXPO_PUBLIC_`: только для выгрузки source maps в EAS Build; при их наличии `app.config.ts` подключает плагин `@sentry/react-native` | Sentry → Settings |
+
+Без PostHog/Sentry — аналитика и отчёты выключены (no-op). Отзывы уходят на `POST {EXPO_PUBLIC_API_BASE}/api/feedback` (тот же сервер, что у веба, с лимитами и пересылкой в Telegram); без `API_BASE` — сохраняются на устройстве.
 
 Без Supabase — демо-вход. Без `API_BASE` — домашки проверяются офлайн-симуляцией. Без ключей RevenueCat — пейвол показывает цены, но ничего не списывает.
 

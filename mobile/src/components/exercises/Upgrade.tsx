@@ -7,6 +7,7 @@ import { chipOrder, upgradeScore } from '@web/data/exerciseLogic'
 import { vibeMood } from '@web/components/exercises/meta'
 import { C, font } from '../../theme'
 import { Head, HintNote, type ViewProps } from './shared'
+import { t } from '@web/i18n/core'
 
 const polar = (v: number, r: number) => {
   const a = Math.PI * (1 - v / 100)
@@ -36,7 +37,7 @@ export function VibeMeter({ value, target, size = 200 }: { value: number; target
   const shake = useAnimatedStyle(() => ({ transform: [{ translateX: wobble.value }] }))
   const needleBox = 136 * k
   return (
-    <Animated.View style={[{ alignItems: 'center' }, shake]} testID="vibe-meter" accessibilityLabel={`Вайб-метр: ${value} из 100`}>
+    <Animated.View style={[{ alignItems: 'center' }, shake]} testID="vibe-meter" accessibilityLabel={t('x00hkeuq', { value })}>
       <View style={{ width: size, height: 116 * k }}>
         <Svg viewBox="0 0 200 116" width={size} height={116 * k}>
           <Path d={arc(0, 100, 78)} stroke="#EEEAF6" strokeWidth={20} fill="none" strokeLinecap="round" />
@@ -45,9 +46,7 @@ export function VibeMeter({ value, target, size = 200 }: { value: number; target
           <Path d={arc(74, 99.5, 78)} stroke="#9BE7DD" strokeWidth={20} fill="none" strokeLinecap="round" />
           {value > 0 ? <Path d={arc(0.5, Math.max(1, value - 0.5), 78)} stroke={mood.color} strokeWidth={9} fill="none" strokeLinecap="round" /> : null}
           <Line x1={tx2} y1={ty2} x2={tx} y2={ty} stroke="#2F2A47" strokeWidth={3.5} strokeLinecap="round" />
-          <SvgText x={tx} y={ty - 6} textAnchor="middle" fontSize={10} fontWeight="900" fill="#2F2A47">
-            цель
-          </SvgText>
+          <SvgText x={tx} y={ty - 6} textAnchor="middle" fontSize={10} fontWeight="900" fill="#2F2A47">{t('x1xpzq6r')}</SvgText>
         </Svg>
         {/* стрелка: квадрат с центром в оси шкалы, вращается вокруг центра */}
         <Animated.View pointerEvents="none" style={[{ position: 'absolute', width: needleBox, height: needleBox, left: 100 * k - needleBox / 2, top: 100 * k - needleBox / 2 }, needle]}>
@@ -68,7 +67,7 @@ export function VibeMeter({ value, target, size = 200 }: { value: number; target
   )
 }
 
-const plural = (n: number) => (n === 1 ? 'правка' : n < 5 ? 'правки' : 'правок')
+const plural = (n: number) => (n === 1 ? t('x0jqys9a') : n < 5 ? t('x0hj1ypi') : t('x0j6kr9o'))
 
 /** «Прокачай промпт»: слабый промпт + чипы-улучшения; Вайб-метр реагирует вживую */
 export function UpgradeView({ ex, answer, setAnswer, status, hint }: ViewProps<UpgradeExercise>) {
@@ -91,7 +90,7 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint }: ViewProps<U
             <View key={c} style={{ width: 9, height: 9, borderRadius: 9, backgroundColor: c }} />
           ))}
           <Text style={[font(600, 11, C.muted), { marginLeft: 6 }]}>prompt.md</Text>
-          <Text style={[font(800, 11, C.muted), { marginLeft: 'auto' }]}>{picked.length ? `+${picked.length} ${plural(picked.length)}` : 'черновик'}</Text>
+          <Text style={[font(800, 11, C.muted), { marginLeft: 'auto' }]}>{picked.length ? `+${picked.length} ${plural(picked.length)}` : t('x0r512do')}</Text>
         </View>
         <Text style={[font(600, 15), { minHeight: 90, paddingHorizontal: 14, paddingVertical: 12, lineHeight: 23 }]} testID="prompt-text">
           {ex.base}
@@ -110,8 +109,8 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint }: ViewProps<U
         <VibeMeter value={score} target={ex.target} />
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={font(900, 15)}>Добавь в промпт</Text>
-        <Text style={font(700, 12, C.muted)}>Часть чипов — ловушки</Text>
+        <Text style={font(900, 15)}>{t('x1th9ida')}</Text>
+        <Text style={font(700, 12, C.muted)}>{t('x0jn9as3')}</Text>
       </View>
       <HintNote hint={hint} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9 }}>
@@ -132,7 +131,7 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint }: ViewProps<U
                 </Text>
                 {marked ? (
                   <View style={{ borderRadius: 4, backgroundColor: C.coral, paddingHorizontal: 4 }}>
-                    <Text style={font(900, 10, C.white)}>🚩 ловушка</Text>
+                    <Text style={font(900, 10, C.white)}>{t('x1nv5xco')}</Text>
                   </View>
                 ) : null}
               </View>

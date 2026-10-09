@@ -1,11 +1,11 @@
 // Помощник для Playwright-скриптов: знает правильные ответы (читает src/data/course.ts через jiti)
 // и умеет проходить уроки в браузере.
-import { createJiti } from 'jiti'
+import { course, L, LANG, esc } from './i18n.mjs'
 
-const jiti = createJiti(import.meta.url)
-export const { UNITS, findLesson } = await jiti.import('../../src/data/course.ts')
+export const { UNITS, findLesson } = course
+export { LANG }
 
-export const BASE = process.argv[2] || 'http://localhost:5173'
+export const BASE = process.argv.slice(2).find((a) => !a.startsWith('--')) || 'http://localhost:5173'
 
 export function watch(page, errors) {
   page.on('console', (m) => {
@@ -16,15 +16,16 @@ export function watch(page, errors) {
 
 export async function login(page, email = 'aidar@example.com') {
   await page.goto(BASE + '/#/login')
-  await page.evaluate(() => {
+  await page.evaluate((lang) => {
     localStorage.clear()
     sessionStorage.clear()
-  })
+    localStorage.setItem('vaibik.locale', lang)
+  }, LANG)
   await page.reload()
-  await page.waitForSelector('text=С возвращением!')
+  await page.waitForSelector(`text=${L('С возвращением!')}`)
   await page.getByPlaceholder('you@example.com').fill(email)
   await page.getByPlaceholder('••••••••').fill('secret123')
-  await page.getByRole('button', { name: 'Войти', exact: true }).click()
+  await page.getByRole('button', { name: L('Войти'), exact: true }).click()
   await page.waitForSelector('[data-lesson]')
   await page.evaluate(() => document.fonts.ready)
 }
@@ -81,7 +82,7 @@ export async function pick(page, ex, { wrong = false } = {}) {
         let reject = !!ex.hunks[i].harmful
         if (wrong && i === 0) reject = !reject
         await at(page, 'data-hunk', i)
-          .getByRole('button', { name: reject ? '✕ Отклонить' : '✓ Принять' })
+          .getByRole('button', { name: reject ? L('✕ Отклонить') : L('✓ Принять') })
           .click()
       }
       break
@@ -97,13 +98,15 @@ export async function pick(page, ex, { wrong = false } = {}) {
   }
 }
 
+const CONT = new RegExp(`^(${esc(L('Продолжить'))}|${esc(L('Понятно'))})$`)
+
 export async function check(page) {
-  await page.getByRole('button', { name: 'Проверить', exact: true }).click()
-  await page.locator('footer').getByRole('button', { name: /^(Продолжить|Понятно)$/ }).waitFor()
+  await page.getByRole('button', { name: L('Проверить'), exact: true }).click()
+  await page.locator('footer').getByRole('button', { name: CONT }).waitFor()
 }
 
 export async function proceed(page) {
-  await page.locator('footer').getByRole('button', { name: /^(Продолжить|Понятно)$/ }).click()
+  await page.locator('footer').getByRole('button', { name: CONT }).click()
   // заряд Бипи сел → разбираем ошибку (+1 деление) и продолжаем
   const review = page.locator('[data-empty="review"]')
   if (await review.isVisible().catch(() => false)) {
@@ -123,7 +126,7 @@ export async function playLesson(page, lessonId, { hooks = {}, wrongAt = [] } = 
   let step = 0
   const answered = []
   for (;;) {
-    if (await page.getByText(/^(Урок пройден!|Безупречно!)$/).count()) break
+    if (await page.getByText(new RegExp(`^(${esc(L('Урок пройден!'))}|${esc(L('Безупречно!'))})$`)).count()) break
     const ex = await currentExercise(page, lesson)
     const wrong = wrongAt.includes(step)
     await pick(page, ex, { wrong })
@@ -143,7 +146,7 @@ export async function openLessonFromPath(page, lessonId) {
   const center = (sel) => page.evaluate((q) => document.querySelector(q).scrollIntoView({ block: 'center', behavior: 'instant' }), sel)
   await center(`[data-lesson="${lessonId}"]`)
   await page.locator(`[data-lesson="${lessonId}"] > div > button`).click()
-  const start = page.locator(`[data-lesson="${lessonId}"]`).getByRole('button', { name: /^(Начать|Повторить) \+\d+ ВП$/ })
+  const start = page.locator(`[data-lesson="${lessonId}"]`).getByRole('button', { name: new RegExp(`^(${esc(L('Начать +15 ВП'))}|${esc(L('Повторить +5 ВП'))})$`) })
   await start.waitFor()
   await page.evaluate((q) => document.querySelector(q).querySelector('.btn').scrollIntoView({ block: 'center', behavior: 'instant' }), `[data-lesson="${lessonId}"]`)
   await start.click()

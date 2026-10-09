@@ -2,6 +2,8 @@ import { useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'r
 import type { PipelineExercise } from '../../data/types'
 import { pipelineBank, pipelineCards } from '../../data/exerciseLogic'
 import { Head, HintNote, type ViewProps } from './shared'
+import { t } from '../../i18n/core'
+import { tx } from '../../i18n/rich'
 
 type Drag = { card: number; from: number | null; x: number; y: number; sx: number; sy: number; moved: boolean }
 
@@ -136,7 +138,7 @@ export function PipelineView({ ex, answer, setAnswer, status, hint }: ViewProps<
                       {idle && <span className="shrink-0 text-[13px] opacity-50" aria-hidden>✕</span>}
                     </button>
                   ) : (
-                    <span className="flex h-full min-h-[46px] items-center px-3 text-[13px] font-bold text-brand/50">{i === 0 ? 'Первый шаг' : `Шаг ${i + 1}`}</span>
+                    <span className="flex h-full min-h-[46px] items-center px-3 text-[13px] font-bold text-brand/50">{i === 0 ? t('x146n632') : t('x0wxry6y', { v: i + 1 })}</span>
                   )}
                 </div>
               </li>
@@ -147,7 +149,7 @@ export function PipelineView({ ex, answer, setAnswer, status, hint }: ViewProps<
 
       {idle && (
         <>
-          <div className="mb-2 mt-4 text-[14px] font-bold text-muted">Нажми на карточку или перетащи её на трек. Одна-две карточки — лишние.</div>
+          <div className="mb-2 mt-4 text-[14px] font-bold text-muted">{t('x0kr3ikn')}</div>
           <div className="flex flex-wrap gap-2.5" data-bank>
             {bank.map((card) =>
               placed.has(card) ? (
@@ -170,7 +172,7 @@ export function PipelineView({ ex, answer, setAnswer, status, hint }: ViewProps<
                     ⋮⋮
                   </span>
                   <span className="min-w-0">{cards[card]}</span>
-                  {hint?.mark === card && <span className="shrink-0 rounded bg-brand px-1.5 text-[11px] font-black text-white">начни с этого</span>}
+                  {hint?.mark === card && <span className="shrink-0 rounded bg-brand px-1.5 text-[11px] font-black text-white">{t('x0vxnpo1')}</span>}
                 </button>
               ),
             )}
@@ -178,9 +180,7 @@ export function PipelineView({ ex, answer, setAnswer, status, hint }: ViewProps<
         </>
       )}
       {!idle && (ex.extra?.length ?? 0) > 0 && (
-        <p className="anim-fade-up mt-3 text-[13.5px] font-bold text-muted">
-          Лишние карточки: {ex.extra!.map((x) => `«${x}»`).join(', ')}
-        </p>
+        <p className="anim-fade-up mt-3 text-[13.5px] font-bold text-muted">{tx('x19ryy5f', { v: ex.extra!.map((x) => `«${x}»`).join(', ') })}</p>
       )}
       {drag && (
         <div className="vx-ghost tile is-selected max-w-[280px] px-3 py-2.5 text-[14.5px] font-bold shadow-[0_10px_24px_rgba(47,42,71,.25)]" style={{ left: drag.x, top: drag.y }}>
