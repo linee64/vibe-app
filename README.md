@@ -13,16 +13,16 @@ DeepSeek (ИИ-проверка домашек), Polar (оплата Pro), фу�
 
 ### 1. Что нужно установить
 
-**Node.js** версии **20.19 или новее** (ветка 20) либо **22.12 или новее** — это минимальные версии,
-которые поддерживает Vite 8 (`"engines": { "node": "^20.19.0 || >=22.12.0" }`).
-Рекомендуем просто поставить **актуальную LTS-версию** (на октябрь 2026 — Node.js 24 LTS)
+**Node.js 22.12 или новее** (`"engines": { "node": ">=22.12.0" }`). Node.js 20 больше не поддерживаем:
+у него закончилась поддержка, Vercel снимает его с 1 октября 2026, а `@supabase/supabase-js` на нём
+предупреждает об устаревании. Рекомендуем **актуальную LTS-версию** (на октябрь 2026 — Node.js 24 LTS)
 с официального сайта: **https://nodejs.org** → кнопка «LTS». Вместе с Node.js ставится и `npm`.
 
 Проверить, что всё установлено (в терминале: на Windows — «Командная строка» или PowerShell,
 на macOS — «Терминал»):
 
 ```bash
-node -v    # должно быть v20.19.0+ или v22.12.0+ (например, v24.x.x)
+node -v    # должно быть v22.12.0 или новее (например, v24.x.x)
 npm -v     # любая версия 10+ (идёт вместе с Node.js)
 ```
 
@@ -66,7 +66,7 @@ vercel dev        # сайт + функции /api вместе на http://loca
 - **Порт 5173 занят.** Vite сам возьмёт следующий свободный (5174, 5175…) — смотрите адрес в строке `Local:`.
   Чтобы задать порт явно: `npm run dev -- --port 3000`.
 - **Ошибка про версию Node.js** (например, `Vite requires Node.js version 20.19+ or 22.12+`,
-  `Unsupported engine` или непонятные ошибки синтаксиса при запуске). Обновите Node.js до LTS с https://nodejs.org,
+  `Unsupported engine` / `EBADENGINE` или непонятные ошибки синтаксиса при запуске). Обновите Node.js до LTS с https://nodejs.org,
   откройте новый терминал, удалите папку `node_modules` и снова выполните `npm install`.
 - **`npm install` завершился с ошибкой.** Проверьте интернет/VPN/прокси, затем удалите папку `node_modules`
   (файл `package-lock.json` **не трогайте**) и повторите `npm install`. Если не помогло — `npm cache verify`
@@ -105,7 +105,7 @@ vercel dev        # сайт + функции /api вместе на http://loca
 
 ### Где что лежит (бэкенд)
 
-- `api/` — Vercel Functions (Node): `ai/review`, `billing/checkout`, `billing/portal`, `billing/webhook`, `feedback`, `health`.
+- `api/` — Vercel Functions (Node.js 24.x или 22.x — см. SETUP.md, шаг 3): `ai/review`, `billing/checkout`, `billing/portal`, `billing/webhook`, `feedback`, `health`.
 - `server/` — их логика (проверка токена, лимиты, DeepSeek, Polar, подпись вебхуков, отзывы и rate limit,
   мини-клиент Sentry `server/sentry.ts`); тесты — `tests/api/`.
 - `supabase/migrations/0001_init.sql` — таблицы, RLS, триггер профиля, функции лимитов и подписок;

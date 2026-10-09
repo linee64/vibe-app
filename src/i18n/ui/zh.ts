@@ -668,6 +668,7 @@ export const zh = {
   "x19ryy5f": "多余的卡片：{v}",
   "x19w7320": "这里会出现带链接的上线网站卡片",
   "x1a0mhst": "© 2026 Vaibik · 原型",
+  "landing.copyright": "© 2026 Vaibik",
   "x1ab4ckk": "每天一课，就是技能的一次新“发布”：v1、v2、v3……小习惯，大成果。",
   "x1abqfqj": "所有单元已解锁 🚀",
   "x1abu6o4": "已完成！徽章“{name}” {emoji}",

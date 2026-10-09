@@ -668,6 +668,7 @@ export const es = {
   "x19ryy5f": "Tarjetas sobrantes: {v}",
   "x19w7320": "Aquí aparecerá la tarjeta del sitio en línea con su enlace",
   "x1a0mhst": "© 2026 Vaibik · prototipo",
+  "landing.copyright": "© 2026 Vaibik",
   "x1ab4ckk": "Cada día con una lección es un nuevo «release» de tus habilidades: v1, v2, v3… Un hábito pequeño, un gran resultado.",
   "x1abqfqj": "Todas las unidades abiertas 🚀",
   "x1abu6o4": "¡Entregada! Insignia «{name}» {emoji}",

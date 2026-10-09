@@ -15,7 +15,7 @@ import { HOMEWORKS } from '../data/homework'
 import { SOON_TOPICS, TIERS, unitsOf } from '../data/tiers'
 import { TierBadge } from '../components/TierBadge'
 import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, usd } from '../data/pricing'
-import { BILLING_ENABLED } from '../lib/config'
+import { BILLING_ENABLED, DEMO_MODE } from '../lib/config'
 import { startCheckout } from '../lib/billing'
 import { track } from '../lib/analytics'
 import { useFeedback } from '../components/FeedbackProvider'
@@ -823,8 +823,9 @@ function Footer() {
       </div>
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1160px] flex-col gap-2 px-5 py-5 text-[13px] font-semibold text-white/45 md:flex-row md:justify-between md:px-8">
-          <span>{t('x1a0mhst')}</span>
-          <span>{t('x1ljbhl2')}</span>
+          {/* «прототип / демо-данные» — только в чистом демо-режиме (без Supabase) */}
+          <span data-footer-copyright>{DEMO_MODE ? t('x1a0mhst') : t('landing.copyright')}</span>
+          {DEMO_MODE ? <span data-demo-note>{t('x1ljbhl2')}</span> : null}
         </div>
       </div>
     </footer>

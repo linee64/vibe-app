@@ -90,9 +90,14 @@
    | `APP_URL` | `https://<проект>.vercel.app` (потом свой домен) | нет |
 
    Галочки окружений: *Production*, *Preview* и *Development*.
-3. [ ] **Deploy.** Открой `https://<проект>.vercel.app/api/health` — должно быть `"supabase":true,"ai":true`.
-4. [ ] Вернись в Supabase → *URL Configuration* → **Site URL** = `https://<проект>.vercel.app`.
-5. [ ] (по желанию) *Settings → Functions → Function Region* — тот же регион, что у Supabase (меньше задержка).
+3. [ ] **Версия Node.js:** *Project Settings → Build and Deployment → Node.js Version* → **24.x** (или **22.x**).
+   Не 20.x: Vercel снимает Node.js 20 с 1 октября 2026, а функциям `/api` нужен Node.js 22+.
+   В `package.json` уже стоит `"engines": { "node": ">=22.12.0" }` — Vercel ставит его выше настройки проекта
+   и по такой записи берёт последнюю 24.x (в логе сборки может быть предупреждение об этом — это нормально).
+   Проверка: в логах функций не должно быть строки `Node.js 20 and below are deprecated`.
+4. [ ] **Deploy.** Открой `https://<проект>.vercel.app/api/health` — должно быть `"supabase":true,"ai":true`.
+5. [ ] Вернись в Supabase → *URL Configuration* → **Site URL** = `https://<проект>.vercel.app`.
+6. [ ] (по желанию) *Settings → Functions → Function Region* — тот же регион, что у Supabase (меньше задержка).
 
 > **Важно:** переменные `VITE_*` вшиваются в сайт при сборке. Поменял их — нажми *Deployments → … → Redeploy*.
 > Серверные переменные тоже применяются только к новым деплоям.
@@ -295,4 +300,5 @@
 | Отзыв «отправлен», но в базе пусто | Не выполнена `0002_feedback.sql`; `/api/feedback` отвечает 503, если нет ни Supabase, ни вебхука |
 | В Telegram ничего не приходит | Бот не добавлен в группу, неверный `chat_id` (у групп он с `-100`) или нет Redeploy после `FEEDBACK_WEBHOOK_URL` |
 | В PostHog нет событий | Нет `VITE_POSTHOG_KEY` в сборке (Redeploy), неверный регион в `VITE_POSTHOG_HOST`, или блокировщик рекламы |
+| В логах `/api`: `Node.js 20 and below are deprecated` | Проект на Node.js 20 → *Settings → Build and Deployment → Node.js Version* = 24.x (или 22.x) и Redeploy |
 | 403 «Запрос с чужого сайта» | Фронт на другом домене → поставь `APP_URL` = адрес фронта |

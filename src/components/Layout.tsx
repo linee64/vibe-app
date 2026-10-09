@@ -7,6 +7,7 @@ import { EconomyBar } from './Economy'
 import { Mascot, MascotHead } from './Mascot'
 import { myStanding } from '../data/league'
 import { t } from '../i18n/core'
+import { DEMO_MODE } from '../lib/config'
 import { tx } from '../i18n/rich'
 
 const NAV = [
@@ -158,7 +159,8 @@ export function RightRail() {
         <p className="text-[14px] font-semibold leading-snug text-muted">{t('x10hq5ca')}</p>
         <Mascot size={104} className="absolute -bottom-3 right-2" mood="think" />
       </section>
-      <p className="px-2 text-center text-[12px] font-bold uppercase tracking-wider text-[#b5b0c8]">{t('x04sfds3')}</p>
+      {/* «Прототип · все данные демонстрационные» — только в чистом демо-режиме (без Supabase) */}
+      {DEMO_MODE ? <p className="px-2 text-center text-[12px] font-bold uppercase tracking-wider text-[#b5b0c8]" data-demo-note>{t('x04sfds3')}</p> : null}
     </div>
   )
 }

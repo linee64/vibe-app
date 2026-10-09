@@ -56,11 +56,20 @@ export interface Db {
 export const ACTIVE_STATUSES = new Set(['active', 'trialing'])
 export const isProRow = (row: SubscriptionRow | null) => !!row && ACTIVE_STATUSES.has(row.status)
 
+// Сервер не использует Realtime, но supabase-js создаёт RealtimeClient в конструкторе и на Node 20
+// (нет глобального WebSocket) падает с «native WebSocket not found» — ломались /api/ai/review и /api/feedback.
+// Подставляем заглушку-транспорт: она никогда не вызывается, т.к. мы не подписываемся на каналы.
+class NoRealtime {
+  constructor() { throw new Error('Realtime is not used on the server') }
+}
+
 let admin: SupabaseClient | null = null
 function client(): SupabaseClient {
   if (!admin) {
+    const ws = (globalThis as { WebSocket?: unknown }).WebSocket
     admin = createClient(serverEnv.supabaseUrl(), serverEnv.supabaseSecretKey(), {
       auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+      ...(ws ? {} : { realtime: { transport: NoRealtime as never } }),
     })
   }
   return admin

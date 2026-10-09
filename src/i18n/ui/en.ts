@@ -668,6 +668,7 @@ export const en = {
   "x19ryy5f": "Extra cards: {v}",
   "x19w7320": "A live site card with a link will appear here",
   "x1a0mhst": "© 2026 Vaibik · prototype",
+  "landing.copyright": "© 2026 Vaibik",
   "x1ab4ckk": "Every day with a lesson is a new “release” of your skills: v1, v2, v3… A small habit — a big result.",
   "x1abqfqj": "All units unlocked 🚀",
   "x1abu6o4": "Done! “{name}” badge {emoji}",
