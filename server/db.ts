@@ -107,7 +107,13 @@ export const supabaseDb: Db = {
       p_cancel_at_period_end: a.cancelAtPeriodEnd,
       p_source_at: a.sourceAt,
     })
-    if (error) throw new Error(`apply_polar_subscription failed: ${error.code ?? ''}`)
+    if (error) {
+      // 23503 (foreign key): пользователя уже нет — аккаунт удалён, а Polar шлёт поздние события
+      // (например, subscription.revoked в конце пробного периода). Применять не к кому: не 500,
+      // иначе Polar будет повторять доставку и со временем отключит эндпоинт.
+      if (error.code === '23503') return false
+      throw new Error(`apply_polar_subscription failed: ${error.code ?? ''}`)
+    }
     return data === true
   },
   async webhookSeen(id) {
