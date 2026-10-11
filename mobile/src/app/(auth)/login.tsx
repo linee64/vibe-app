@@ -8,7 +8,7 @@ import { Mascot } from '../../components/Mascot'
 import { Btn, Txt } from '../../components/ui'
 import { C, font } from '../../theme'
 import { track } from '../../lib/analytics'
-import { t } from '@web/i18n/core'
+import { getLocale, t } from '@web/i18n/core'
 
 type Mode = 'login' | 'signup' | 'reset'
 
@@ -53,7 +53,7 @@ export default function LoginScreen() {
       setNote(error ? { text: error.message, bad: true } : { text: t('x00his2q'), bad: false })
       return
     }
-    const res = mode === 'signup' ? await sb.auth.signUp({ email: email.trim(), password, options: { data: { display_name: name.trim() } } }) : await sb.auth.signInWithPassword({ email: email.trim(), password })
+    const res = mode === 'signup' ? await sb.auth.signUp({ email: email.trim(), password, options: { data: { display_name: name.trim(), locale: getLocale() } } }) : await sb.auth.signInWithPassword({ email: email.trim(), password })
     setBusy(false)
     if (!res.error) {
       if (mode === 'signup') track('signup_completed', { needs_confirm: !res.data.session })

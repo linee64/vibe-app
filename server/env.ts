@@ -22,7 +22,7 @@ export const serverEnv = {
   polarProductMonthly: () => str('POLAR_PRODUCT_MONTHLY_ID'),
   polarProductAnnual: () => str('POLAR_PRODUCT_ANNUAL_ID'),
   polarWebhookSecret: () => str('POLAR_WEBHOOK_SECRET'),
-  /** Публичный адрес сайта (https://vaibik.vercel.app) — для ссылок возврата из оплаты */
+  /** Публичный адрес сайта (https://vaibik.site) — для ссылок возврата из оплаты */
   appUrl: () => str('APP_URL').replace(/\/+$/, ''),
 }
 

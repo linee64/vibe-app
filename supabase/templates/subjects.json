@@ -1,0 +1,26 @@
+{
+  "confirmation": {
+    "file": "confirm-signup.html",
+    "subject": "{{- $l := \"\" -}}{{- with .Data -}}{{- with .locale -}}{{- $l = printf \"%v\" . -}}{{- end -}}{{- end -}}{{ if eq $l \"ru\" }}Вайбик · Подтвердите почту{{ else if eq $l \"kk\" }}Вайбик · Поштаңызды растаңыз{{ else if eq $l \"es\" }}Vaibik · Confirma tu correo{{ else if eq $l \"zh\" }}Vaibik · 请确认你的邮箱{{ else }}Vaibik · Confirm your email{{ end }}"
+  },
+  "recovery": {
+    "file": "reset-password.html",
+    "subject": "{{- $l := \"\" -}}{{- with .Data -}}{{- with .locale -}}{{- $l = printf \"%v\" . -}}{{- end -}}{{- end -}}{{ if eq $l \"ru\" }}Вайбик · Сброс пароля{{ else if eq $l \"kk\" }}Вайбик · Құпиясөзді қалпына келтіру{{ else if eq $l \"es\" }}Vaibik · Restablece tu contraseña{{ else if eq $l \"zh\" }}Vaibik · 重置你的密码{{ else }}Vaibik · Reset your password{{ end }}"
+  },
+  "magic_link": {
+    "file": "magic-link.html",
+    "subject": "{{- $l := \"\" -}}{{- with .Data -}}{{- with .locale -}}{{- $l = printf \"%v\" . -}}{{- end -}}{{- end -}}{{ if eq $l \"ru\" }}Вайбик · Ссылка для входа{{ else if eq $l \"kk\" }}Вайбик · Кіру сілтемесі{{ else if eq $l \"es\" }}Vaibik · Tu enlace de acceso{{ else if eq $l \"zh\" }}Vaibik · 你的登录链接{{ else }}Vaibik · Your sign-in link{{ end }}"
+  },
+  "email_change": {
+    "file": "change-email.html",
+    "subject": "{{- $l := \"\" -}}{{- with .Data -}}{{- with .locale -}}{{- $l = printf \"%v\" . -}}{{- end -}}{{- end -}}{{ if eq $l \"ru\" }}Вайбик · Подтвердите новую почту{{ else if eq $l \"kk\" }}Вайбик · Жаңа поштаны растаңыз{{ else if eq $l \"es\" }}Vaibik · Confirma tu nuevo correo{{ else if eq $l \"zh\" }}Vaibik · 请确认你的新邮箱{{ else }}Vaibik · Confirm your new email{{ end }}"
+  },
+  "invite": {
+    "file": "invite.html",
+    "subject": "{{- $l := \"\" -}}{{- with .Data -}}{{- with .locale -}}{{- $l = printf \"%v\" . -}}{{- end -}}{{- end -}}{{ if eq $l \"ru\" }}Вайбик · Вас пригласили{{ else if eq $l \"kk\" }}Вайбик · Сізді шақырды{{ else if eq $l \"es\" }}Vaibik · Tienes una invitación{{ else if eq $l \"zh\" }}Vaibik · 你收到了邀请{{ else }}Vaibik · You’re invited{{ end }}"
+  },
+  "reauthentication": {
+    "file": "reauthentication.html",
+    "subject": "{{- $l := \"\" -}}{{- with .Data -}}{{- with .locale -}}{{- $l = printf \"%v\" . -}}{{- end -}}{{- end -}}{{ if eq $l \"ru\" }}Вайбик · Код подтверждения{{ else if eq $l \"kk\" }}Вайбик · Растау коды{{ else if eq $l \"es\" }}Vaibik · Tu código de confirmación{{ else if eq $l \"zh\" }}Vaibik · 你的验证码{{ else }}Vaibik · Your confirmation code{{ end }}"
+  }
+}

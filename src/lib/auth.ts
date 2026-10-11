@@ -3,11 +3,20 @@
  * Используется только когда SUPABASE_ENABLED; в демо-режиме Login работает как раньше.
  */
 import { getSupabase } from './supabase'
-import { t } from '../i18n/core'
+import { getLocale, t } from '../i18n/core'
 
 export type AuthResult = { ok: true; message?: string; needsConfirm?: boolean } | { ok: false; error: string }
 
 const appUrl = () => `${window.location.origin}${window.location.pathname}`
+
+/**
+ * user_metadata для Supabase Auth: язык интерфейса уходит в `locale`, по нему письма
+ * (supabase/templates/*.html, {{ .Data.locale }}) выбирают язык. Пустое имя не отправляем.
+ */
+export function authMetadata(displayName?: string): { locale: string; display_name?: string } {
+  const name = displayName?.trim().slice(0, 80)
+  return name ? { display_name: name, locale: getLocale() } : { locale: getLocale() }
+}
 
 interface ErrLike {
   code?: string
@@ -57,7 +66,7 @@ export async function signUp(email: string, password: string, displayName?: stri
     const { data, error } = await (await client()).auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: appUrl(), data: displayName ? { display_name: displayName.slice(0, 80) } : undefined },
+      options: { emailRedirectTo: appUrl(), data: authMetadata(displayName) },
     })
     if (error) return { ok: false, error: authErrorRu(error) }
     // Включено подтверждение почты и адрес уже занят — Supabase возвращает «пустого» пользователя без identities
@@ -86,6 +95,37 @@ export async function updatePassword(password: string): Promise<AuthResult> {
     return error ? { ok: false, error: authErrorRu(error) } : { ok: true, message: t('x09kijz5') }
   } catch (e) {
     return { ok: false, error: authErrorRu(e) }
+  }
+}
+
+/** Смена почты: письмо «подтвердите новый адрес» придёт на языке интерфейса */
+export async function changeEmail(newEmail: string): Promise<AuthResult> {
+  try {
+    const { error } = await (await client()).auth.updateUser(
+      { email: newEmail, data: { locale: getLocale() } },
+      { emailRedirectTo: appUrl() },
+    )
+    return error ? { ok: false, error: authErrorRu(error) } : { ok: true }
+  } catch (e) {
+    return { ok: false, error: authErrorRu(e) }
+  }
+}
+
+/**
+ * Держит user_metadata.locale в актуальном состоянии (для писем сброса пароля и т.п., которые
+ * Supabase шлёт без нашего участия). Пишет только если язык отличается. Ошибки молча игнорируем.
+ */
+export async function syncAuthLocale(): Promise<void> {
+  try {
+    const sb = await getSupabase()
+    if (!sb) return
+    const { data } = await sb.auth.getSession()
+    const user = data.session?.user
+    const locale = getLocale()
+    if (!user || user.user_metadata?.locale === locale) return
+    await sb.auth.updateUser({ data: { locale } })
+  } catch {
+    // не критично: письмо просто придёт на прежнем языке
   }
 }
 

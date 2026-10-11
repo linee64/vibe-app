@@ -1,0 +1,86 @@
+{{- $l := "" -}}{{- with .Data -}}{{- with .locale -}}{{- $l = printf "%v" . -}}{{- end -}}{{- end -}}
+{{- $asset := "https://vaibik.site" -}}
+<!DOCTYPE html>
+<html lang="{{ if eq $l "ru" }}ru{{ else if eq $l "kk" }}kk{{ else if eq $l "es" }}es{{ else if eq $l "zh" }}zh{{ else }}en{{ end }}" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{{ if eq $l "ru" }}Вайбик · Подтвердите новую почту{{ else if eq $l "kk" }}Вайбик · Жаңа поштаны растаңыз{{ else if eq $l "es" }}Vaibik · Confirma tu nuevo correo{{ else if eq $l "zh" }}Vaibik · 请确认你的新邮箱{{ else }}Vaibik · Confirm your new email{{ end }}</title>
+<style>
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+body { margin:0; padding:0; }
+a { text-decoration:none; }
+.fallback a { word-break:break-all; }
+@media (max-width: 600px) {
+  .px { padding-left:22px !important; padding-right:22px !important; }
+  .h1 { font-size:24px !important; }
+}
+@media (prefers-color-scheme: dark) {
+  .bg { background-color:#16132A !important; }
+  .card { background-color:#221E3B !important; border-color:#3A3366 !important; }
+  .h1, .ink { color:#FFFFFF !important; }
+  .txt { color:#DCD6F5 !important; }
+  .muted { color:#A49DC7 !important; }
+  .lnk { color:#B9A1FF !important; }
+  .code { background-color:#2E2852 !important; color:#FFFFFF !important; border-color:#4A4180 !important; }
+}
+[data-ogsc] .h1, [data-ogsc] .ink { color:#FFFFFF !important; }
+[data-ogsc] .txt { color:#DCD6F5 !important; }
+[data-ogsc] .lnk { color:#B9A1FF !important; }
+</style>
+</head>
+<body class="bg" style="margin:0;padding:0;background-color:#F4F0FF;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:#F4F0FF;">{{ if eq $l "ru" }}Подтвердите смену адреса, чтобы письма Вайбика приходили на новую почту.{{ else if eq $l "kk" }}Вайбик хаттары жаңа поштаға келуі үшін мекенжай ауысуын растаңыз.{{ else if eq $l "es" }}Confirma el cambio para que los correos de Vaibik lleguen a tu nueva dirección.{{ else if eq $l "zh" }}确认更换后，Vaibik 的邮件将发送到你的新邮箱。{{ else }}Confirm the change so Vaibik emails go to your new address.{{ end }}&#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; </div>
+<table role="presentation" class="bg" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#F4F0FF" style="background-color:#F4F0FF;width:100%;">
+<tr><td align="center" style="padding:28px 12px 32px 12px;">
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="560" style="width:560px;max-width:100%;">
+<tr><td align="center" class="ink" style="padding:0 0 16px 0;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:22px;line-height:28px;font-weight:900;color:#7C4DFF;letter-spacing:-0.3px;">
+<span style="color:#7C4DFF;">{{ if eq $l "ru" }}Вайбик{{ else if eq $l "kk" }}Вайбик{{ else if eq $l "es" }}Vaibik{{ else if eq $l "zh" }}Vaibik{{ else }}Vaibik{{ end }}</span>
+</td></tr>
+<tr><td>
+
+<table role="presentation" class="card" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="width:100%;background-color:#FFFFFF;border:3px solid #E4DAFF;border-radius:28px;border-collapse:separate;overflow:hidden;">
+<tr><td style="padding:0;font-size:0;line-height:0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+<tr>
+<td width="34%" height="10" bgcolor="#7C4DFF" style="background-color:#7C4DFF;border-radius:25px 0 0 0;height:10px;font-size:0;line-height:0;">&nbsp;</td>
+<td width="33%" height="10" bgcolor="#FF7A59" style="background-color:#FF7A59;height:10px;font-size:0;line-height:0;">&nbsp;</td>
+<td width="33%" height="10" bgcolor="#13C2AE" style="background-color:#13C2AE;border-radius:0 25px 0 0;height:10px;font-size:0;line-height:0;">&nbsp;</td>
+</tr></table>
+</td></tr>
+<tr><td align="center" style="padding:30px 40px 6px 40px;" class="px">
+<img src="{{ $asset }}/email/bipi.png" width="120" height="120" alt="{{ if eq $l "ru" }}Бипи — робот-талисман Вайбика{{ else if eq $l "kk" }}Бипи — Вайбиктің робот-талисманы{{ else if eq $l "es" }}Bipi, el robot mascota de Vaibik{{ else if eq $l "zh" }}Bipi——Vaibik 的机器人吉祥物{{ else }}Bipi, Vaibik’s robot mascot{{ end }}" style="display:block;width:120px;height:120px;max-width:120px;border:0;outline:none;text-decoration:none;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:13px;color:#8A84A8;">
+</td></tr>
+<tr><td align="center" class="px h1" style="padding:14px 40px 0 40px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:28px;line-height:34px;font-weight:900;color:#2F2A47;">{{ if eq $l "ru" }}Меняем почту{{ else if eq $l "kk" }}Поштаны ауыстырамыз{{ else if eq $l "es" }}Cambiamos tu correo{{ else if eq $l "zh" }}更换邮箱{{ else }}Changing your email{{ end }}</td></tr>
+<tr><td align="center" class="px txt" style="padding:12px 40px 0 40px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:17px;line-height:26px;color:#4A4566;">{{ if eq $l "ru" }}Вы хотите сменить почту аккаунта с <b>{{ .Email }}</b> на <b>{{ .NewEmail }}</b>. Подтвердите — и входите уже с новым адресом.{{ else if eq $l "kk" }}Аккаунт поштасын <b>{{ .Email }}</b> мекенжайынан <b>{{ .NewEmail }}</b> мекенжайына ауыстырғыңыз келеді. Растаңыз — енді жаңа мекенжаймен кіресіз.{{ else if eq $l "es" }}Pediste cambiar el correo de tu cuenta de <b>{{ .Email }}</b> a <b>{{ .NewEmail }}</b>. Confírmalo y a partir de ahora entra con la nueva dirección.{{ else if eq $l "zh" }}你申请将账户邮箱从 <b>{{ .Email }}</b> 更换为 <b>{{ .NewEmail }}</b>。确认后，即可使用新邮箱登录。{{ else }}You asked to change your account email from <b>{{ .Email }}</b> to <b>{{ .NewEmail }}</b>. Confirm it and sign in with the new address from now on.{{ end }}</td></tr>
+<tr><td align="center" class="px" style="padding:28px 40px 0 40px;">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;border-collapse:separate;">
+<tr><td align="center" bgcolor="#7C4DFF" style="background-color:#7C4DFF;border-radius:18px;border-bottom:5px solid #5B2FD6;">
+<a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:16px 34px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:18px;line-height:22px;font-weight:800;color:#FFFFFF;text-decoration:none;border-radius:18px;">{{ if eq $l "ru" }}Подтвердить смену{{ else if eq $l "kk" }}Ауыстыруды растау{{ else if eq $l "es" }}Confirmar el cambio{{ else if eq $l "zh" }}确认更换{{ else }}Confirm the change{{ end }}</a>
+</td></tr></table>
+</td></tr>
+<tr><td class="px fallback" style="padding:22px 40px 0 40px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:13px;line-height:20px;color:#8A84A8;" align="center">
+<span class="muted" style="color:#8A84A8;">{{ if eq $l "ru" }}Кнопка не нажимается? Скопируйте ссылку в браузер:{{ else if eq $l "kk" }}Батырма басылмай ма? Сілтемені браузерге көшіріңіз:{{ else if eq $l "es" }}¿El botón no funciona? Copia este enlace en tu navegador:{{ else if eq $l "zh" }}按钮无法点击？请将此链接复制到浏览器中打开：{{ else }}Button not working? Copy this link into your browser:{{ end }}</span><br>
+<a class="lnk" href="{{ .ConfirmationURL }}" target="_blank" style="color:#7C4DFF;text-decoration:underline;word-break:break-all;">{{ .ConfirmationURL }}</a>
+</td></tr>
+<tr><td class="px muted" style="padding:12px 40px 0 40px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:13px;line-height:20px;color:#8A84A8;" align="center">{{ if eq $l "ru" }}Ссылка одноразовая и скоро перестанет работать.{{ else if eq $l "kk" }}Сілтеме бір рет қана жұмыс істейді және көп ұзамай ескіреді.{{ else if eq $l "es" }}El enlace funciona una sola vez y caduca pronto.{{ else if eq $l "zh" }}该链接仅可使用一次，且很快会失效。{{ else }}The link works once and expires soon.{{ end }}</td></tr>
+<tr><td style="padding:30px 0 0 0;font-size:0;line-height:0;">&nbsp;</td></tr>
+</table>
+
+</td></tr>
+<tr><td align="center" class="px" style="padding:22px 32px 0 32px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:13px;line-height:20px;color:#8A84A8;">
+<span class="ink" style="font-weight:800;color:#2F2A47;">{{ if eq $l "ru" }}Вайбик{{ else if eq $l "kk" }}Вайбик{{ else if eq $l "es" }}Vaibik{{ else if eq $l "zh" }}Vaibik{{ else }}Vaibik{{ end }}</span><span class="muted" style="color:#8A84A8;"> — {{ if eq $l "ru" }}учимся вайб-кодить вместе с Бипи{{ else if eq $l "kk" }}Бипимен бірге вайб-кодингті үйренеміз{{ else if eq $l "es" }}aprende vibe coding con Bipi{{ else if eq $l "zh" }}和 Bipi 一起学氛围编程{{ else }}learn vibe coding with Bipi{{ end }}</span><br>
+<span class="muted" style="color:#8A84A8;">{{ if eq $l "ru" }}Вы получили это письмо, потому что в Вайбике запросили смену почты аккаунта. Если это были не вы — не нажимайте кнопку и смените пароль.{{ else if eq $l "kk" }}Бұл хат Вайбикте аккаунт поштасын ауыстыру сұралғандықтан келді. Егер бұл сіз болмасаңыз — батырманы баспаңыз және құпиясөзді ауыстырыңыз.{{ else if eq $l "es" }}Recibiste este correo porque se pidió cambiar el correo de una cuenta de Vaibik. Si no fuiste tú, no pulses el botón y cambia tu contraseña.{{ else if eq $l "zh" }}你收到这封邮件，是因为有人申请更换 Vaibik 账户的邮箱。如果不是你本人，请不要点击按钮，并尽快修改密码。{{ else }}You got this email because an email change was requested for a Vaibik account. If it wasn’t you, don’t press the button and change your password.{{ end }}</span>
+</td></tr>
+</table>
+
+</td></tr>
+</table>
+</body>
+</html>

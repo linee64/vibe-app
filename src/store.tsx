@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { DEMO_MODE, REVIEW_MODE, SUPABASE_ENABLED } from './lib/config'
 import { getSupabase } from './lib/supabase'
+import { syncAuthLocale } from './lib/auth'
 import { loadRemoteProgress, mergeProgress, saveRemoteProgress } from './lib/progressSync'
 import { RECHARGE_MS } from './data/economy'
 import { track } from './lib/analytics'
@@ -247,6 +248,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const userId = session?.real ? session.id : undefined
+
+  // Язык писем Supabase Auth (user_metadata.locale) — при входе и при явной смене языка
+  useEffect(() => {
+    if (!userId) return
+    void syncAuthLocale()
+    return onUserLocaleChange(() => void syncAuthLocale())
+  }, [userId])
 
   // Загрузка и слияние прогресса при входе (и при возвращении на вкладку — вдруг учился с другого устройства)
   useEffect(() => {

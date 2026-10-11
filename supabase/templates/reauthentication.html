@@ -1,0 +1,80 @@
+{{- $l := "" -}}{{- with .Data -}}{{- with .locale -}}{{- $l = printf "%v" . -}}{{- end -}}{{- end -}}
+{{- $asset := "https://vaibik.site" -}}
+<!DOCTYPE html>
+<html lang="{{ if eq $l "ru" }}ru{{ else if eq $l "kk" }}kk{{ else if eq $l "es" }}es{{ else if eq $l "zh" }}zh{{ else }}en{{ end }}" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{{ if eq $l "ru" }}Вайбик · Код подтверждения{{ else if eq $l "kk" }}Вайбик · Растау коды{{ else if eq $l "es" }}Vaibik · Tu código de confirmación{{ else if eq $l "zh" }}Vaibik · 你的验证码{{ else }}Vaibik · Your confirmation code{{ end }}</title>
+<style>
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+body { margin:0; padding:0; }
+a { text-decoration:none; }
+.fallback a { word-break:break-all; }
+@media (max-width: 600px) {
+  .px { padding-left:22px !important; padding-right:22px !important; }
+  .h1 { font-size:24px !important; }
+}
+@media (prefers-color-scheme: dark) {
+  .bg { background-color:#16132A !important; }
+  .card { background-color:#221E3B !important; border-color:#3A3366 !important; }
+  .h1, .ink { color:#FFFFFF !important; }
+  .txt { color:#DCD6F5 !important; }
+  .muted { color:#A49DC7 !important; }
+  .lnk { color:#B9A1FF !important; }
+  .code { background-color:#2E2852 !important; color:#FFFFFF !important; border-color:#4A4180 !important; }
+}
+[data-ogsc] .h1, [data-ogsc] .ink { color:#FFFFFF !important; }
+[data-ogsc] .txt { color:#DCD6F5 !important; }
+[data-ogsc] .lnk { color:#B9A1FF !important; }
+</style>
+</head>
+<body class="bg" style="margin:0;padding:0;background-color:#F4F0FF;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:#F4F0FF;">{{ if eq $l "ru" }}Код для подтверждения действия в аккаунте Вайбика.{{ else if eq $l "kk" }}Вайбик аккаунтындағы әрекетті растауға арналған код.{{ else if eq $l "es" }}Tu código para confirmar una acción en tu cuenta de Vaibik.{{ else if eq $l "zh" }}用于确认 Vaibik 账户操作的验证码。{{ else }}Your code to confirm an action in your Vaibik account.{{ end }}&#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; </div>
+<table role="presentation" class="bg" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#F4F0FF" style="background-color:#F4F0FF;width:100%;">
+<tr><td align="center" style="padding:28px 12px 32px 12px;">
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="560" style="width:560px;max-width:100%;">
+<tr><td align="center" class="ink" style="padding:0 0 16px 0;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:22px;line-height:28px;font-weight:900;color:#7C4DFF;letter-spacing:-0.3px;">
+<span style="color:#7C4DFF;">{{ if eq $l "ru" }}Вайбик{{ else if eq $l "kk" }}Вайбик{{ else if eq $l "es" }}Vaibik{{ else if eq $l "zh" }}Vaibik{{ else }}Vaibik{{ end }}</span>
+</td></tr>
+<tr><td>
+
+<table role="presentation" class="card" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="width:100%;background-color:#FFFFFF;border:3px solid #E4DAFF;border-radius:28px;border-collapse:separate;overflow:hidden;">
+<tr><td style="padding:0;font-size:0;line-height:0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+<tr>
+<td width="34%" height="10" bgcolor="#7C4DFF" style="background-color:#7C4DFF;border-radius:25px 0 0 0;height:10px;font-size:0;line-height:0;">&nbsp;</td>
+<td width="33%" height="10" bgcolor="#FF7A59" style="background-color:#FF7A59;height:10px;font-size:0;line-height:0;">&nbsp;</td>
+<td width="33%" height="10" bgcolor="#13C2AE" style="background-color:#13C2AE;border-radius:0 25px 0 0;height:10px;font-size:0;line-height:0;">&nbsp;</td>
+</tr></table>
+</td></tr>
+<tr><td align="center" style="padding:30px 40px 6px 40px;" class="px">
+<img src="{{ $asset }}/email/bipi.png" width="120" height="120" alt="{{ if eq $l "ru" }}Бипи — робот-талисман Вайбика{{ else if eq $l "kk" }}Бипи — Вайбиктің робот-талисманы{{ else if eq $l "es" }}Bipi, el robot mascota de Vaibik{{ else if eq $l "zh" }}Bipi——Vaibik 的机器人吉祥物{{ else }}Bipi, Vaibik’s robot mascot{{ end }}" style="display:block;width:120px;height:120px;max-width:120px;border:0;outline:none;text-decoration:none;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:13px;color:#8A84A8;">
+</td></tr>
+<tr><td align="center" class="px h1" style="padding:14px 40px 0 40px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:28px;line-height:34px;font-weight:900;color:#2F2A47;">{{ if eq $l "ru" }}Ваш код{{ else if eq $l "kk" }}Сіздің кодыңыз{{ else if eq $l "es" }}Tu código{{ else if eq $l "zh" }}你的验证码{{ else }}Your code{{ end }}</td></tr>
+<tr><td align="center" class="px txt" style="padding:12px 40px 0 40px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:17px;line-height:26px;color:#4A4566;">{{ if eq $l "ru" }}Введите этот код в Вайбике, чтобы подтвердить действие с аккаунтом <b>{{ .Email }}</b>:{{ else if eq $l "kk" }}<b>{{ .Email }}</b> аккаунтымен әрекетті растау үшін осы кодты Вайбикке енгізіңіз:{{ else if eq $l "es" }}Introduce este código en Vaibik para confirmar la acción de <b>{{ .Email }}</b>:{{ else if eq $l "zh" }}请在 Vaibik 中输入此验证码，以确认 <b>{{ .Email }}</b> 的账户操作：{{ else }}Enter this code in Vaibik to confirm the action for <b>{{ .Email }}</b>:{{ end }}</td></tr>
+<tr><td align="center" class="px" style="padding:28px 40px 0 40px;">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;border-collapse:separate;">
+<tr><td class="code" align="center" bgcolor="#F4F0FF" style="background-color:#F4F0FF;border:2px dashed #C9B8FF;border-radius:18px;padding:14px 28px;font-family:'SFMono-Regular',Menlo,Consolas,'Courier New',monospace;font-size:32px;line-height:38px;font-weight:700;letter-spacing:8px;color:#2F2A47;">{{ .Token }}</td></tr></table>
+</td></tr>
+<tr><td class="px muted" style="padding:18px 40px 0 40px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:13px;line-height:20px;color:#8A84A8;" align="center">{{ if eq $l "ru" }}Никому не сообщайте этот код — даже Бипи.{{ else if eq $l "kk" }}Бұл кодты ешкімге айтпаңыз — тіпті Бипиге де.{{ else if eq $l "es" }}No compartas este código con nadie, ni siquiera con Bipi.{{ else if eq $l "zh" }}请勿把验证码告诉任何人——就算是 Bipi 也不行。{{ else }}Don’t share this code with anyone — not even Bipi.{{ end }}</td></tr>
+<tr><td style="padding:30px 0 0 0;font-size:0;line-height:0;">&nbsp;</td></tr>
+</table>
+
+</td></tr>
+<tr><td align="center" class="px" style="padding:22px 32px 0 32px;font-family:'Nunito','Segoe UI','Helvetica Neue',Helvetica,Arial,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:13px;line-height:20px;color:#8A84A8;">
+<span class="ink" style="font-weight:800;color:#2F2A47;">{{ if eq $l "ru" }}Вайбик{{ else if eq $l "kk" }}Вайбик{{ else if eq $l "es" }}Vaibik{{ else if eq $l "zh" }}Vaibik{{ else }}Vaibik{{ end }}</span><span class="muted" style="color:#8A84A8;"> — {{ if eq $l "ru" }}учимся вайб-кодить вместе с Бипи{{ else if eq $l "kk" }}Бипимен бірге вайб-кодингті үйренеміз{{ else if eq $l "es" }}aprende vibe coding con Bipi{{ else if eq $l "zh" }}和 Bipi 一起学氛围编程{{ else }}learn vibe coding with Bipi{{ end }}</span><br>
+<span class="muted" style="color:#8A84A8;">{{ if eq $l "ru" }}Вы получили это письмо, потому что в Вайбике запросили подтверждение действия с аккаунтом. Если это были не вы — смените пароль.{{ else if eq $l "kk" }}Бұл хат Вайбикте аккаунт әрекетін растау сұралғандықтан келді. Егер бұл сіз болмасаңыз — құпиясөзді ауыстырыңыз.{{ else if eq $l "es" }}Recibiste este correo porque una acción en tu cuenta de Vaibik necesitaba confirmación. Si no fuiste tú, cambia tu contraseña.{{ else if eq $l "zh" }}你收到这封邮件，是因为 Vaibik 账户的某项操作需要确认。如果不是你本人，请修改密码。{{ else }}You got this email because a Vaibik account action needed confirmation. If it wasn’t you, change your password.{{ end }}</span>
+</td></tr>
+</table>
+
+</td></tr>
+</table>
+</body>
+</html>

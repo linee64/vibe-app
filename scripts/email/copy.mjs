@@ -1,0 +1,275 @@
+/**
+ * Тексты писем Supabase Auth на 5 языках (ru, en, kk, es, zh).
+ * Меняете текст здесь → `npm run email:build` пересобирает supabase/templates/*.html и subjects.json.
+ * Внутри текстов можно использовать переменные Supabase: {{ .Email }}, {{ .NewEmail }}, {{ .Token }}.
+ */
+
+/** Общие строки для всех писем */
+export const COMMON = {
+  brand: { ru: 'Вайбик', en: 'Vaibik', kk: 'Вайбик', es: 'Vaibik', zh: 'Vaibik' },
+  mascotAlt: {
+    ru: 'Бипи — робот-талисман Вайбика',
+    en: 'Bipi, Vaibik’s robot mascot',
+    kk: 'Бипи — Вайбиктің робот-талисманы',
+    es: 'Bipi, el robot mascota de Vaibik',
+    zh: 'Bipi——Vaibik 的机器人吉祥物',
+  },
+  fallback: {
+    ru: 'Кнопка не нажимается? Скопируйте ссылку в браузер:',
+    en: 'Button not working? Copy this link into your browser:',
+    kk: 'Батырма басылмай ма? Сілтемені браузерге көшіріңіз:',
+    es: '¿El botón no funciona? Copia este enlace en tu navegador:',
+    zh: '按钮无法点击？请将此链接复制到浏览器中打开：',
+  },
+  expires: {
+    ru: 'Ссылка одноразовая и скоро перестанет работать.',
+    en: 'The link works once and expires soon.',
+    kk: 'Сілтеме бір рет қана жұмыс істейді және көп ұзамай ескіреді.',
+    es: 'El enlace funciona una sola vez y caduca pronto.',
+    zh: '该链接仅可使用一次，且很快会失效。',
+  },
+  tagline: {
+    ru: 'учимся вайб-кодить вместе с Бипи',
+    en: 'learn vibe coding with Bipi',
+    kk: 'Бипимен бірге вайб-кодингті үйренеміз',
+    es: 'aprende vibe coding con Bipi',
+    zh: '和 Bipi 一起学氛围编程',
+  },
+}
+
+/**
+ * Письма. key — имя типа в Supabase (mailer_templates_<key>_content / mailer_subjects_<key>,
+ * [auth.email.template.<key>] в config.toml); file — имя файла в supabase/templates/.
+ * code: true — вместо кнопки показываем {{ .Token }} (у reauthentication ссылки нет).
+ */
+export const EMAILS = [
+  {
+    key: 'confirmation',
+    file: 'confirm-signup',
+    subject: {
+      ru: 'Вайбик · Подтвердите почту',
+      en: 'Vaibik · Confirm your email',
+      kk: 'Вайбик · Поштаңызды растаңыз',
+      es: 'Vaibik · Confirma tu correo',
+      zh: 'Vaibik · 请确认你的邮箱',
+    },
+    preheader: {
+      ru: 'Один клик — и Бипи откроет вам первый урок вайб-кодинга.',
+      en: 'One click and Bipi will open your first vibe-coding lesson.',
+      kk: 'Бір рет басыңыз — Бипи сізге вайб-кодингтің алғашқы сабағын ашады.',
+      es: 'Un clic y Bipi te abrirá tu primera lección de vibe coding.',
+      zh: '点一下，Bipi 就会为你打开第一节氛围编程课。',
+    },
+    title: {
+      ru: 'Привет! Это Бипи',
+      en: 'Hi! It’s Bipi',
+      kk: 'Сәлем! Бұл Бипи',
+      es: '¡Hola! Soy Bipi',
+      zh: '你好！我是 Bipi',
+    },
+    body: {
+      ru: 'Осталось подтвердить почту <b>{{ .Email }}</b> — и можно учиться вайб-кодить: собирать сайты и приложения вместе с&nbsp;ИИ.',
+      en: 'Just confirm <b>{{ .Email }}</b> and you’re ready to learn vibe coding — building sites and apps together with AI.',
+      kk: '<b>{{ .Email }}</b> поштаңызды растаңыз — сосын ЖИ-мен бірге сайттар мен қосымшалар жасауды үйренеміз.',
+      es: 'Solo confirma <b>{{ .Email }}</b> y listo para aprender vibe coding: crear webs y apps junto con la IA.',
+      zh: '只需确认 <b>{{ .Email }}</b>，就可以开始学习氛围编程——和 AI 一起做网站和应用。',
+    },
+    button: { ru: 'Подтвердить почту', en: 'Confirm email', kk: 'Поштаны растау', es: 'Confirmar correo', zh: '确认邮箱' },
+    reason: {
+      ru: 'Вы получили это письмо, потому что на этот адрес зарегистрировали аккаунт в Вайбике. Если это были не вы — просто проигнорируйте его.',
+      en: 'You got this email because someone signed up for Vaibik with this address. If it wasn’t you, just ignore it.',
+      kk: 'Бұл хат осы мекенжаймен Вайбикте аккаунт тіркелгендіктен келді. Егер бұл сіз болмасаңыз — жай ғана елемеңіз.',
+      es: 'Recibiste este correo porque alguien se registró en Vaibik con esta dirección. Si no fuiste tú, ignóralo.',
+      zh: '你收到这封邮件，是因为有人用这个邮箱注册了 Vaibik。如果不是你本人，请忽略此邮件。',
+    },
+  },
+  {
+    key: 'recovery',
+    file: 'reset-password',
+    subject: {
+      ru: 'Вайбик · Сброс пароля',
+      en: 'Vaibik · Reset your password',
+      kk: 'Вайбик · Құпиясөзді қалпына келтіру',
+      es: 'Vaibik · Restablece tu contraseña',
+      zh: 'Vaibik · 重置你的密码',
+    },
+    preheader: {
+      ru: 'Ссылка для нового пароля внутри. Если вы не просили сброс — ничего делать не нужно.',
+      en: 'Your new-password link is inside. Didn’t ask for a reset? You can ignore this.',
+      kk: 'Жаңа құпиясөзге сілтеме ішінде. Сұрамаған болсаңыз — ештеңе істеудің қажеті жоқ.',
+      es: 'Dentro tienes el enlace para tu nueva contraseña. ¿No lo pediste? Ignora este correo.',
+      zh: '里面是设置新密码的链接。如果不是你本人操作，忽略即可。',
+    },
+    title: {
+      ru: 'Забыли пароль? Бывает!',
+      en: 'Forgot your password? Happens!',
+      kk: 'Құпиясөзді ұмыттыңыз ба? Болады!',
+      es: '¿Olvidaste tu contraseña? ¡Pasa!',
+      zh: '忘记密码了？没关系！',
+    },
+    body: {
+      ru: 'Мы получили запрос на сброс пароля для <b>{{ .Email }}</b>. Нажмите кнопку и придумайте новый — прогресс и серия никуда не денутся.',
+      en: 'We got a request to reset the password for <b>{{ .Email }}</b>. Tap the button and pick a new one — your progress and streak stay safe.',
+      kk: '<b>{{ .Email }}</b> үшін құпиясөзді қалпына келтіру сұрауын алдық. Батырманы басып, жаңасын ойлап табыңыз — прогресс пен серия сақталады.',
+      es: 'Recibimos una solicitud para restablecer la contraseña de <b>{{ .Email }}</b>. Pulsa el botón y elige una nueva: tu progreso y tu racha siguen a salvo.',
+      zh: '我们收到了为 <b>{{ .Email }}</b> 重置密码的请求。点击按钮设置新密码——你的进度和连续学习记录都会保留。',
+    },
+    button: { ru: 'Придумать новый пароль', en: 'Set a new password', kk: 'Жаңа құпиясөз орнату', es: 'Crear contraseña nueva', zh: '设置新密码' },
+    reason: {
+      ru: 'Вы получили это письмо, потому что для этого адреса запросили сброс пароля в Вайбике. Если это были не вы — проигнорируйте письмо, пароль не изменится.',
+      en: 'You got this email because a password reset was requested for this address on Vaibik. If it wasn’t you, ignore it — your password won’t change.',
+      kk: 'Бұл хат Вайбикте осы мекенжай үшін құпиясөзді қалпына келтіру сұралғандықтан келді. Егер бұл сіз болмасаңыз — елемеңіз, құпиясөз өзгермейді.',
+      es: 'Recibiste este correo porque se pidió restablecer la contraseña de esta dirección en Vaibik. Si no fuiste tú, ignóralo: tu contraseña no cambiará.',
+      zh: '你收到这封邮件，是因为有人在 Vaibik 为这个邮箱申请了重置密码。如果不是你本人，请忽略，密码不会改变。',
+    },
+  },
+  {
+    key: 'magic_link',
+    file: 'magic-link',
+    subject: {
+      ru: 'Вайбик · Ссылка для входа',
+      en: 'Vaibik · Your sign-in link',
+      kk: 'Вайбик · Кіру сілтемесі',
+      es: 'Vaibik · Tu enlace de acceso',
+      zh: 'Vaibik · 你的登录链接',
+    },
+    preheader: {
+      ru: 'Войдите в Вайбик в один клик — без пароля.',
+      en: 'Sign in to Vaibik in one click — no password needed.',
+      kk: 'Вайбикке бір рет басып кіріңіз — құпиясөзсіз.',
+      es: 'Entra en Vaibik con un clic, sin contraseña.',
+      zh: '一键登录 Vaibik，无需密码。',
+    },
+    title: { ru: 'С возвращением!', en: 'Welcome back!', kk: 'Қайта оралуыңызбен!', es: '¡Hola de nuevo!', zh: '欢迎回来！' },
+    body: {
+      ru: 'Нажмите кнопку, чтобы войти в Вайбик как <b>{{ .Email }}</b>. Бипи уже ждёт вас на следующем уроке.',
+      en: 'Tap the button to sign in to Vaibik as <b>{{ .Email }}</b>. Bipi is waiting for you at the next lesson.',
+      kk: 'Вайбикке <b>{{ .Email }}</b> ретінде кіру үшін батырманы басыңыз. Бипи сізді келесі сабақта күтіп тұр.',
+      es: 'Pulsa el botón para entrar en Vaibik como <b>{{ .Email }}</b>. Bipi te espera en la próxima lección.',
+      zh: '点击按钮，以 <b>{{ .Email }}</b> 登录 Vaibik。Bipi 已经在下一课等你了。',
+    },
+    button: { ru: 'Войти в Вайбик', en: 'Sign in to Vaibik', kk: 'Вайбикке кіру', es: 'Entrar en Vaibik', zh: '登录 Vaibik' },
+    reason: {
+      ru: 'Вы получили это письмо, потому что для этого адреса запросили вход в Вайбик. Если это были не вы — просто проигнорируйте его.',
+      en: 'You got this email because a sign-in to Vaibik was requested for this address. If it wasn’t you, just ignore it.',
+      kk: 'Бұл хат осы мекенжай үшін Вайбикке кіру сұралғандықтан келді. Егер бұл сіз болмасаңыз — жай ғана елемеңіз.',
+      es: 'Recibiste este correo porque se pidió acceder a Vaibik con esta dirección. Si no fuiste tú, ignóralo.',
+      zh: '你收到这封邮件，是因为有人申请用这个邮箱登录 Vaibik。如果不是你本人，请忽略此邮件。',
+    },
+  },
+  {
+    key: 'email_change',
+    file: 'change-email',
+    subject: {
+      ru: 'Вайбик · Подтвердите новую почту',
+      en: 'Vaibik · Confirm your new email',
+      kk: 'Вайбик · Жаңа поштаны растаңыз',
+      es: 'Vaibik · Confirma tu nuevo correo',
+      zh: 'Vaibik · 请确认你的新邮箱',
+    },
+    preheader: {
+      ru: 'Подтвердите смену адреса, чтобы письма Вайбика приходили на новую почту.',
+      en: 'Confirm the change so Vaibik emails go to your new address.',
+      kk: 'Вайбик хаттары жаңа поштаға келуі үшін мекенжай ауысуын растаңыз.',
+      es: 'Confirma el cambio para que los correos de Vaibik lleguen a tu nueva dirección.',
+      zh: '确认更换后，Vaibik 的邮件将发送到你的新邮箱。',
+    },
+    title: { ru: 'Меняем почту', en: 'Changing your email', kk: 'Поштаны ауыстырамыз', es: 'Cambiamos tu correo', zh: '更换邮箱' },
+    body: {
+      ru: 'Вы хотите сменить почту аккаунта с <b>{{ .Email }}</b> на <b>{{ .NewEmail }}</b>. Подтвердите — и входите уже с новым адресом.',
+      en: 'You asked to change your account email from <b>{{ .Email }}</b> to <b>{{ .NewEmail }}</b>. Confirm it and sign in with the new address from now on.',
+      kk: 'Аккаунт поштасын <b>{{ .Email }}</b> мекенжайынан <b>{{ .NewEmail }}</b> мекенжайына ауыстырғыңыз келеді. Растаңыз — енді жаңа мекенжаймен кіресіз.',
+      es: 'Pediste cambiar el correo de tu cuenta de <b>{{ .Email }}</b> a <b>{{ .NewEmail }}</b>. Confírmalo y a partir de ahora entra con la nueva dirección.',
+      zh: '你申请将账户邮箱从 <b>{{ .Email }}</b> 更换为 <b>{{ .NewEmail }}</b>。确认后，即可使用新邮箱登录。',
+    },
+    button: { ru: 'Подтвердить смену', en: 'Confirm the change', kk: 'Ауыстыруды растау', es: 'Confirmar el cambio', zh: '确认更换' },
+    reason: {
+      ru: 'Вы получили это письмо, потому что в Вайбике запросили смену почты аккаунта. Если это были не вы — не нажимайте кнопку и смените пароль.',
+      en: 'You got this email because an email change was requested for a Vaibik account. If it wasn’t you, don’t press the button and change your password.',
+      kk: 'Бұл хат Вайбикте аккаунт поштасын ауыстыру сұралғандықтан келді. Егер бұл сіз болмасаңыз — батырманы баспаңыз және құпиясөзді ауыстырыңыз.',
+      es: 'Recibiste este correo porque se pidió cambiar el correo de una cuenta de Vaibik. Si no fuiste tú, no pulses el botón y cambia tu contraseña.',
+      zh: '你收到这封邮件，是因为有人申请更换 Vaibik 账户的邮箱。如果不是你本人，请不要点击按钮，并尽快修改密码。',
+    },
+  },
+  {
+    key: 'invite',
+    file: 'invite',
+    subject: {
+      ru: 'Вайбик · Вас пригласили',
+      en: 'Vaibik · You’re invited',
+      kk: 'Вайбик · Сізді шақырды',
+      es: 'Vaibik · Tienes una invitación',
+      zh: 'Vaibik · 你收到了邀请',
+    },
+    preheader: {
+      ru: 'Примите приглашение и начните учиться вайб-кодить вместе с Бипи.',
+      en: 'Accept the invite and start learning vibe coding with Bipi.',
+      kk: 'Шақыруды қабылдап, Бипимен бірге вайб-кодингті үйрене бастаңыз.',
+      es: 'Acepta la invitación y empieza a aprender vibe coding con Bipi.',
+      zh: '接受邀请，和 Bipi 一起开始学习氛围编程。',
+    },
+    title: {
+      ru: 'Вас пригласили в Вайбик!',
+      en: 'You’re invited to Vaibik!',
+      kk: 'Сізді Вайбикке шақырды!',
+      es: '¡Te han invitado a Vaibik!',
+      zh: '你被邀请加入 Vaibik！',
+    },
+    body: {
+      ru: 'Вайбик — курс вайб-кодинга: собираете сайты и приложения вместе с ИИ, по несколько минут в день. Примите приглашение, чтобы создать аккаунт для <b>{{ .Email }}</b>.',
+      en: 'Vaibik is a vibe-coding course: build sites and apps together with AI, a few minutes a day. Accept the invite to create an account for <b>{{ .Email }}</b>.',
+      kk: 'Вайбик — вайб-кодинг курсы: күніне бірнеше минут ЖИ-мен бірге сайттар мен қосымшалар жасайсыз. <b>{{ .Email }}</b> үшін аккаунт ашу үшін шақыруды қабылдаңыз.',
+      es: 'Vaibik es un curso de vibe coding: crea webs y apps junto con la IA, unos minutos al día. Acepta la invitación para crear una cuenta para <b>{{ .Email }}</b>.',
+      zh: 'Vaibik 是一门氛围编程课程：每天几分钟，和 AI 一起做网站和应用。接受邀请，为 <b>{{ .Email }}</b> 创建账户。',
+    },
+    button: { ru: 'Принять приглашение', en: 'Accept invitation', kk: 'Шақыруды қабылдау', es: 'Aceptar invitación', zh: '接受邀请' },
+    reason: {
+      ru: 'Вы получили это письмо, потому что вас пригласили в Вайбик. Не ждали приглашения — просто проигнорируйте его.',
+      en: 'You got this email because you were invited to Vaibik. Not expecting an invite? Just ignore it.',
+      kk: 'Бұл хат сізді Вайбикке шақырғандықтан келді. Шақыру күтпеген болсаңыз — жай ғана елемеңіз.',
+      es: 'Recibiste este correo porque te invitaron a Vaibik. ¿No esperabas la invitación? Ignórala.',
+      zh: '你收到这封邮件，是因为有人邀请你加入 Vaibik。如果你没有预期收到邀请，请忽略此邮件。',
+    },
+  },
+  {
+    key: 'reauthentication',
+    file: 'reauthentication',
+    code: true,
+    subject: {
+      ru: 'Вайбик · Код подтверждения',
+      en: 'Vaibik · Your confirmation code',
+      kk: 'Вайбик · Растау коды',
+      es: 'Vaibik · Tu código de confirmación',
+      zh: 'Vaibik · 你的验证码',
+    },
+    preheader: {
+      ru: 'Код для подтверждения действия в аккаунте Вайбика.',
+      en: 'Your code to confirm an action in your Vaibik account.',
+      kk: 'Вайбик аккаунтындағы әрекетті растауға арналған код.',
+      es: 'Tu código para confirmar una acción en tu cuenta de Vaibik.',
+      zh: '用于确认 Vaibik 账户操作的验证码。',
+    },
+    title: { ru: 'Ваш код', en: 'Your code', kk: 'Сіздің кодыңыз', es: 'Tu código', zh: '你的验证码' },
+    body: {
+      ru: 'Введите этот код в Вайбике, чтобы подтвердить действие с аккаунтом <b>{{ .Email }}</b>:',
+      en: 'Enter this code in Vaibik to confirm the action for <b>{{ .Email }}</b>:',
+      kk: '<b>{{ .Email }}</b> аккаунтымен әрекетті растау үшін осы кодты Вайбикке енгізіңіз:',
+      es: 'Introduce este código en Vaibik para confirmar la acción de <b>{{ .Email }}</b>:',
+      zh: '请在 Vaibik 中输入此验证码，以确认 <b>{{ .Email }}</b> 的账户操作：',
+    },
+    note: {
+      ru: 'Никому не сообщайте этот код — даже Бипи.',
+      en: 'Don’t share this code with anyone — not even Bipi.',
+      kk: 'Бұл кодты ешкімге айтпаңыз — тіпті Бипиге де.',
+      es: 'No compartas este código con nadie, ni siquiera con Bipi.',
+      zh: '请勿把验证码告诉任何人——就算是 Bipi 也不行。',
+    },
+    reason: {
+      ru: 'Вы получили это письмо, потому что в Вайбике запросили подтверждение действия с аккаунтом. Если это были не вы — смените пароль.',
+      en: 'You got this email because a Vaibik account action needed confirmation. If it wasn’t you, change your password.',
+      kk: 'Бұл хат Вайбикте аккаунт әрекетін растау сұралғандықтан келді. Егер бұл сіз болмасаңыз — құпиясөзді ауыстырыңыз.',
+      es: 'Recibiste este correo porque una acción en tu cuenta de Vaibik necesitaba confirmación. Si no fuiste tú, cambia tu contraseña.',
+      zh: '你收到这封邮件，是因为 Vaibik 账户的某项操作需要确认。如果不是你本人，请修改密码。',
+    },
+  },
+]
