@@ -2,14 +2,16 @@
 // «Правильный путь» из src/data/homework.ts должен выполнять все требования, а расплывчатый промпт — нет.
 import { HOMEWORKS, type HomeworkDef } from '../../src/data/homework'
 import { BUG_CODE, BUG_ERROR, cardSim, debugSim, deploySim, formSim, landingSim, type Sim } from '../../src/homework/sims'
+import { SPEC_UI_ACTIONS, specSims } from '../../src/homework/spec'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SIMS: Record<string, Sim<any, any>> = { hw1: cardSim, hw2: landingSim, hw3: debugSim, hw4: formSim, hw5: deploySim }
+const SIMS: Record<string, Sim<any, any>> = { hw1: cardSim, hw2: landingSim, hw3: debugSim, hw4: formSim, hw5: deploySim, ...specSims }
 const UI_ACTIONS: Record<string, Record<string, unknown>> = {
   viewMobile: { viewedMobile: true, device: 'phone' },
   addTask: { verified: true },
   submitForm: { saved: true },
   openSite: { opened: true },
+  ...SPEC_UI_ACTIONS,
 }
 
 function run(hw: HomeworkDef, steps: HomeworkDef['solution']) {

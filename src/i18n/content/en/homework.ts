@@ -164,4 +164,474 @@ export const homework: ContentPack['homework'] = {
     solution: [{ block: 'Commit' }, { block: 'Push to GitHub' }, { block: 'Deploy to Vercel' }, {}, { type: 'Connect the domain zerno-coffee.com and Vercel Analytics.' }, {}, {}],
     vague: 'Just put the site online somewhere.',
   },
+  hw6: {
+    short: 'Plan card',
+    title: 'Build a plan card with the design system',
+    brief: 'The online drawing school “Aquarelle” sells a course by subscription. Ask the AI to make a plan card: from design system tokens, with all button states, phone-friendly and accessible to everyone.',
+    intro: 'An interface from a prompt is structure, system, states, responsive design and accessibility. Describe the card — and I\'ll show you what comes out! 🎨',
+    badge: {
+      name: 'Interface designer',
+    },
+    requirements: [
+      {
+        label: 'Structure: price, items, button',
+        hint: 'Describe what\'s inside: “plan name, price per month, 3 items ‘what\'s included’ and a ‘Start’ button”.',
+      },
+      {
+        label: 'Colors and spacing from tokens',
+        hint: 'Ask to take colors, radii and spacing from the design system tokens (tokens.css), not to invent new ones.',
+      },
+      {
+        label: 'Button states',
+        hint: 'The button has hover, keyboard focus, disabled and loading. List them.',
+      },
+      {
+        label: 'Accessibility: contrast and labels',
+        hint: 'Ask for text contrast of at least 4.5:1 and labels for the screen reader.',
+      },
+      {
+        label: 'Responsive design and phone check',
+        hint: 'Ask for responsive design (on a narrow screen the card is full width) and switch the preview to 📱 phone.',
+      },
+    ],
+    blocks: [
+      {
+        group: 'Goal',
+        label: 'Plan card',
+        text: 'Make a “Pro” plan card for the “Aquarelle” school: name, price $49 per month, 3 items “what\'s included” and a “Start” button.',
+      },
+      {
+        group: 'System',
+        label: 'Tokens',
+        text: 'Take colors, radii and spacing from the design system tokens in tokens.css.',
+      },
+      {
+        group: 'States',
+        label: 'Button states',
+        text: 'The button needs states: hover, focus, disabled and loading.',
+      },
+      {
+        group: 'Responsive design',
+        label: 'Responsive design',
+        text: 'Make it responsive: on narrow screens the card is full width, the button is at least 44 px.',
+      },
+      {
+        group: 'Accessibility',
+        label: 'Accessibility',
+        text: 'Text contrast of at least 4.5:1, and icons have labels for the screen reader.',
+      },
+      {
+        group: 'Empty words',
+        label: 'Make it beautiful',
+        text: 'Make it beautiful and modern.',
+      },
+      {
+        group: 'Danger!',
+        label: 'Copy someone else\'s design',
+        text: 'Copy the Stripe plan card one to one.',
+      },
+    ],
+    followUps: [
+      'Add a “Popular” badge',
+      'Make a dark theme from the same tokens',
+    ],
+    placeholder: 'For example: “Make a plan card”…',
+    vague: 'Make a beautiful card.',
+    texts: {
+      nothing: 'I didn\'t understand what exactly to make 🤔 Describe the card: what\'s inside, what it\'s built from and how it behaves.',
+      partial: 'I built what I understood. Look at the preview — what\'s still missing?',
+      done: 'Done! The card is built from tokens, with all states and accessible. Check it on your phone 📱',
+      trap: 'I won\'t copy someone else\'s design one to one — that\'s someone else\'s brand. Describe the techniques you like, and I\'ll build them in your style.',
+      trapBipi: 'You can\'t copy someone else\'s design and brand. Better describe what you like: a big price, an accent button, checkmarks next to the items.',
+      weak: 'The AI will understand “beautiful and modern” its own way. Describe the structure, tokens, states — that\'s what “beautiful” is.',
+      extras: {
+        badge: '“Popular” badge',
+        dark: 'Dark theme from tokens',
+      },
+      preview: {
+        empty: 'Describe the card — and it will appear here',
+        plan: 'Pro',
+        per: '/ mo',
+        item1: 'All 40 watercolor lessons',
+        item2: 'Feedback on your work from an artist',
+        item3: 'Chat with students',
+        cta: 'Start',
+        badge: 'Popular',
+        states: 'Button states',
+        sNormal: 'Normal',
+        sHover: 'Hover',
+        sFocus: 'Focus',
+        sDisabled: 'Disabled',
+        sLoading: 'Loading',
+        noTokens: 'Colors and spacing “by eye” — not from the design system',
+        tokensOk: 'Colors, radii and spacing — from tokens.css',
+        lowContrast: 'Light gray text is hard to read',
+        a11yOk: 'Contrast 7:1 · labels for the screen reader',
+        notAdaptive: 'On a phone the card doesn\'t fit',
+        checkPhone: 'Check it on your phone 📱',
+        phoneOk: 'On a phone — full width ✓',
+      },
+    },
+    solution: [
+      {
+        block: 'Plan card',
+      },
+      {
+        block: 'Tokens',
+      },
+      {
+        block: 'Button states',
+      },
+      {},
+      {
+        type: 'Make it responsive: on a phone the card is full width. Text contrast of at least 4.5:1, and labels for the screen reader.',
+      },
+      {},
+      {},
+    ],
+  },
+  hw7: {
+    short: 'Habit tracker',
+    title: 'Build a habit tracker app on Expo',
+    brief: 'Make a mobile app “Habits”: a daily to-do list with a “done” checkmark and an add screen. Describe the AI stack, screens, data storage, and phone specifics — then run the app in Expo Go.',
+    intro: 'A mobile app starts with the stack and screens. Describe what you need — and run the result on the “phone” in the preview! 📱',
+    badge: {
+      name: 'Mobile developer',
+    },
+    requirements: [
+      {
+        label: 'Stack: Expo and React Native',
+        hint: 'Name the stack: “Project on Expo (React Native, TypeScript)”. Otherwise the AI might make a web page.',
+      },
+      {
+        label: 'Screens: list and add',
+        hint: 'List the screens: “a habit list with a ‘done’ checkmark and an add habit screen”.',
+      },
+      {
+        label: 'Data is stored on the phone',
+        hint: 'Without storage, habits will disappear after a restart. Ask to store them on the phone (AsyncStorage).',
+      },
+      {
+        label: 'Screen notch and keyboard',
+        hint: 'Ask to account for the safe area and make sure the keyboard doesn’t cover the button.',
+      },
+      {
+        label: 'Run in Expo Go',
+        hint: 'When the stack and screens are ready, tap “Run in Expo Go” in the preview.',
+      },
+    ],
+    blocks: [
+      {
+        group: 'Stack',
+        text: 'Project on Expo (React Native, TypeScript, expo-router).',
+      },
+      {
+        group: 'Screens',
+        label: 'Habit list',
+        text: 'Main screen — a habit list with a “done today” checkmark.',
+      },
+      {
+        group: 'Screens',
+        label: 'Add screen',
+        text: 'Second screen — add a habit: a name field and an “Add” button.',
+      },
+      {
+        group: 'Data',
+        label: 'Storage',
+        text: 'Store habits on the phone using AsyncStorage.',
+      },
+      {
+        group: 'Phone',
+        label: 'Notch and keyboard',
+        text: 'Account for the safe area, and the keyboard shouldn’t cover the button.',
+      },
+      {
+        group: 'Empty words',
+        label: 'Make it convenient',
+        text: 'Make it convenient and beautiful.',
+      },
+      {
+        group: 'Danger!',
+        label: 'In HTML',
+        text: 'Build everything in HTML and CSS.',
+      },
+    ],
+    followUps: [
+      'Add a dark theme',
+      'Show the streak of days in a row',
+    ],
+    placeholder: 'For example: “Make a habit app”…',
+    vague: 'Make a habit app.',
+    texts: {
+      nothing: 'I didn’t understand what app to make 🤔 Name the stack, screens, and what should be saved.',
+      partial: 'I did what I understood. Look at the “phone” in the preview — what’s still missing?',
+      done: 'Done! Screens in React Native, data stored on the phone. Run the app in Expo Go ▶',
+      trap: 'HTML and CSS don’t work in React Native — it has its own components: View, Text, Pressable, and styles via StyleSheet. I’ll use those.',
+      trapBipi: 'A mobile app in React Native has no HTML or CSS files. Name the stack — and the AI won’t mix it up.',
+      weak: '“Convenient and beautiful” is not a task. Describe the screens, data, and phone specifics.',
+      extras: {
+        dark: 'Dark theme',
+        streak: 'Streak of days in a row',
+      },
+      preview: {
+        empty: 'Describe the screens — and the app will appear on the phone',
+        web: 'This is a web page, not an app: name the stack',
+        title: 'My habits',
+        today: 'Today',
+        h1: 'Drink water',
+        h2: 'Read 10 minutes',
+        h3: 'Exercise',
+        add: '+ Add habit',
+        stored: 'Saved on the phone',
+        notStored: 'Everything will disappear after a restart',
+        notch: 'Title under the screen notch',
+        streak: '🔥 5 days in a row',
+        run: '▶ Run in Expo Go',
+        runLocked: 'First — stack and screens',
+        ran: 'Opened in Expo Go on the phone ✓',
+      },
+    },
+    solution: [
+      {
+        block: undefined,
+      },
+      {
+        block: 'Habit list',
+      },
+      {
+        block: 'Add screen',
+      },
+      {},
+      {
+        type: 'Store habits on the phone using AsyncStorage. Account for the safe area, and the keyboard shouldn’t cover the button.',
+      },
+      {},
+      {},
+    ],
+  },
+  hw8: {
+    short: 'AI assistant',
+    title: 'Add an AI assistant to the coffee shop site',
+    brief: 'Zerno coffee shop wants a chat on the site that answers about the menu and opening hours. Ask the AI editor to do it safely: through your own server, with the key in the environment, clear rules for the model, and limits.',
+    intro: 'An AI feature is not just a prompt for the model, but also a server, keys, and limits. Describe the architecture — then ask the bot a test question! 🤖',
+    badge: {
+      name: 'AI engineer',
+    },
+    requirements: [
+      {
+        label: 'Server route /api/chat',
+        hint: 'Requests to the model must go through your server: “Make a server route /api/chat”.',
+      },
+      {
+        label: 'Key in an environment variable',
+        hint: 'The model key — server only: “Take the key from the environment variable AI_API_KEY”.',
+      },
+      {
+        label: 'System prompt: menu and hours',
+        hint: 'Set rules for the model: “System prompt: answer only about the menu and opening hours, don\'t make things up”.',
+      },
+      {
+        label: 'Limits on questions and length',
+        hint: 'Protect your budget: “No more than 20 questions per hour from one visitor, answer — up to 300 tokens”.',
+      },
+      {
+        label: 'Test question in the chat',
+        hint: 'When the server, key, and system prompt are ready, ask the bot a test question in the preview.',
+      },
+    ],
+    blocks: [
+      {
+        group: 'Architecture',
+        label: 'Route /api/chat',
+        text: 'Make a server route /api/chat: it takes the question and calls the model.',
+      },
+      {
+        group: 'Security',
+        label: 'Key in the environment',
+        text: 'Take the model key from the environment variable AI_API_KEY, server only.',
+      },
+      {
+        group: 'Rules',
+        label: 'System prompt',
+        text: 'System prompt: you are the assistant of Zerno coffee shop, answer only about the menu and opening hours, don\'t make things up.',
+      },
+      {
+        group: 'Budget',
+        label: 'Limits',
+        text: 'Limit: no more than 20 questions per hour from a visitor, answer up to 300 tokens.',
+      },
+      {
+        group: 'Experience',
+        label: 'Streaming',
+        text: 'Show the answer gradually, with streaming.',
+      },
+      {
+        group: 'Danger!',
+        label: 'Paste my key',
+        text: 'Here\'s my key: sk-proj-Zr8aKeY2x9vQ',
+      },
+    ],
+    followUps: [
+      'Stream the answer',
+      'If the network drops — show “Retry”',
+    ],
+    placeholder: 'For example: “Add an AI chat to the site”…',
+    vague: 'Add an AI chat to the site.',
+    texts: {
+      nothing: 'I didn\'t understand what to do 🤔 Describe how the bot reaches the model, where the key is, and what it answers about.',
+      partial: 'I did what I understood. Look at the diagram in the preview — what\'s still missing?',
+      done: 'Done! The bot reaches the model through the server, the key is in the environment, the rules are set. Ask it a test question 💬',
+      trap: 'I won\'t put the key from the chat into the code. Revoke it in the provider\'s dashboard, create a new one, and put it in an environment variable on the server.',
+      trapBipi: 'Never paste a secret key into a prompt or code: it will end up in the history and in the repository. The key — only in environment variables.',
+      weak: 'Describe the architecture concretely: server, key, rules for the model, limits.',
+      extras: {
+        stream: 'Answer streaming',
+        retry: '“Retry” button on error',
+      },
+      preview: {
+        cafe: 'Zerno coffee shop',
+        tagline: 'Coffee and pastries from 8:00',
+        browser: 'Browser',
+        server: 'Server',
+        model: 'Model',
+        keyLeak: 'Key in the browser — everyone can see it',
+        keyEnv: 'Key in the environment',
+        noServer: 'Requests go directly from the browser',
+        rules: 'Rules: only menu and hours',
+        noRules: 'Without rules the bot answers anything',
+        limits: 'Limit: 20 questions per hour',
+        chat: 'Zerno assistant',
+        question: 'Do you have oat milk?',
+        ask: 'Ask',
+        locked: 'First: server, key, and rules',
+        answer: 'Yes, we do! Oat milk can be added to any drink for $3.',
+        retry: 'Retry',
+        site: 'zerno-coffee.com',
+      },
+    },
+    solution: [
+      {
+        block: 'Route /api/chat',
+      },
+      {
+        block: 'Key in the environment',
+      },
+      {},
+      {
+        type: 'System prompt: answer only about the coffee shop\'s menu and opening hours. Limit: no more than 20 questions per hour.',
+      },
+      {},
+      {},
+    ],
+  },
+  hw9: {
+    short: 'Task for the agent',
+    title: 'Give the agent a task and check the result',
+    brief: 'In the Zerno coffee shop, the 10% discount doesn\'t work on orders of exactly 5 000 ₸. Give the AI agent a task so it fixes the bug, doesn\'t touch anything extra, and proves the result with tests.',
+    intro: 'The agent will do the work itself — if the task is clear: goal, boundaries, a “done” criterion, and tests. Then we\'ll run the checks! 🛠️',
+    badge: {
+      name: 'Agent Tamer',
+    },
+    requirements: [
+      {
+        label: 'Goal: what to fix',
+        hint: 'Say what to fix: “Fix the discount: 10% should apply to orders from 5 000 ₸ inclusive.”',
+      },
+      {
+        label: 'Boundaries: what not to touch',
+        hint: 'Set boundaries: “Only change discount.ts and the tests, don\'t touch payment or design.”',
+      },
+      {
+        label: '“Done” criterion',
+        hint: 'Say when the task is solved: “Done when an order of 5 000 ₸ gets the discount and all tests pass.”',
+      },
+      {
+        label: 'Test for this case',
+        hint: 'Ask for a test: “Add a test: an order of 5 000 ₸ costs 4 500 ₸.”',
+      },
+      {
+        label: 'Run the tests',
+        hint: 'Click “Run tests” in the preview — let the agent prove everything works.',
+      },
+    ],
+    blocks: [
+      {
+        group: 'Goal',
+        label: 'Fix the discount',
+        text: 'Fix the discount: 10% should apply to orders from 5 000 ₸ inclusive.',
+      },
+      {
+        group: 'Boundaries',
+        label: 'Don\'t touch anything extra',
+        text: 'Only change discount.ts and the tests, don\'t touch payment or design.',
+      },
+      {
+        group: 'Done',
+        label: 'Done criterion',
+        text: 'Done when an order of 5 000 ₸ gets the discount and all tests pass.',
+      },
+      {
+        group: 'Tests',
+        label: 'Test for the case',
+        text: 'Add a test: an order of 5 000 ₸ costs 4 500 ₸.',
+      },
+      {
+        group: 'Process',
+        label: 'Branch and PR',
+        text: 'Work in a separate branch and open a pull request.',
+      },
+      {
+        group: 'Danger!',
+        label: 'Delete the tests',
+        text: 'If a test gets in the way — delete the test.',
+      },
+    ],
+    followUps: [
+      'Work in a separate branch and open a pull request',
+      'Explain what the error was',
+    ],
+    placeholder: 'For example: “Fix the discount”…',
+    vague: 'Fix the shop.',
+    texts: {
+      nothing: 'I didn\'t understand the task 🤔 What to fix, what not to touch, and how to know it\'s done?',
+      partial: 'I started on what I understood. Check the diff in the preview — what\'s still missing?',
+      done: 'Done! I fixed discount.ts and added a test. Run the tests to make sure ▶',
+      trap: 'I won\'t delete the tests: a failing test shows a real problem. Better to fix the code.',
+      trapBipi: 'Deleting a test that gets in the way doesn\'t mean fixing the bug. That kind of rule lets the agent “fix” things by removing checks.',
+      weak: 'Describe the task specifically: goal, boundaries, a “done” criterion, and tests.',
+      extras: {
+        review: 'Separate branch and pull request',
+        explain: 'Explanation of the bug\'s cause',
+      },
+      preview: {
+        task: 'Agent task',
+        empty: 'Describe the task — the agent will show a plan and changes',
+        plan: 'Agent plan',
+        pGoal: 'Find where the discount is calculated',
+        pScope: 'Only change discount.ts and the tests',
+        pDone: 'Done when all tests pass',
+        pTests: 'Add a test for an order of 5 000 ₸',
+        files: 'Files changed',
+        wide: 'The agent also changed payment and styles — that wasn\'t asked for',
+        run: '▶ Run tests',
+        runLocked: 'First — goal and test',
+        branch: 'Branch fix/discount · pull request opened',
+        explain: 'Cause: the code had > 5000, but it needs >= 5000',
+      },
+    },
+    solution: [
+      {
+        block: 'Fix the discount',
+      },
+      {
+        block: 'Don\'t touch anything extra',
+      },
+      {},
+      {
+        type: 'Done when all tests pass. Add a test: an order of 5 000 ₸ costs 4 500 ₸.',
+      },
+      {},
+      {},
+    ],
+  },
 }

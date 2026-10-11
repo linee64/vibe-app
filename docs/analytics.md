@@ -56,6 +56,8 @@ Retention по `lesson_completed`; Trends `lesson_abandoned` с разбивко
 | `feedback_submitted` | отправлен отзыв (в т.ч. микро-опрос) | `rating`, `category`, `source` — **без текста и почты** |
 | `micro_prompt_shown` | показан микро-опрос | `source` (`first_lesson` / `paywall_exit` / `homework`) |
 | `micro_prompt_dismissed` | микро-опрос закрыт крестиком | `source` |
+| `language_changed` | сменили язык в переключателе | `from`, `to` |
+| `sound_toggled` | переключили «Звуки» в профиле | `enabled`, `where` (`profile`) |
 | `error_screen_shown` | показан экран «Бипи споткнулся» | `route` (веб) / `boundary` (мобилка) |
 | `$pageview` / `$screen` | смена экрана | `$current_url` без query (веб) / имя экрана (мобилка) |
 

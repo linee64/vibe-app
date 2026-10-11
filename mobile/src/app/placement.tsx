@@ -9,6 +9,7 @@ import { ExerciseView } from '../components/exercises'
 import { Btn, ProgressBar, Txt } from '../components/ui'
 import { Mascot } from '../components/Mascot'
 import { buzz } from '../lib/haptics'
+import { playSound } from '../lib/sound'
 import { track } from '../lib/analytics'
 import { C, font } from '../theme'
 import { t } from '@web/i18n/core'
@@ -32,6 +33,7 @@ export default function PlacementScreen() {
     if (!ex || status !== 'idle' || answer === null) return
     const ok = isCorrect(ex, answer)
     void buzz(ok ? 'ok' : 'bad')
+    playSound(ok ? 'correct' : 'wrong')
     if (ok) setScore((s) => s + 1)
     setStatus(ok ? 'correct' : 'wrong')
   }

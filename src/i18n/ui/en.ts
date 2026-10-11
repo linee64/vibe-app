@@ -2,6 +2,8 @@
 import type { Msg, UIKey } from '../core'
 
 export const en = {
+  "ach.agents": "Agent tamer",
+  "ach.mobile": "Your own app",
   "api.err.ai_failed": "The AI is unavailable right now — I’ll check your prompt offline.",
   "api.err.ai_not_configured": "AI review isn’t connected yet.",
   "api.err.ai_timeout": "The AI is taking too long — try again.",
@@ -43,6 +45,10 @@ export const en = {
   "landing.hero": "Build apps with AI <0/><1>in 5 minutes</1> a day",
   "lang.hint": "Lessons, homework and Bipi’s tips — in the language you choose.",
   "lang.label": "Language",
+  "sound.hint": "Vaibik’s synth blips for right answers, mistakes and finished lessons.",
+  "sound.label": "Sound effects",
+  "sound.off": "Off",
+  "sound.on": "On",
   "layout.rank": "You’re <0>#{rank}</0>.",
   "lesson.chargePause": "It’s not a penalty — just a pause. Review your mistake and Bipi gets a charge bar. Or wait: +1 bar every {min} min",
   "lesson.praise.1": "Great!",
@@ -954,7 +960,7 @@ export const en = {
   "x1x6qy5j": "I don’t know",
   "x1x9ab04": "▦ feedback table",
   "x1xc2vqr": "A weak prompt → tap improvements and they’ll be added to the text. The Vibe meter shows how well the AI will understand you. But careful: some improvements are traps.",
-  "x1xecshz": "Five units — from your first prompt to launch",
+  "x1xecshz": "Nine units — from your first prompt to your own AI agents",
   "x1xejk0j": "A short lesson explains how to phrase a task so the AI gets it the first time.",
   "x1xg3zny": "Error report check (#/debug/crash)",
   "x1xi86r6": "Clarify",

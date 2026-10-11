@@ -13,6 +13,7 @@ import { HINT_COST, RECHARGE_COST, RECHARGE_MINUTES, tokens, waitText } from '..
 import type { Exercise } from '../data/types'
 import { LessonComplete, type LessonResult } from './LessonComplete'
 import { track } from '../lib/analytics'
+import { playSound } from '../lib/sound'
 import { requestMicroPrompt } from '../lib/feedback'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
@@ -107,6 +108,7 @@ export function LessonScreen({ id }: { id: string }) {
       setAttempts((a) => a + 1)
       const ok = !skip && isCorrect(ex, answer)
       track('exercise_answered', { lesson_id: id, type: ex.kind, correct: ok, retry: isRetry, skipped: skip })
+      playSound(ok ? 'correct' : 'wrong')
       if (ok) {
         setSolved((s) => s + 1)
         setPraise(PRAISE()[Math.floor(Math.random() * PRAISE().length)])
@@ -146,6 +148,7 @@ export function LessonScreen({ id }: { id: string }) {
       const xp = wasDone.current ? 5 : perfect ? 15 : 10
       const accuracy = Math.round((exercises.length / Math.max(attempts, 1)) * 100)
       completeLesson(id, xp, perfect)
+      playSound('complete')
       finished.current = true
       track('lesson_completed', { lesson_id: id, unit: unitNum, mistakes, duration_s: seconds, perfect, accuracy, repeat: wasDone.current })
       // самый первый пройденный урок — потом (на пути, не в уроке) спросим «Как тебе первый урок?»

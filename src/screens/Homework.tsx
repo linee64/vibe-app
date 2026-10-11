@@ -6,6 +6,7 @@ import { type Sim, type Tone } from '../homework/sims'
 import { getLocalizedSims } from '../i18n/homework/sims'
 import { getLocale } from '../i18n/core'
 import { CardPreview, DeployPreview, FormPreview, LandingPreview, TodoPreview, type PreviewProps } from '../homework/previews'
+import { AgentPreview, AssistantPreview, HabitsPreview, PricingPreview } from '../homework/specPreviews'
 import { useStore } from '../store'
 import { navigate } from '../router'
 import { continueAfter } from '../flow'
@@ -18,6 +19,7 @@ import { AI_ENABLED } from '../lib/config'
 import { reviewPrompt, type ReviewOutcome } from '../lib/review'
 import { buildReviewRequest, mergeAiIntoPrompt } from '../homework/ai'
 import { track } from '../lib/analytics'
+import { playSound } from '../lib/sound'
 import { requestMicroPrompt } from '../lib/feedback'
 import { recordHomeworkSubmission } from '../lib/progressSync'
 import { t } from '../i18n/core'
@@ -226,6 +228,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
   useEffect(() => {
     if (allDone && !announced.current && !busy) {
       announced.current = true
+      playSound('correct')
       setMsgs((m) => [...m, { id: nextId.current++, role: 'bipi', text: t('x129mn8u'), tone: 'good' }])
     }
   }, [allDone, busy])
@@ -256,6 +259,7 @@ function Runner<S, U>({ def, sim, Preview, onSubmit }: RunnerProps<S, U>) {
     const tip = missing ? (sim.hint?.(turn.state, uiRef.current, missing.id) ?? missing.hint) : ''
     if (!bipi && review) bipi = done ? t('x129mn8u') : t('x16jvi98', { score: review.score })
     if (!bipi) bipi = done ? t('x129mn8u') : `${turn.tone === 'good' ? t('x0yd8eh2') : turn.tone === 'meh' ? t('x0q6hiae') : t('x1ymh4to')}${tip}`
+    if (done && !announced.current) playSound('correct')
     if (done) announced.current = true
     setState(turn.state)
     setVersion((v) => v + 1)
@@ -573,6 +577,10 @@ const RUNNERS: Record<string, (def: HomeworkDef, onSubmit: (n: number, prompts: 
   hw3: (def, onSubmit) => <Runner def={def} sim={sims().hw3} Preview={TodoPreview} onSubmit={onSubmit} />,
   hw4: (def, onSubmit) => <Runner def={def} sim={sims().hw4} Preview={FormPreview} onSubmit={onSubmit} />,
   hw5: (def, onSubmit) => <Runner def={def} sim={sims().hw5} Preview={DeployPreview} onSubmit={onSubmit} />,
+  hw6: (def, onSubmit) => <Runner def={def} sim={sims().hw6} Preview={PricingPreview} onSubmit={onSubmit} />,
+  hw7: (def, onSubmit) => <Runner def={def} sim={sims().hw7} Preview={HabitsPreview} onSubmit={onSubmit} />,
+  hw8: (def, onSubmit) => <Runner def={def} sim={sims().hw8} Preview={AssistantPreview} onSubmit={onSubmit} />,
+  hw9: (def, onSubmit) => <Runner def={def} sim={sims().hw9} Preview={AgentPreview} onSubmit={onSubmit} />,
 }
 
 export function HomeworkScreen({ id }: { id: string }) {
@@ -597,6 +605,7 @@ export function HomeworkScreen({ id }: { id: string }) {
     // настоящий аккаунт: сохраняем сданную домашку (история промптов) — для аналитики и будущих проверок
     if (session?.real) void recordHomeworkSubmission(def.id, prompts, true)
     completeHomework(def.id, HOMEWORK_XP)
+    playSound('complete')
     setDone({ iterations, again })
     window.scrollTo(0, 0)
   })

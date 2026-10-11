@@ -16,6 +16,8 @@ import { FeedbackBubble } from '../components/Icons'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { formatDate, t } from '../i18n/core'
 import { tx } from '../i18n/rich'
+import { playSound, setSoundOn, useSoundOn } from '../lib/sound'
+import { track } from '../lib/analytics'
 
 
 const ruDate = (iso: string | null, opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' }) => (iso ? formatDate(iso, opts) : '')
@@ -136,7 +138,43 @@ const ACHIEVEMENTS = [
   { unit: 'u3', emoji: '🐞', color: '#13C2AE', get title() { return t('x0vaktnm') } },
   { unit: 'u4', emoji: '🗄️', color: '#5B2FD6', get title() { return t('x18i6kuu') } },
   { unit: 'u5', emoji: '🚀', color: '#FFA41B', get title() { return t('x1wvqlg2') } },
+  { unit: 'u7', emoji: '📱', color: '#13C2AE', get title() { return t('ach.mobile') } },
+  { unit: 'u9', emoji: '🤖', color: '#5B2FD6', get title() { return t('ach.agents') } },
 ]
+
+/** Звуки вкл/выкл: хранится на устройстве, по умолчанию включены */
+function SoundToggle() {
+  const on = useSoundOn()
+  const toggle = () => {
+    const next = !on
+    setSoundOn(next)
+    track('sound_toggled', { enabled: next, where: 'profile' })
+    if (next) playSound('correct')
+  }
+  return (
+    <section className="card mt-6 flex items-center gap-4 p-4" aria-labelledby="profile-sound" data-sound-setting={on ? 'on' : 'off'}>
+      <span className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-2xl bg-teal-light text-[28px]" aria-hidden>
+        {on ? '🔊' : '🔇'}
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2 id="profile-sound" className="text-[18px] font-black leading-tight">{t('sound.label')}</h2>
+        <p className="text-[14px] font-semibold leading-snug text-muted">{t('sound.hint')}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-labelledby="profile-sound"
+        onClick={toggle}
+        data-sound-toggle
+        className={`relative flex h-[34px] w-[64px] shrink-0 items-center rounded-full border-2 transition-colors duration-150 ${on ? 'border-teal-dark bg-teal' : 'border-line bg-line'}`}
+      >
+        <span className={`absolute text-[10px] font-black uppercase tracking-wider ${on ? 'left-2 text-white' : 'right-2 text-muted'}`}>{on ? t('sound.on') : t('sound.off')}</span>
+        <span className={`absolute top-[2px] h-[26px] w-[26px] rounded-full bg-white shadow-[0_2px_0_rgba(47,42,71,.18)] transition-[left] duration-150 ${on ? 'left-[32px]' : 'left-[2px]'}`} />
+      </button>
+    </section>
+  )
+}
 
 export function Profile() {
   const { session, progress, logout, resetProgress, setUnlockAll } = useStore()
@@ -202,6 +240,8 @@ export function Profile() {
         <p className="mb-3 text-[14px] font-semibold leading-snug text-muted">{t('lang.hint')}</p>
         <LanguageSwitcher variant="list" />
       </section>
+
+      <SoundToggle />
 
       <button
         className="card mt-6 flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-snow"

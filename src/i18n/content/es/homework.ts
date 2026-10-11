@@ -164,4 +164,474 @@ export const homework: ContentPack['homework'] = {
     solution: [{ block: 'Commit' }, { block: 'Push a GitHub' }, { block: 'Deploy en Vercel' }, {}, { type: 'Conecta el dominio zerno-coffee.com y Vercel Analytics.' }, {}, {}],
     vague: 'Nada más sube el sitio a algún lado.',
   },
+  hw6: {
+    short: 'Tarjeta de plan',
+    title: 'Arma una tarjeta de plan según el sistema de diseño',
+    brief: 'La escuela de dibujo en línea «Acuarela» vende un curso por suscripción. Pídele a la IA que haga una tarjeta de plan: con los tokens del sistema de diseño, con todos los estados del botón, cómoda en el teléfono y accesible para todos.',
+    intro: 'La interfaz según el prompt es estructura, sistema, estados, diseño responsive y accesibilidad. Describe la tarjeta, ¡y yo te muestro cómo queda! 🎨',
+    badge: {
+      name: 'Diseñador de interfaces',
+    },
+    requirements: [
+      {
+        label: 'Estructura: precio, puntos, botón',
+        hint: 'Describe qué lleva dentro: “nombre del plan, precio al mes, 3 puntos de ‘qué incluye’ y el botón ‘Empezar’”.',
+      },
+      {
+        label: 'Colores y espaciados desde tokens',
+        hint: 'Pide que tome colores, radios y espaciados de los tokens del sistema de diseño (tokens.css), y que no invente nuevos.',
+      },
+      {
+        label: 'Estados del botón',
+        hint: 'El botón tiene hover, foco con teclado, estado inactivo y carga. Enuméralos.',
+      },
+      {
+        label: 'Accesibilidad: contraste y etiquetas',
+        hint: 'Pide un contraste de texto de al menos 4,5:1 y etiquetas para el lector de pantalla.',
+      },
+      {
+        label: 'Responsive y prueba en el teléfono',
+        hint: 'Pide diseño responsive (en pantalla angosta la tarjeta ocupa todo el ancho) y cambia la vista previa a 📱 teléfono.',
+      },
+    ],
+    blocks: [
+      {
+        group: 'Objetivo',
+        label: 'Tarjeta de plan',
+        text: 'Haz una tarjeta del plan “Pro” para la escuela “Acuarela”: nombre, precio $4.99 al mes, 3 puntos de “qué incluye” y el botón “Empezar”.',
+      },
+      {
+        group: 'Sistema',
+        label: 'Tokens',
+        text: 'Toma colores, radios y espaciados de los tokens del sistema de diseño en tokens.css.',
+      },
+      {
+        group: 'Estados',
+        label: 'Estados del botón',
+        text: 'El botón necesita estados: hover, foco, inactivo y carga.',
+      },
+      {
+        group: 'Responsive',
+        label: 'Responsive',
+        text: 'Haz diseño responsive: en pantallas angostas la tarjeta ocupa todo el ancho, el botón de al menos 44 px.',
+      },
+      {
+        group: 'Accesibilidad',
+        label: 'Accesibilidad',
+        text: 'Contraste de texto de al menos 4,5:1, y en los íconos, etiquetas para el lector de pantalla.',
+      },
+      {
+        group: 'Palabras vacías',
+        label: 'Hazlo bonito',
+        text: 'Hazlo bonito y moderno.',
+      },
+      {
+        group: '¡Peligro!',
+        label: 'Copia el diseño de otro',
+        text: 'Copia la tarjeta de plan de Stripe tal cual.',
+      },
+    ],
+    followUps: [
+      'Agrega la insignia “Popular”',
+      'Haz un tema oscuro con los mismos tokens',
+    ],
+    placeholder: 'Por ejemplo: “Haz una tarjeta de plan”…',
+    vague: 'Haz una tarjeta bonita.',
+    texts: {
+      nothing: 'No entendí qué hacer exactamente 🤔 Describe la tarjeta: qué lleva dentro, de qué está hecha y cómo se comporta.',
+      partial: 'Armé lo que entendí. Mira la vista previa: ¿qué falta todavía?',
+      done: '¡Listo! La tarjeta está armada con tokens, con todos los estados y accesible. Pruébala en el teléfono 📱',
+      trap: 'Copiar el diseño de otro tal cual no lo voy a hacer: es una marca ajena. Describe los recursos que te gustan y los armaré en tu estilo.',
+      trapBipi: 'No se puede copiar el diseño ni la marca de otro. Mejor describe qué te gusta: precio grande, botón de acento, palomitas en los puntos.',
+      weak: '“Bonito y moderno” la IA lo entenderá a su manera. Describe la estructura, los tokens, los estados: eso es lo “bonito”.',
+      extras: {
+        badge: 'Insignia “Popular”',
+        dark: 'Tema oscuro con tokens',
+      },
+      preview: {
+        empty: 'Describe la tarjeta y aparecerá aquí',
+        plan: 'Pro',
+        per: '/ mes',
+        item1: 'Las 40 lecciones de acuarela',
+        item2: 'Revisión de trabajos por un artista',
+        item3: 'Chat con los estudiantes',
+        cta: 'Empezar',
+        badge: 'Popular',
+        states: 'Estados del botón',
+        sNormal: 'Normal',
+        sHover: 'Hover',
+        sFocus: 'Foco',
+        sDisabled: 'Inactivo',
+        sLoading: 'Cargando',
+        noTokens: 'Colores y espaciados “a ojo”, no del sistema de diseño',
+        tokensOk: 'Colores, radios y espaciados desde tokens.css',
+        lowContrast: 'El texto gris claro se lee mal',
+        a11yOk: 'Contraste 7:1 · etiquetas para el lector de pantalla',
+        notAdaptive: 'En el teléfono la tarjeta no cabe',
+        checkPhone: 'Pruébala en el teléfono 📱',
+        phoneOk: 'En el teléfono ocupa todo el ancho ✓',
+      },
+    },
+    solution: [
+      {
+        block: 'Tarjeta de plan',
+      },
+      {
+        block: 'Tokens',
+      },
+      {
+        block: 'Estados del botón',
+      },
+      {},
+      {
+        type: 'Haz diseño responsive: en el teléfono la tarjeta ocupa todo el ancho. Contraste de texto de al menos 4,5:1 y etiquetas para el lector de pantalla.',
+      },
+      {},
+      {},
+    ],
+  },
+  hw7: {
+    short: 'Rastreador de hábitos',
+    title: 'Crea una app rastreadora de hábitos en Expo',
+    brief: 'Haz una app móvil «Hábitos»: lista de tareas para cada día con marca de «hecho» y pantalla para agregar. Describe el stack de IA, las pantallas, el almacenamiento de datos y las particularidades del teléfono, y ejecuta la app en Expo Go.',
+    intro: 'Una app móvil empieza con el stack y las pantallas. Describe lo que necesitas, ¡y ejecuta el resultado en el «teléfono» de la vista previa! 📱',
+    badge: {
+      name: 'Desarrollador móvil',
+    },
+    requirements: [
+      {
+        label: 'Stack: Expo y React Native',
+        hint: 'Nombra el stack: «Proyecto en Expo (React Native, TypeScript)». Si no, la IA podría hacer una página web.',
+      },
+      {
+        label: 'Pantallas: lista y agregar',
+        hint: 'Enumera las pantallas: «lista de hábitos con marca de “hecho” y pantalla para agregar hábito».',
+      },
+      {
+        label: 'Datos guardados en el teléfono',
+        hint: 'Sin almacenamiento, los hábitos desaparecerán al reiniciar. Pide que se guarden en el teléfono (AsyncStorage).',
+      },
+      {
+        label: 'Recorte de pantalla y teclado',
+        hint: 'Pide que se considere la zona segura de la pantalla (safe area) y que el teclado no tape el botón.',
+      },
+      {
+        label: 'Ejecutar en Expo Go',
+        hint: 'Cuando el stack y las pantallas estén listos, presiona «Ejecutar en Expo Go» en la vista previa.',
+      },
+    ],
+    blocks: [
+      {
+        group: 'Stack',
+        text: 'Proyecto en Expo (React Native, TypeScript, expo-router).',
+      },
+      {
+        group: 'Pantallas',
+        label: 'Lista de hábitos',
+        text: 'Pantalla principal: lista de hábitos con marca de «hecho hoy».',
+      },
+      {
+        group: 'Pantallas',
+        label: 'Pantalla para agregar',
+        text: 'Segunda pantalla: agregar hábito, con campo de nombre y botón «Agregar».',
+      },
+      {
+        group: 'Datos',
+        label: 'Almacenamiento',
+        text: 'Guarda los hábitos en el teléfono con AsyncStorage.',
+      },
+      {
+        group: 'Teléfono',
+        label: 'Recorte y teclado',
+        text: 'Considera la zona segura de la pantalla, y el teclado no debe tapar el botón.',
+      },
+      {
+        group: 'Palabras vacías',
+        label: 'Hazlo cómodo',
+        text: 'Hazlo cómodo y bonito.',
+      },
+      {
+        group: '¡Peligro!',
+        label: 'En HTML',
+        text: 'Maqueta todo en HTML y CSS.',
+      },
+    ],
+    followUps: [
+      'Agrega tema oscuro',
+      'Muestra la racha de días seguidos',
+    ],
+    placeholder: 'Por ejemplo: «Haz una app para hábitos»…',
+    vague: 'Haz una app para hábitos.',
+    texts: {
+      nothing: 'No entendí qué app hacer 🤔 Nombra el stack, las pantallas y qué debe guardarse.',
+      partial: 'Hice lo que entendí. Mira el «teléfono» en la vista previa: ¿qué falta todavía?',
+      done: '¡Listo! Pantallas en React Native, datos guardados en el teléfono. Ejecuta la app en Expo Go ▶',
+      trap: 'HTML y CSS no funcionan en React Native: aquí hay componentes propios: View, Text, Pressable y estilos con StyleSheet. Lo hago con ellos.',
+      trapBipi: 'En una app móvil con React Native no hay archivos HTML ni CSS. Nombra el stack y la IA no se confundirá.',
+      weak: '«Cómodo y bonito» no es una tarea. Describe las pantallas, los datos y las particularidades del teléfono.',
+      extras: {
+        dark: 'Tema oscuro',
+        streak: 'Racha de días seguidos',
+      },
+      preview: {
+        empty: 'Describe las pantallas y la app aparecerá en el teléfono',
+        web: 'Esto es una página web, no una app: nombra el stack',
+        title: 'Mis hábitos',
+        today: 'Hoy',
+        h1: 'Tomar agua',
+        h2: 'Leer 10 minutos',
+        h3: 'Ejercicio',
+        add: '+ Agregar hábito',
+        stored: 'Se guarda en el teléfono',
+        notStored: 'Al reiniciar se perderá todo',
+        notch: 'Título debajo del recorte de pantalla',
+        streak: '🔥 5 días seguidos',
+        run: '▶ Ejecutar en Expo Go',
+        runLocked: 'Primero: stack y pantallas',
+        ran: 'Abierto en Expo Go en el teléfono ✓',
+      },
+    },
+    solution: [
+      {
+        block: undefined,
+      },
+      {
+        block: 'Lista de hábitos',
+      },
+      {
+        block: 'Pantalla para agregar',
+      },
+      {},
+      {
+        type: 'Guarda los hábitos en el teléfono con AsyncStorage. Considera la zona segura de la pantalla y el teclado.',
+      },
+      {},
+      {},
+    ],
+  },
+  hw8: {
+    short: 'Asistente de IA',
+    title: 'Integra un asistente de IA en el sitio de la cafetería',
+    brief: 'La cafetería Zerno quiere un chat en el sitio que responda sobre el menú y el horario. Pídele al editor con IA que lo haga de forma segura: a través de tu servidor, con la clave en una variable de entorno, reglas claras para el modelo y límites.',
+    intro: 'Una función de IA no es solo un prompt para el modelo, también es servidor, claves y límites. Describe la arquitectura, ¡y luego hazle una pregunta de prueba al bot! 🤖',
+    badge: {
+      name: 'Ingeniero de IA',
+    },
+    requirements: [
+      {
+        label: 'Ruta de servidor /api/chat',
+        hint: 'Las solicitudes al modelo deben pasar por tu servidor: “Crea una ruta de servidor /api/chat”.',
+      },
+      {
+        label: 'Clave en variable de entorno',
+        hint: 'La clave del modelo solo en el servidor: “Toma la clave de la variable de entorno AI_API_KEY”.',
+      },
+      {
+        label: 'Prompt de sistema: menú y horario',
+        hint: 'Define reglas para el modelo: “Prompt de sistema: responde solo sobre el menú y el horario, no inventes”.',
+      },
+      {
+        label: 'Límites de preguntas y longitud',
+        hint: 'Protege el presupuesto: “No más de 20 preguntas por hora por visitante, respuesta de hasta 300 tokens”.',
+      },
+      {
+        label: 'Pregunta de prueba en el chat',
+        hint: 'Cuando el servidor, la clave y el prompt de sistema estén listos, hazle una pregunta de prueba al bot en la vista previa.',
+      },
+    ],
+    blocks: [
+      {
+        group: 'Arquitectura',
+        label: 'Ruta /api/chat',
+        text: 'Crea una ruta de servidor /api/chat: recibe la pregunta y llama al modelo.',
+      },
+      {
+        group: 'Seguridad',
+        label: 'Clave en el entorno',
+        text: 'Toma la clave del modelo de la variable de entorno AI_API_KEY, solo en el servidor.',
+      },
+      {
+        group: 'Reglas',
+        label: 'Prompt de sistema',
+        text: 'Prompt de sistema: eres el asistente de la cafetería Zerno, responde solo sobre el menú y el horario, no inventes.',
+      },
+      {
+        group: 'Presupuesto',
+        label: 'Límites',
+        text: 'Límite: no más de 20 preguntas por hora por visitante, respuesta de hasta 300 tokens.',
+      },
+      {
+        group: 'Experiencia',
+        label: 'Streaming',
+        text: 'Muestra la respuesta poco a poco, con streaming.',
+      },
+      {
+        group: '¡Peligro!',
+        label: 'Pegar mi clave',
+        text: 'Aquí está mi clave: sk-proj-Zr8aKeY2x9vQ',
+      },
+    ],
+    followUps: [
+      'Muestra la respuesta con streaming',
+      'Si se cae la red, muestra “Reintentar”',
+    ],
+    placeholder: 'Por ejemplo: “Agrega un chat con IA al sitio”…',
+    vague: 'Agrega un chat con IA al sitio.',
+    texts: {
+      nothing: 'No entendí qué hacer 🤔 Describe por dónde el bot llega al modelo, dónde está la clave y a qué responde.',
+      partial: 'Hice lo que entendí. Mira el esquema en la vista previa, ¿qué falta todavía?',
+      done: '¡Listo! El bot llega al modelo a través del servidor, la clave está en el entorno y las reglas están definidas. Hazle una pregunta de prueba 💬',
+      trap: 'No voy a poner en el código la clave del chat. Revócala en el panel del proveedor, crea una nueva y colócala en una variable de entorno en el servidor.',
+      trapBipi: 'Nunca pegues una clave secreta en el prompt o en el código: quedará en el historial y en el repositorio. La clave va solo en variables de entorno.',
+      weak: 'Describe la arquitectura con concreción: servidor, clave, reglas para el modelo, límites.',
+      extras: {
+        stream: 'Streaming de la respuesta',
+        retry: 'Botón “Reintentar” en caso de error',
+      },
+      preview: {
+        cafe: 'Cafetería Zerno',
+        tagline: 'Café y repostería desde las 8:00',
+        browser: 'Navegador',
+        server: 'Servidor',
+        model: 'Modelo',
+        keyLeak: 'Clave en el navegador: todos pueden verla',
+        keyEnv: 'Clave en el entorno',
+        noServer: 'Las solicitudes van directo desde el navegador',
+        rules: 'Reglas: solo menú y horario',
+        noRules: 'Sin reglas, el bot responde cualquier cosa',
+        limits: 'Límite: 20 preguntas por hora',
+        chat: 'Asistente de Zerno',
+        question: '¿Tienen leche de avena?',
+        ask: 'Preguntar',
+        locked: 'Primero: servidor, clave y reglas',
+        answer: '¡Sí, tenemos! Puedes agregar leche de avena a cualquier bebida por $300.',
+        retry: 'Reintentar',
+        site: 'zerno-coffee.com',
+      },
+    },
+    solution: [
+      {
+        block: 'Ruta /api/chat',
+      },
+      {
+        block: 'Clave en el entorno',
+      },
+      {},
+      {
+        type: 'Prompt de sistema: responde solo sobre el menú y el horario de la cafetería. Límite: no más de 20 preguntas por hora.',
+      },
+      {},
+      {},
+    ],
+  },
+  hw9: {
+    short: 'Tarea para el agente',
+    title: 'Dale una tarea al agente y revisa el resultado',
+    brief: 'En la tienda de la cafetería Zerno el descuento del 10% no se aplica a los pedidos de exactamente 5 000 ₸. Dale una tarea al agente de IA para que arregle el bug, no toque nada de más y demuestre el resultado con tests.',
+    intro: 'El agente hará el trabajo solo — si la tarea es clara: objetivo, límites, criterio de “listo” y tests. ¡Y después lanzamos las comprobaciones! 🛠️',
+    badge: {
+      name: 'Domador de agentes',
+    },
+    requirements: [
+      {
+        label: 'Objetivo: qué corregir',
+        hint: 'Di qué corregir: “Corrige el descuento: el 10% debe aplicarse a los pedidos desde 5 000 ₸ inclusive”.',
+      },
+      {
+        label: 'Límites: qué no tocar',
+        hint: 'Define los límites: “Cambia solo discount.ts y los tests, no toques el pago ni el diseño”.',
+      },
+      {
+        label: 'Criterio de “listo”',
+        hint: 'Di cuándo la tarea está resuelta: “Listo cuando un pedido de 5 000 ₸ recibe el descuento y todos los tests pasan”.',
+      },
+      {
+        label: 'Test para este caso',
+        hint: 'Pide un test: “Agrega un test: un pedido de 5 000 ₸ cuesta 4 500 ₸”.',
+      },
+      {
+        label: 'Ejecutar los tests',
+        hint: 'Presiona “Ejecutar tests” en la vista previa — que el agente demuestre que todo funciona.',
+      },
+    ],
+    blocks: [
+      {
+        group: 'Objetivo',
+        label: 'Corregir el descuento',
+        text: 'Corrige el descuento: el 10% debe aplicarse a los pedidos desde 5 000 ₸ inclusive.',
+      },
+      {
+        group: 'Límites',
+        label: 'No tocar nada de más',
+        text: 'Cambia solo discount.ts y los tests, no toques el pago ni el diseño.',
+      },
+      {
+        group: 'Listo',
+        label: 'Criterio de “listo”',
+        text: 'Listo cuando un pedido de 5 000 ₸ recibe el descuento y todos los tests pasan.',
+      },
+      {
+        group: 'Tests',
+        label: 'Test para el caso',
+        text: 'Agrega un test: un pedido de 5 000 ₸ cuesta 4 500 ₸.',
+      },
+      {
+        group: 'Proceso',
+        label: 'Rama y PR',
+        text: 'Trabaja en una rama aparte y abre un pull request.',
+      },
+      {
+        group: '¡Peligro!',
+        label: 'Eliminar los tests',
+        text: 'Si el test estorba, elimina el test.',
+      },
+    ],
+    followUps: [
+      'Trabaja en una rama aparte y abre un pull request',
+      'Explica cuál era el error',
+    ],
+    placeholder: 'Por ejemplo: “Arregla el descuento”…',
+    vague: 'Arregla la tienda.',
+    texts: {
+      nothing: 'No entendí la tarea 🤔 ¿Qué corregir, qué no tocar y cómo saber que está listo?',
+      partial: 'Empecé con lo que entendí. Mira el diff en la vista previa — ¿qué más falta?',
+      done: '¡Listo! Corregí discount.ts y agregué un test. Ejecuta los tests para comprobar ▶',
+      trap: 'No voy a eliminar los tests: un test que falla muestra el problema real. Mejor corrijo el código.',
+      trapBipi: 'Eliminar el test que estorba no es arreglar el bug. Esa regla le permite al agente “arreglar” borrando las comprobaciones.',
+      weak: 'Describe la tarea de forma concreta: objetivo, límites, criterio de “listo” y tests.',
+      extras: {
+        review: 'Rama aparte y pull request',
+        explain: 'Explicación de la causa del bug',
+      },
+      preview: {
+        task: 'Tarea del agente',
+        empty: 'Describe la tarea — el agente mostrará el plan y los cambios',
+        plan: 'Plan del agente',
+        pGoal: 'Encontrar dónde se calcula el descuento',
+        pScope: 'Cambiar solo discount.ts y los tests',
+        pDone: 'Listo cuando todos los tests pasan',
+        pTests: 'Agregar un test para el pedido de 5 000 ₸',
+        files: 'Archivos modificados',
+        wide: 'El agente también cambió el pago y los estilos — eso no se lo pediste',
+        run: '▶ Ejecutar tests',
+        runLocked: 'Primero — objetivo y test',
+        branch: 'Rama fix/discount · pull request abierto',
+        explain: 'Causa: en el código había > 5000, pero se necesita >= 5000',
+      },
+    },
+    solution: [
+      {
+        block: 'Corregir el descuento',
+      },
+      {
+        block: 'No tocar nada de más',
+      },
+      {},
+      {
+        type: 'Listo cuando todas las pruebas pasen. Agrega una prueba: un pedido de 5 000 ₸ cuesta 4 500 ₸.',
+      },
+      {},
+      {},
+    ],
+  },
 }

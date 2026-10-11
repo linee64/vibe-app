@@ -2,6 +2,8 @@
 import type { Msg, UIKey } from '../core'
 
 export const es = {
+  "ach.agents": "Domador de agentes",
+  "ach.mobile": "Tu propia app",
   "api.err.ai_failed": "La IA no está disponible ahora: reviso tu prompt sin conexión.",
   "api.err.ai_not_configured": "La revisión con IA aún no está conectada.",
   "api.err.ai_timeout": "La IA está tardando demasiado: inténtalo de nuevo.",
@@ -43,6 +45,10 @@ export const es = {
   "landing.hero": "Crea apps con IA <0/><1>en 5 minutos</1> al día",
   "lang.hint": "Lecciones, tareas y consejos de Bipi, en el idioma que elijas.",
   "lang.label": "Idioma",
+  "sound.hint": "Sonidos sintetizados de Vaibik para aciertos, errores y lecciones terminadas.",
+  "sound.label": "Efectos de sonido",
+  "sound.off": "No",
+  "sound.on": "Sí",
   "layout.rank": "Estás en el <0>puesto {rank}</0>.",
   "lesson.chargePause": "No es un castigo, solo una pausa. Revisa tu error y Bipi recupera una barra. O espera: +1 barra cada {min} min",
   "lesson.praise.1": "¡Excelente!",
@@ -954,7 +960,7 @@ export const es = {
   "x1x6qy5j": "No sé",
   "x1x9ab04": "▦ Tabla feedback",
   "x1xc2vqr": "Un prompt débil → toca las mejoras y se agregarán al texto. El Vibe-metro muestra qué tan bien te entenderá la IA. Pero cuidado: algunas mejoras son trampas.",
-  "x1xecshz": "Cinco unidades: del primer prompt al lanzamiento",
+  "x1xecshz": "Nueve unidades: del primer prompt a tus propios agentes de IA",
   "x1xejk0j": "Una lección corta explica cómo plantear la tarea para que la IA la entienda a la primera.",
   "x1xg3zny": "Prueba del reporte de errores (#/debug/crash)",
   "x1xi86r6": "Aclara",

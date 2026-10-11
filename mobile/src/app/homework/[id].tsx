@@ -16,10 +16,12 @@ import { AI_ENABLED } from '../../lib/env'
 import { useStore } from '../../store/Store'
 import { recordHomeworkSubmission } from '../../store/progress'
 import { CardPreview, DeployPreview, FormPreview, LandingPreview, TodoPreview } from '../../components/homework/previews'
+import { SpecPreview } from '../../components/homework/specPreviews'
 import { MascotHead } from '../../components/Mascot'
 import { Btn, Chip, ProgressBar, Txt } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { C, font } from '../../theme'
+import { playSound } from '../../lib/sound'
 
 const BLOCK_COLORS: Record<BlockColor, { main: string; light: string; dark: string }> = {
   brand: { main: C.brand, light: C.brandLight, dark: C.brandDark },
@@ -178,6 +180,7 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
     track('homework_passed', { homework_id: def.id, ai_or_sim: usedAi.current ? 'ai' : 'sim', iterations: prompts.length, repeat: again })
     if (!again) void requestMicroPrompt('homework')
     completeHomework(def.id, HOMEWORK_XP)
+    playSound('complete')
     void recordHomeworkSubmission(def.id, prompts, true)
     setDone(true)
   }
@@ -194,6 +197,7 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
     if (def.id === 'hw2') return <LandingPreview state={state as never} ui={ui as never} setUi={setUi as never} />
     if (def.id === 'hw3') return <TodoPreview state={state as never} ui={ui as never} setUi={setUi as never} insert={insert} />
     if (def.id === 'hw4') return <FormPreview state={state as never} ui={ui as never} setUi={setUi as never} />
+    if (def.id === 'hw6' || def.id === 'hw7' || def.id === 'hw8' || def.id === 'hw9') return <SpecPreview id={def.id} state={state as never} ui={ui as never} setUi={setUi as never} />
     return <DeployPreview state={state as never} ui={ui as never} setUi={setUi as never} />
   })()
 

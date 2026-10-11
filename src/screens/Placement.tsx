@@ -11,6 +11,7 @@ import { track } from '../lib/analytics'
 import { Confetti } from './LessonComplete'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
+import { playSound } from '../lib/sound'
 
 type Phase = 'intro' | 'quiz' | 'result'
 
@@ -33,6 +34,7 @@ export function PlacementScreen({ target }: { target: string }) {
       if (!ex || status !== 'idle' || (!skip && !canCheck(ex, answer))) return
       const ok = !skip && isCorrect(ex, answer)
       if (ok) setScore((s) => s + 1)
+      playSound(ok ? 'correct' : 'wrong')
       setStatus(ok ? 'correct' : 'wrong')
     },
     [ex, status, answer],
@@ -44,6 +46,7 @@ export function PlacementScreen({ target }: { target: string }) {
       setPlacementSeen()
       const ok = score >= PLACEMENT_PASS
       track('placement_completed', { target: tier?.id, score, total: questions.length, passed: ok })
+      playSound(ok ? 'levelup' : 'complete')
       if (ok && tier) {
         passTiersByTest(tiersBefore(tier.id))
         track('tier_unlocked', { tier: tier.id, via: 'placement' })

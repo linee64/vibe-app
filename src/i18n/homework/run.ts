@@ -6,12 +6,14 @@ import type { HomeworkDef } from '../../data/homework'
 import { BUG_CODE, BUG_ERROR, type Sim } from '../../homework/sims'
 import type { Locale } from '../locales'
 import { getLocalizedSims } from './sims'
+import { SPEC_UI_ACTIONS } from '../../homework/spec'
 
 const UI_ACTIONS: Record<string, Record<string, unknown>> = {
   viewMobile: { viewedMobile: true, device: 'phone' },
   addTask: { verified: true },
   submitForm: { saved: true },
   openSite: { opened: true },
+  ...SPEC_UI_ACTIONS,
 }
 
 export function runHomeworkSolution(hw: HomeworkDef, locale: Locale, steps: HomeworkDef['solution']) {

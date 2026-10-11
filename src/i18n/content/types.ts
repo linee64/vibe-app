@@ -59,8 +59,8 @@ export interface EconomyTr {
 export type HomeworkTr = TrMap
 
 export interface ContentPack {
-  units: Record<'u1' | 'u2' | 'u3' | 'u4' | 'u5', UnitTr>
-  homework: Record<'hw1' | 'hw2' | 'hw3' | 'hw4' | 'hw5', HomeworkTr>
+  units: Record<'u1' | 'u2' | 'u3' | 'u4' | 'u5' | 'u6' | 'u7' | 'u8' | 'u9', UnitTr>
+  homework: Record<'hw1' | 'hw2' | 'hw3' | 'hw4' | 'hw5' | 'hw6' | 'hw7' | 'hw8' | 'hw9', HomeworkTr>
   tiers: TiersTr
   economy: EconomyTr
   /**

@@ -21,6 +21,10 @@ import { unit2 } from '../../data/units/u2-landing'
 import { unit3 } from '../../data/units/u3-debugging'
 import { unit4 } from '../../data/units/u4-backend'
 import { unit5 } from '../../data/units/u5-launch'
+import { unit6 } from '../../data/units/u6-design'
+import { unit7 } from '../../data/units/u7-mobile'
+import { unit8 } from '../../data/units/u8-ai-features'
+import { unit9 } from '../../data/units/u9-agents'
 import { SOURCE_LOCALE, type Locale } from '../locales'
 import { applyTr, replaceExact } from './overlay'
 import type { ContentPack, UnitTr } from './types'
@@ -28,8 +32,8 @@ import type { ContentPack, UnitTr } from './types'
 export type { ContentPack } from './types'
 
 /** Сырые (неперемешанные) русские разделы — источник для накладок */
-export const RAW_UNITS: Unit[] = [unit1, unit2, unit3, unit4, unit5]
-export type UnitId = 'u1' | 'u2' | 'u3' | 'u4' | 'u5'
+export const RAW_UNITS: Unit[] = [unit1, unit2, unit3, unit4, unit5, unit6, unit7, unit8, unit9]
+export type UnitId = 'u1' | 'u2' | 'u3' | 'u4' | 'u5' | 'u6' | 'u7' | 'u8' | 'u9'
 
 const LOADERS: Record<Exclude<Locale, 'ru'>, () => Promise<{ default: ContentPack }>> = {
   en: () => import('./en'),

@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
+import { SPEC_UI_ACTIONS } from '../../src/homework/spec'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { LOCALES, PLURAL_CATEGORIES, detectLocale, formatUsd, getLocale, loadLocale, placeholders, pluralCategory, setLocale, t, type Catalog, type Locale } from '../../src/i18n'
@@ -124,6 +125,7 @@ const UI_ACTIONS: Record<string, Record<string, unknown>> = {
   addTask: { verified: true },
   submitForm: { saved: true },
   openSite: { opened: true },
+  ...SPEC_UI_ACTIONS,
 }
 function run(sim: AnySim, hw: HomeworkDef, steps: HomeworkDef['solution']) {
   let s = sim.init()
@@ -163,7 +165,7 @@ describe('домашки: локализованные симуляторы', ()
         const review = { score: 80, requirements: Object.fromEntries(ids.map((r) => [r, true])), feedback: [], improved_prompt: '', detected_features: [], values: {} }
         const { text } = mergeAiIntoPrompt(sim, hw, sim.init(), 'Please do everything the task asks.', review)
         const ck = sim.check(sim.apply(sim.init(), text).state, p.fullUi) as Record<string, boolean>
-        for (const r of hw.requirements.filter((r) => !p.uiReqs.includes(r.id) || hw.id === 'hw2')) expect(ck[r.id], `${l}/${hw.id}.${r.id}`).toBe(true)
+        for (const r of hw.requirements.filter((r) => !p.uiReqs.includes(r.id) || hw.id === 'hw2' || hw.id === 'hw6')) expect(ck[r.id], `${l}/${hw.id}.${r.id}`).toBe(true)
       })
     }
   }

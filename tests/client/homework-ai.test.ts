@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { HOMEWORKS } from '../../src/data/homework'
 import { cardSim, debugSim, deploySim, formSim, landingSim, type Sim } from '../../src/homework/sims'
+import { specSims } from '../../src/homework/spec'
 import { AI_PROFILES, buildReviewRequest, mergeAiIntoPrompt } from '../../src/homework/ai'
 import type { PromptReview } from '../../src/lib/review'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SIMS: Record<string, Sim<any, any>> = { hw1: cardSim, hw2: landingSim, hw3: debugSim, hw4: formSim, hw5: deploySim }
+const SIMS: Record<string, Sim<any, any>> = { hw1: cardSim, hw2: landingSim, hw3: debugSim, hw4: formSim, hw5: deploySim, ...specSims }
 
 const review = (reqs: string[], features: string[] = [], values: Record<string, string> = {}): PromptReview => ({
   score: 80,
@@ -24,7 +25,7 @@ describe('ИИ → симулятор: канонические фразы', () 
       expect(sim).toBeTruthy()
       expect(p).toBeTruthy()
     })
-    const promptReqs = def.requirements.filter((r) => !p.uiReqs.includes(r.id) || def.id === 'hw2')
+    const promptReqs = def.requirements.filter((r) => !p.uiReqs.includes(r.id) || def.id === 'hw2' || def.id === 'hw6')
 
     it(`${def.id}: всё, что засчитал ИИ, засчитывает и симулятор (с UI-действиями)`, () => {
       // промпт своими словами — симулятор по ключевым словам ничего не видит

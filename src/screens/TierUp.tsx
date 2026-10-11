@@ -8,6 +8,7 @@ import { TierBadge } from '../components/TierBadge'
 import { Check } from '../components/Icons'
 import { Confetti } from './LessonComplete'
 import { track } from '../lib/analytics'
+import { playSound } from '../lib/sound'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
 
@@ -21,6 +22,7 @@ export function TierUpScreen({ id }: { id: string }) {
     if (!tier || !passed) navigate('/learn')
     else {
       // экран показывается один раз на тир — это и есть момент «тир пройден, следующий открыт»
+      if (!progress.tiersCelebrated.includes(tier.id)) playSound('levelup')
       if (!progress.tiersCelebrated.includes(tier.id)) track('tier_unlocked', { tier: nextTier(tier)?.id ?? 'soon', via: 'progress', completed_tier: tier.id })
       markTierCelebrated(tier.id)
     }

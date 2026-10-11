@@ -9,6 +9,7 @@ import { Mascot } from '../../components/Mascot'
 import { Btn, Txt } from '../../components/ui'
 import { C } from '../../theme'
 import { track } from '../../lib/analytics'
+import { playSound } from '../../lib/sound'
 import { t } from '@web/i18n/core'
 
 export default function TierUpScreen() {
@@ -22,6 +23,7 @@ export default function TierUpScreen() {
     // экран показывается один раз на тир — момент «тир пройден, следующий открыт»
     if (!tier || sent.current || progress.tiersCelebrated.includes(tier.id)) return
     sent.current = true
+    playSound('levelup')
     track('tier_unlocked', { tier: nextTier(tier)?.id ?? 'soon', via: 'progress', completed_tier: tier.id })
   }, [tier, progress.tiersCelebrated])
   if (!tier) return null

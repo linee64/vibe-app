@@ -35,6 +35,7 @@ export type AnalyticsEvent =
   | 'micro_prompt_dismissed'
   | 'error_screen_shown'
   | 'language_changed'
+  | 'sound_toggled'
 
 /** Минимум, который нужен от SDK (posthog-js и posthog-react-native оба подходят) */
 export interface AnalyticsClient {

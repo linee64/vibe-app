@@ -2,6 +2,8 @@
 import type { Msg, UIKey } from '../core'
 
 export const zh = {
+  "ach.agents": "智能体驯服师",
+  "ach.mobile": "自己的应用",
   "api.err.ai_failed": "AI 暂时不可用——我先离线检查你的提示词。",
   "api.err.ai_not_configured": "AI 检查尚未接入。",
   "api.err.ai_timeout": "AI 思考太久了——再试一次吧。",
@@ -43,6 +45,10 @@ export const zh = {
   "landing.hero": "用 AI 做应用，<0/>每天<1>5 分钟</1>",
   "lang.hint": "课程、作业和 Bipi 的提示都会使用所选语言。",
   "lang.label": "界面语言",
+  "sound.hint": "Vaibik 的合成音效：答对、答错、完成课程。",
+  "sound.label": "音效",
+  "sound.off": "关",
+  "sound.on": "开",
   "layout.rank": "你排<0>第 {rank} 名</0>。",
   "lesson.chargePause": "这不是惩罚——只是暂停一下。复盘错题，Bipi 就能充一格电。或者等待：每 {min} 分钟 +1 格",
   "lesson.praise.1": "太棒了！",
@@ -954,7 +960,7 @@ export const zh = {
   "x1x6qy5j": "不知道",
   "x1x9ab04": "▦ feedback 表",
   "x1xc2vqr": "弱提示词 → 点击改进项，它们会写进文本。氛围计显示 AI 能多大程度理解你。但要小心：改进项里藏着陷阱。",
-  "x1xecshz": "五个单元——从第一个提示词到上线",
+  "x1xecshz": "九个单元——从第一个提示词到你自己的 AI 智能体",
   "x1xejk0j": "一节短课教你如何表述任务，让 AI 一次就懂。",
   "x1xg3zny": "错误报告测试（#/debug/crash）",
   "x1xi86r6": "补充",

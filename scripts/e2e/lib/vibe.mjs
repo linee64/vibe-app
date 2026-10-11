@@ -79,6 +79,12 @@ export async function doAction(page, action) {
     case 'openSite':
       await pv.getByRole('button', { name: L('Открыть сайт') }).click()
       break
+    case 'runApp':
+    case 'sendTest':
+    case 'runTests':
+      await pv.locator(`[data-spec-action="${action}"]`).click()
+      await pv.locator('[data-spec-done]').waitFor()
+      break
   }
   await page.waitForTimeout(200)
 }

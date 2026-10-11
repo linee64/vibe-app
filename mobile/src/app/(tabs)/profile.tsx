@@ -16,6 +16,8 @@ import { C, font } from '../../theme'
 import { t } from '@web/i18n/core'
 import { LanguageSwitcher } from '../../components/LanguageSwitcher'
 import { tx } from '@web/i18n/rich'
+import { playSound, setSoundOn, useSoundOn } from '../../lib/sound'
+import { track } from '../../lib/analytics'
 
 export default function ProfileScreen() {
   const { session, progress, logout, setUnlockAll, resetProgress } = useStore()
@@ -60,6 +62,8 @@ export default function ProfileScreen() {
         <Txt w={600} size={13} color={C.muted}>{t('lang.hint')}</Txt>
         <LanguageSwitcher />
       </View>
+
+      <SoundRow />
 
       {progress.portfolioUrl ? (
         <View style={{ borderRadius: 18, backgroundColor: C.tealLight, padding: 14 }}>
@@ -122,6 +126,31 @@ function Stat({ value, label }: { value: string; label: string }) {
     <View style={{ flex: 1, borderRadius: 16, backgroundColor: C.white, borderWidth: 2, borderColor: C.line, paddingVertical: 10, alignItems: 'center' }}>
       <Text style={font(900, 16)}>{value}</Text>
       <Text style={font(700, 11, C.muted)}>{label}</Text>
+    </View>
+  )
+}
+
+/** Звуки вкл/выкл (по умолчанию включены) */
+function SoundRow() {
+  const on = useSoundOn()
+  return (
+    <View style={{ borderRadius: 18, backgroundColor: C.white, borderWidth: 2, borderColor: C.line, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <Text style={{ fontSize: 26 }}>{on ? '🔊' : '🔇'}</Text>
+      <View style={{ flex: 1 }}>
+        <Txt w={900} size={15}>{t('sound.label')}</Txt>
+        <Txt w={600} size={13} color={C.muted}>{t('sound.hint')}</Txt>
+      </View>
+      <Switch
+        testID="sound-toggle"
+        accessibilityLabel={t('sound.label')}
+        value={on}
+        onValueChange={(v) => {
+          setSoundOn(v)
+          track('sound_toggled', { enabled: v, where: 'profile' })
+          if (v) playSound('correct')
+        }}
+        trackColor={{ true: C.teal, false: C.line }}
+      />
     </View>
   )
 }

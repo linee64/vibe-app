@@ -9,6 +9,7 @@
 import type { HomeworkDef } from '../data/homework'
 import type { ReviewRequest, PromptReview } from '../lib/review'
 import { BUG_ERROR, type Sim } from './sims'
+import { SPECS, type SpecDef } from './spec'
 
 type Values = Record<string, string>
 
@@ -46,6 +47,18 @@ export function paletteKey(x: string | undefined): keyof typeof PALETTES {
   if (/бирюз|мятн|teal/.test(t)) return 'teal'
   if (/янтар|оранж|желт|золот|amber/.test(t)) return 'amber'
   return 'coffee'
+}
+
+/** Профиль для спек-домашек (6–9): канонические фразы понимает спек-симулятор */
+function specProfile(def: SpecDef, features: { id: string; label: string }[], phrases: Record<string, string>): AiProfile {
+  return {
+    features,
+    values: [],
+    uiReqs: def.reqs.filter((r) => r.ui).map((r) => r.id),
+    fullUi: { device: 'phone', viewedMobile: true, ran: true, tested: true, testsRun: true },
+    phrase: (id) => phrases[id] ?? null,
+    featureOn: (s, id) => !!(s as { extras?: Record<string, boolean> }).extras?.[id],
+  }
 }
 
 export const AI_PROFILES: Record<string, AiProfile> = {
@@ -163,6 +176,67 @@ export const AI_PROFILES: Record<string, AiProfile> = {
     },
     featureOn: (s, id) => id === 'og' && !!(s as { ogImage?: boolean }).ogImage,
   },
+  hw6: specProfile(
+    SPECS.hw6,
+    [
+      { id: 'badge', label: 'Бейдж «Популярный»' },
+      { id: 'dark', label: 'Тёмная тема' },
+    ],
+    {
+      structure: 'Карточка: цена в месяц, пункты и кнопка.',
+      tokens: 'Цвета и отступы из токенов дизайн-системы.',
+      states: 'Состояния кнопки: наведение, фокус, неактивная.',
+      a11y: 'Контраст текста не меньше 4,5:1.',
+      mobile: 'Адаптив под телефон.',
+      badge: 'Добавь бейдж «Популярный».',
+      dark: 'Тёмная тема.',
+    },
+  ),
+  hw7: specProfile(
+    SPECS.hw7,
+    [
+      { id: 'dark', label: 'Тёмная тема' },
+      { id: 'streak', label: 'Серия дней подряд' },
+    ],
+    {
+      stack: 'Проект на Expo (React Native).',
+      screens: 'Экраны: список привычек и добавление привычки.',
+      storage: 'Храни привычки через AsyncStorage.',
+      safe: 'Учти безопасную зону и клавиатуру.',
+      dark: 'Тёмная тема.',
+      streak: 'Покажи серию дней подряд.',
+    },
+  ),
+  hw8: specProfile(
+    SPECS.hw8,
+    [
+      { id: 'stream', label: 'Стриминг ответа' },
+      { id: 'retry', label: 'Кнопка «Повторить» при ошибке' },
+    ],
+    {
+      route: 'Серверный маршрут /api/chat.',
+      secret: 'Ключ из переменной окружения.',
+      system: 'Системный промпт: только меню и часы работы.',
+      limits: 'Лимит вопросов и длины ответа.',
+      stream: 'Ответ стримингом.',
+      retry: 'Кнопка «Повторить».',
+    },
+  ),
+  hw9: specProfile(
+    SPECS.hw9,
+    [
+      { id: 'review', label: 'Отдельная ветка и pull request' },
+      { id: 'explain', label: 'Объяснить причину бага' },
+    ],
+    {
+      goal: 'Исправь скидку от 5 000 ₸.',
+      scope: 'Меняй только discount.ts и тесты.',
+      done: 'Готово, когда все тесты проходят.',
+      tests: 'Добавь тест на этот случай.',
+      review: 'Работай в отдельной ветке.',
+      explain: 'Объясни причину.',
+    },
+  ),
 }
 
 /** Запрос к /api/ai/review для домашки */

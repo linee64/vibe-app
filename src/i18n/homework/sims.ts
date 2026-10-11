@@ -22,6 +22,7 @@ import {
   type Sim,
   type Tone,
 } from '../../homework/sims'
+import { specSims, type SpecState, type SpecUi } from '../../homework/spec'
 import type { Locale } from '../locales'
 import type { SimKeywords, SimPack } from './types'
 import { ru } from './packs/ru'
@@ -100,6 +101,10 @@ export interface LocalizedSims {
   hw3: Sim<DebugState, DebugUi>
   hw4: Sim<FormState, FormUi>
   hw5: Sim<DeployState, DeployUi>
+  hw6: Sim<SpecState, SpecUi>
+  hw7: Sim<SpecState, SpecUi>
+  hw8: Sim<SpecState, SpecUi>
+  hw9: Sim<SpecState, SpecUi>
 }
 
 const cache = new Map<Locale, LocalizedSims>()
@@ -450,7 +455,7 @@ export function getLocalizedSims(locale: Locale): LocalizedSims {
     check: (s) => ({ commit: !!s.commit && !s.commitVague, push: s.pushed, deploy: s.deployed, domain: !!s.domain, analytics: s.analytics }),
   }
 
-  const sims: LocalizedSims = { hw1: cardSim, hw2: landingSim, hw3: debugSim, hw4: formSim, hw5: deploySim }
+  const sims: LocalizedSims = { hw1: cardSim, hw2: landingSim, hw3: debugSim, hw4: formSim, hw5: deploySim, ...specSims }
   cache.set(locale, sims)
   return sims
 }

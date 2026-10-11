@@ -13,6 +13,7 @@ import { Sheet } from '../../components/Sheet'
 import { Mascot } from '../../components/Mascot'
 import { useToast } from '../../components/Toast'
 import { buzz } from '../../lib/haptics'
+import { playSound } from '../../lib/sound'
 import { track } from '../../lib/analytics'
 import { requestMicroPrompt } from '../../lib/feedback'
 import { C, font } from '../../theme'
@@ -86,6 +87,7 @@ export default function LessonScreen() {
       const xp = wasDone.current ? 5 : perfect ? 15 : 10
       const accuracy = Math.round((exercises.length / Math.max(a, 1)) * 100)
       completeLesson(id, xp, perfect)
+      playSound('complete')
       finished.current = true
       track('lesson_completed', { lesson_id: id, unit: found?.unit.num ?? 0, mistakes: m, duration_s: seconds, perfect, accuracy, repeat: wasDone.current })
       if (!wasDone.current && firstEver.current) void requestMicroPrompt('first_lesson')
@@ -104,6 +106,7 @@ export default function LessonScreen() {
       track('exercise_answered', { lesson_id: id, type: ex.kind, correct: ok, retry: isRetry, skipped: skip })
       if (ok) {
         void buzz('ok')
+        playSound('correct')
         setSolved((s) => s + 1)
         praiseRef.current = (praiseRef.current + 1) % PRAISE().length
         setPraise(PRAISE()[praiseRef.current])
@@ -114,6 +117,7 @@ export default function LessonScreen() {
         }
       } else {
         void buzz('bad')
+        playSound('wrong')
         const m = mistakes + 1
         setMistakes(m)
         setStatus('wrong')

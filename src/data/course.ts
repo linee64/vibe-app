@@ -1,5 +1,5 @@
 /**
- * Курс «Вайб-кодинг»: 5 разделов, в каждом — уроки (узлы на пути) со своими упражнениями.
+ * Курс «Вайб-кодинг»: 9 разделов, в каждом — уроки (узлы на пути) со своими упражнениями.
  * Контент лежит в src/data/units/*.ts, типы — в src/data/types.ts.
  */
 import type { Unit } from './types'
@@ -9,6 +9,10 @@ import { unit2 } from './units/u2-landing'
 import { unit3 } from './units/u3-debugging'
 import { unit4 } from './units/u4-backend'
 import { unit5 } from './units/u5-launch'
+import { unit6 } from './units/u6-design'
+import { unit7 } from './units/u7-mobile'
+import { unit8 } from './units/u8-ai-features'
+import { unit9 } from './units/u9-agents'
 
 export * from './types'
 import { DEMO_EXERCISE as DEMO_RU } from './units/u1-first-prompt'
@@ -18,7 +22,7 @@ const prepare = (u: Unit): Unit => ({
   lessons: u.lessons.map((l) => ({ ...l, exercises: l.exercises.map((ex, i) => prepareExercise(ex, `${l.id}:${i}:${ex.title}`)) })),
 })
 
-export const UNITS_RU: Unit[] = [unit1, unit2, unit3, unit4, unit5].map(prepare)
+export const UNITS_RU: Unit[] = [unit1, unit2, unit3, unit4, unit5, unit6, unit7, unit8, unit9].map(prepare)
 
 const lessonsOf = (units: Unit[]) => units.flatMap((u) => u.lessons.map((l, i) => ({ ...l, unit: u, index: i })))
 

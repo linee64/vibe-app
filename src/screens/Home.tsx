@@ -21,7 +21,7 @@ import { navigate } from '../router'
 import { Book, Check, Chest, Dumbbell, House, Lock, Star, Trophy } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
 import { TierBadge } from '../components/TierBadge'
-import { BrowserArt, BugArt, DatabaseArt, RocketArt } from '../components/Illustrations'
+import { AgentArt, AiChatArt, BrowserArt, BugArt, DatabaseArt, DesignArt, PhoneArt, RocketArt } from '../components/Illustrations'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
 
@@ -267,6 +267,10 @@ const ARTS: Record<string, ReactNode> = {
   u3: <BugArt size={170} className="w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
   u4: <DatabaseArt size={170} className="w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
   u5: <RocketArt size={170} className="anim-float w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
+  u6: <DesignArt size={170} className="w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
+  u7: <PhoneArt size={170} className="anim-float w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
+  u8: <AiChatArt size={170} className="w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
+  u9: <AgentArt size={170} className="w-[88px] min-[360px]:w-[110px] sm:w-[170px]" />,
 }
 
 function UnitArt({ unit, dir, locked }: { unit: Unit; dir: number; locked: boolean }) {
@@ -367,7 +371,7 @@ function SoonCard() {
           <div className="mt-2 flex flex-wrap gap-2">
             {SOON_TOPICS.map((t, i) => (
               <span key={t} className="rounded-full px-3 py-1 text-[14px] font-extrabold text-white" style={{ background: i === 0 ? '#7C4DFF' : '#FF7A59' }}>
-                {i === 0 ? '🤖 ' : '💳 '}
+                {i === 0 ? '💳 ' : '🚀 '}
                 {t}
               </span>
             ))}
