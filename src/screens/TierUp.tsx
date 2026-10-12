@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useStore, LAST_LESSON_KEY } from '../store'
 import { navigate } from '../router'
-import { SOON_TOPICS, findTier, isTierPassed, nextTier } from '../data/tiers'
+import { findTier, isTierPassed, nextTier } from '../data/tiers'
 import { UNIT_COLORS } from '../data/types'
 import { Mascot } from '../components/Mascot'
 import { TierBadge } from '../components/TierBadge'
@@ -11,6 +11,7 @@ import { track } from '../lib/analytics'
 import { playSound } from '../lib/sound'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
+import { EXPLORE_ANCHOR } from '../components/ExploreMore'
 
 /** Праздничный экран «Тир пройден!» — показывается один раз на тир */
 export function TierUpScreen({ id }: { id: string }) {
@@ -33,7 +34,7 @@ export function TierUpScreen({ id }: { id: string }) {
   const next = nextTier(tier)
   const c = UNIT_COLORS[tier.color]
   const go = () => {
-    sessionStorage.setItem(LAST_LESSON_KEY, next ? `tier-${next.id}` : 'path-finish')
+    sessionStorage.setItem(LAST_LESSON_KEY, next ? `tier-${next.id}` : EXPLORE_ANCHOR)
     navigate('/learn')
   }
   return (
@@ -67,16 +68,16 @@ export function TierUpScreen({ id }: { id: string }) {
             </div>
           </div>
         ) : (
-          <div className="relative mt-8 w-full max-w-[460px] rounded-[22px] border-2 border-dashed border-brand-mid bg-brand-light/50 p-4">
-            <div className="text-[18px] font-black">{t('x0byhvbd')}</div>
-            <div className="mt-1 text-[14px] font-semibold text-muted">{tx('x1nsz9rw', { v: SOON_TOPICS.join(', ') })}</div>
+          <div className="relative mt-8 w-full max-w-[460px] rounded-[22px] border-2 border-dashed border-brand-mid bg-brand-light/50 p-4" data-explore-next>
+            <div className="text-[18px] font-black">{t('explore.tier.title')}</div>
+            <div className="mt-1 text-[14px] font-semibold text-muted">{t('explore.tier.body')}</div>
           </div>
         )}
       </main>
       <footer className="border-t-2 border-line">
         <div className="mx-auto flex max-w-[1040px] justify-end px-4 py-5 md:px-8 md:py-8">
           <button className="btn w-full md:w-[200px]" onClick={go} autoFocus>
-            {next ? t('x0vf0bc5') : t('x0odeypg')}
+            {next ? t('x0vf0bc5') : t('explore.kicker')}
           </button>
         </div>
       </footer>

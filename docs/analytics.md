@@ -52,7 +52,7 @@ Retention по `lesson_completed`; Trends `lesson_abandoned` с разбивко
 | `checkout_started` | нажали «Оформить» / «Попробовать» | `plan` (`monthly` / `annual`), `source` |
 | `checkout_completed` | вернулись из оплаты / покупка в сторе | `plan`? |
 | `trial_started` | подписка в статусе trialing | `plan`, `days`? |
-| `feedback_opened` | открыт лист «Отзыв» | `entry` (`profile` / `sidebar` / `header` / `landing` / `more`) |
+| `feedback_opened` | открыт лист «Отзыв» | `entry` (`profile` / `sidebar` / `header` / `landing` / `more` / `explore`) |
 | `feedback_submitted` | отправлен отзыв (в т.ч. микро-опрос) | `rating`, `category`, `source` — **без текста и почты** |
 | `micro_prompt_shown` | показан микро-опрос | `source` (`first_lesson` / `paywall_exit` / `homework`) |
 | `micro_prompt_dismissed` | микро-опрос закрыт крестиком | `source` |
@@ -64,6 +64,7 @@ Retention по `lesson_completed`; Trends `lesson_abandoned` с разбивко
 | `onboarding_completed` | тур пройден до конца | `entry`, `warmup_correct` |
 | `onboarding_skipped` | тур закрыт «Пропустить» / крестиком | `entry`, `step` |
 | `glossary_opened` | открыт термин или словарик | `where` (`lesson_term` / `lesson_list` / `profile`), `term`? |
+| `explore_action` | действие в блоке «Исследуй дальше» в конце пути | `action` (`practice` / `quests` / `homework` / `suggest`) |
 | `error_screen_shown` | показан экран «Бипи споткнулся» | `route` (веб) / `boundary` (мобилка) |
 | `$pageview` / `$screen` | смена экрана | `$current_url` без query (веб) / имя экрана (мобилка) |
 

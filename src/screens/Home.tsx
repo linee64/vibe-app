@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { UNITS, UNIT_COLORS, type NodeKind, type Unit } from '../data/course'
+import { UNIT_COLORS, type NodeKind, type Unit } from '../data/course'
 import { HOMEWORK_XP } from '../data/homework'
 import { currentNodeId, isNodeDone, unitNodes, type PathItem } from '../data/path'
 import {
@@ -19,6 +19,7 @@ import { useToast } from '../components/Toast'
 import { navigate } from '../router'
 import { Book, Check, Chest, Dumbbell, House, Lock, Star, Trophy } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
+import { EXPLORE_ANCHOR, ExploreMore } from '../components/ExploreMore'
 import { TierBadge } from '../components/TierBadge'
 import { AgentArt, AiChatArt, BrowserArt, BugArt, DatabaseArt, DesignArt, PhoneArt, RocketArt } from '../components/Illustrations'
 import { t } from '../i18n/core'
@@ -389,8 +390,6 @@ export function Home() {
   const { progress } = useStore()
   const [openId, setOpenId] = useState<string | null>(null)
   const current = currentNodeId(progress)
-  const totalLessons = UNITS.reduce((n, u) => n + u.lessons.length, 0)
-  const doneLessons = UNITS.reduce((n, u) => n + u.lessons.filter((l) => progress.completed.includes(l.id)).length, 0)
   const showFirstRun = !progress.placementSeen && !progress.unlockAll && !isTierOpenByProgress(TIERS[1], progress)
 
   // Esc закрывает попап урока
@@ -413,7 +412,7 @@ export function Home() {
     if (!last) return
     sessionStorage.removeItem(LAST_LESSON_KEY)
     const el = document.querySelector(`[data-lesson="${last}"]`) ?? document.getElementById(last)
-    el?.scrollIntoView({ block: last.startsWith('tier-') ? 'start' : 'center' })
+    el?.scrollIntoView({ block: last.startsWith('tier-') || last === EXPLORE_ANCHOR ? 'start' : 'center' })
   }, [])
 
   let ui = 0
@@ -463,12 +462,7 @@ export function Home() {
           </div>
         )
       })}
-      <div id="path-finish" className="flex flex-col items-center gap-3 pb-6 text-center">
-        <div className="flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-wider text-[#b5b0c8]">{tx('x1i7hg7b', {}, [() => <span className="h-[2px] w-12 bg-line" />, () => <span className="h-[2px] w-12 bg-line" />])}</div>
-        <Mascot mood={doneLessons >= totalLessons ? 'happy' : 'think'} size={96} />
-        <h3 className="text-[20px] font-black">{tx('x1b3h82i', { doneLessons, totalLessons, length: progress.homework.length, length2: UNITS.length })}</h3>
-        <p className="max-w-[360px] text-[15px] font-semibold text-muted">{t('x1f33be5')}</p>
-      </div>
+      <ExploreMore />
     </div>
   )
 }

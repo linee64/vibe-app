@@ -12,7 +12,7 @@ const FeedbackSheet = lazy(() => import('./Feedback').then((m) => ({ default: m.
 const MicroPromptCard = lazy(() => import('./Feedback').then((m) => ({ default: m.MicroPromptCard })))
 
 export interface OpenFeedbackOptions {
-  /** Откуда открыли (для аналитики): profile, header, more, landing, error */
+  /** Откуда открыли (для аналитики): profile, header, more, landing, error, explore */
   entry?: string
   category?: FeedbackCategory
 }

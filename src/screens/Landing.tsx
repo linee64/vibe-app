@@ -12,7 +12,7 @@ import { UpgradeView, VibeMeter } from '../components/exercises/Upgrade'
 import { isCorrect, upgradeScore, type Answer, type Status } from '../data/exerciseLogic'
 import { DEMO_EXERCISE, UNITS, UNIT_COLORS } from '../data/course'
 import { HOMEWORKS } from '../data/homework'
-import { SOON_TOPICS, TIERS, unitsOf } from '../data/tiers'
+import { TIERS, unitsOf } from '../data/tiers'
 import { TierBadge } from '../components/TierBadge'
 import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, usd } from '../data/pricing'
 import { BILLING_ENABLED, DEMO_MODE } from '../lib/config'
@@ -343,7 +343,7 @@ function TiersAndHomework() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-[13px] font-extrabold text-brand">{tx('x1nsz9rw', { v: SOON_TOPICS.join(' · ') })}</p>
+          <p className="mt-4 text-[13px] font-extrabold text-brand">{t('explore.landing')}</p>
         </div>
       </Reveal>
     </div>
