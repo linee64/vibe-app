@@ -3,6 +3,7 @@ import { ALL_LESSONS, UNITS } from '../data/course'
 import { homeworkForUnit } from '../data/homework'
 import { questBoard } from '../data/quests'
 import { isUnitLocked } from '../data/tiers'
+import { isNodeReachable } from '../data/path'
 import { useStore } from '../store'
 import { navigate } from '../router'
 import { track } from '../lib/analytics'
@@ -45,9 +46,9 @@ export function ExploreMore() {
   const review = done.length ? done[seed % done.length] : ALL_LESSONS[0]
 
   const homeworks = UNITS.map((u) => homeworkForUnit(u.id)).filter((h) => !!h)
-  const nextHw = homeworks.find((h) => !progress.homework.includes(h.id) && !isUnitLocked(h.unitId, progress))
+  const nextHw = homeworks.find((h) => !progress.homework.includes(h.id) && !isUnitLocked(h.unitId, progress) && isNodeReachable(h.id, progress))
   const againHw = homeworks.find((h) => progress.homework.includes(h.id))
-  const hw = nextHw ?? againHw ?? homeworks[0]
+  const hw = nextHw ?? againHw
 
   const daily = questBoard(progress.quests).daily
   const dailyDone = daily.filter((q) => q.done).length

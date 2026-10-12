@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSP
 import { UNITS, UNIT_COLORS } from '../data/course'
 import { HOMEWORK_XP, findHomework, type BlockColor, type HomeworkDef, type PromptBlock } from '../data/homework'
 import { isUnitLocked, tierOfUnit } from '../data/tiers'
+import { isNodeReachable } from '../data/path'
 import { type Sim, type Tone } from '../homework/sims'
 import { getLocalizedSims } from '../i18n/homework/sims'
 import { getLocale } from '../i18n/core'
@@ -596,7 +597,7 @@ export function HomeworkScreen({ id }: { id: string }) {
         <button className="btn" onClick={() => navigate('/learn')}>{t('x0povobi')}</button>
       </div>
     )
-  if (isUnitLocked(def.unitId, progress)) return <LockedScreen tier={tierOfUnit(def.unitId)} />
+  if (isUnitLocked(def.unitId, progress) || !isNodeReachable(def.id, progress)) return <LockedScreen tier={tierOfUnit(def.unitId)} />
   if (done) return <HomeworkDone def={def} iterations={done.iterations} again={done.again} onContinue={() => continueAfter(progress, def.id)} />
   return RUNNERS[def.id](def, (iterations, prompts, usedAi) => {
     const again = progress.homework.includes(def.id)

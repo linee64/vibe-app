@@ -1,6 +1,6 @@
 // Сквозная проверка курса на мобильном экране 375px (или 1280px с --desktop):
-//  A. Тиры закрыты: серые узлы с замком, попап «Заверши тир…», прямые ссылки ведут на экран «закрыто»;
-//     «Тест на уровень» — провал (не открывает) и успех (открывает Средний), затем тест с баннера Продвинутого.
+//  A. Строго по шагам: открыт только первый урок, остальные узлы серые с замком, нажатие — тост
+//     «Сначала пройди предыдущий уровень», прямые ссылки ведут на экран «закрыто» (без пейвола), теста на уровень нет.
 //  B. Честное прохождение: ВСЕ уроки (54) + домашки (9) («правильный путь», перед ним — расплывчатый промпт,
 //     который не должен засчитываться) по порядку пути; тиры открываются по мере прохождения, экраны «Тир пройден!».
 //  C. «Разблокировать всё (демо)» из профиля.
@@ -11,7 +11,7 @@
 import { chromium } from 'playwright'
 import { UNITS, watch, login, playLesson, BASE, findLesson, currentExercise, pick, check } from './lib/solver.mjs'
 import { T, L, LANG, plain } from './lib/i18n.mjs'
-import { HOMEWORKS, TIERS, PLACEMENT_PASS, readProgress, unlockAll, dismissFirstRun, playHomework, playPlacement } from './lib/vibe.mjs'
+import { HOMEWORKS, TIERS, readProgress, unlockAll, dismissFirstRun, playHomework } from './lib/vibe.mjs'
 
 const desktop = process.argv.includes('--desktop')
 const errors = []
@@ -52,61 +52,35 @@ const lockedNodes = (page) => page.evaluate(() => [...document.querySelectorAll(
   watch(page, errors)
   await login(page)
   await overflowCheck(page, 'A home')
-  assert(await page.locator('[data-first-run]').count(), 'A: нет предложения «Тест на уровень» после первого входа')
+  assert(!(await page.locator('[data-first-run]').count()), 'A: предложения «Тест на уровень» больше нет')
+  assert(!(await page.locator('[data-placement]').count()), 'A: тестов на уровень на пути больше нет')
   assert(!(await tierLocked(page, 'novice')), 'A: Новичок должен быть открыт')
   assert(await tierLocked(page, 'mid'), 'A: Средний должен быть закрыт')
   assert(await tierLocked(page, 'pro'), 'A: Продвинутый должен быть закрыт')
+  // строго по шагам: пройденные (done) → один текущий (current) → всё остальное с замком (locked)
+  const states = await page.evaluate(() => [...document.querySelectorAll('[data-lesson]')].map((n) => n.getAttribute('data-state')).join(','))
+  assert(/^(done,)*current(,locked)+$/.test(states), `A: путь должен быть строго по шагам, а он: ${states}`)
   const locked = await lockedNodes(page)
-  assert(locked.includes('u3-1') && locked.includes('hw4') && locked.includes('u5-6') && !locked.some((id) => id.startsWith('u1') || id.startsWith('u2')), `A: неверные закрытые узлы: ${locked.join(',')}`)
-  // попап закрытого узла
-  await page.evaluate(() => document.querySelector('[data-lesson="u3-1"]').scrollIntoView({ block: 'center', behavior: 'instant' }))
-  await page.locator('[data-lesson="u3-1"] > div > button').click()
-  const pop = page.locator('[data-lesson="u3-1"]').getByText(plain(T('x068m9kf', { name: TIERS[0].name })))
-  assert(await pop.isVisible(), 'A: нет попапа «Заверши тир Новичок, чтобы открыть»')
-  const popText = await page.locator('[data-lesson="u3-1"]').innerText()
-  assert(/0\/4/.test(popText), `A: в попапе нет прогресса 0/4: ${popText.replace(/\n/g, ' ')}`)
-  await overflowCheck(page, 'A locked popover')
-  await page.keyboard.press('Escape')
-  // прямые ссылки
-  await go(page, '/lesson/u3-1')
-  assert(await page.waitForSelector('[data-locked-screen]', { timeout: 5000 }).then(() => true, () => false), 'A: /lesson/u3-1 должен показывать экран «закрыто»')
-  await go(page, '/homework/hw4')
-  assert(await page.waitForSelector('[data-locked-screen]', { timeout: 5000 }).then(() => true, () => false), 'A: /homework/hw4 должен показывать экран «закрыто»')
-  await go(page, '/learn')
+  // нажатие на закрытый узел: тост, без попапа и без перехода
+  const probe = [locked[0], locked.find((id) => id.startsWith('u2')), 'u3-1'].filter(Boolean)
+  for (const id of probe) {
+    await page.keyboard.press('Escape')
+    await page.evaluate((x) => document.querySelector(`[data-lesson="${x}"]`).scrollIntoView({ block: 'center', behavior: 'instant' }), id)
+    await page.locator(`[data-lesson="${id}"] > div > button`).click()
+    assert(await page.getByRole('status').getByText(T('path.locked')).isVisible(), `A: нет тоста «${T('path.locked')}» для ${id}`)
+    assert(!(await page.locator(`[data-lesson="${id}"] .anim-pop`).count()), `A: у закрытого ${id} не должно быть попапа`)
+  }
+  await overflowCheck(page, 'A locked toast')
+  // прямые ссылки: закрыто, без пейвола
+  for (const h of [`/lesson/${locked[0]}`, '/lesson/u2-2', '/homework/hw2', '/lesson/u3-1', '/homework/hw4']) {
+    await go(page, h)
+    assert(await page.waitForSelector('[data-locked-screen]', { timeout: 5000 }).then(() => true, () => false), `A: ${h} должен показывать экран «закрыто»`)
+    assert(!(await page.locator('[data-paywall]').count()), `A: ${h} не должен показывать пейвол`)
+  }
+  await go(page, '/placement/mid')
   await page.waitForSelector('[data-lesson]')
-  // тест на уровень из предложения после входа: провал → не открывает
-  await page.locator('[data-first-run]').getByRole('button', { name: T('x1qewgb1') }).click()
-  await page.waitForSelector('[data-placement="intro"]')
-  await overflowCheck(page, 'A placement intro')
-  let passed = await playPlacement(page, 'mid', { correct: PLACEMENT_PASS - 2, hooks: { beforeCheck: (ex, i) => (i === 0 ? overflowCheck(page, `A placement q${i} (${ex.kind})`) : null) } })
-  assert(!passed, 'A: тест с 4/8 не должен засчитываться')
-  await overflowCheck(page, 'A placement fail')
-  // повтор — успех
-  await page.getByRole('button', { name: T('x173j3r6') }).click()
-  passed = await playPlacement(page, 'mid', { correct: 8, start: false })
-  assert(passed, 'A: тест с 8/8 должен засчитываться')
-  let prog = await readProgress(page)
-  assert(prog.tiersByTest.includes('novice'), 'A: Новичок не отмечен «пройден тестом»')
-  await page.getByRole('button', { name: T('x0ztonvh', { name: TIERS[1].name }) }).click()
-  await page.waitForSelector('[data-lesson]')
-  assert(!(await tierLocked(page, 'mid')), 'A: после теста Средний должен открыться')
-  assert(await tierLocked(page, 'pro'), 'A: после теста Продвинутый всё ещё закрыт')
-  assert(!(await page.locator('[data-first-run]').count()), 'A: предложение теста должно скрыться')
-  // тест с баннера закрытого тира Продвинутый (порог — ровно 6/8)
-  await page.locator('[data-tier="pro"]').getByRole('button', { name: T('x0tw0ozv') }).click()
-  await page.waitForSelector('[data-placement="intro"]')
-  passed = await playPlacement(page, 'pro', { correct: PLACEMENT_PASS })
-  assert(passed, 'A: тест Продвинутого с 6/8 должен засчитываться')
-  await page.getByRole('button', { name: T('x0ztonvh', { name: TIERS[2].name }) }).click()
-  await page.waitForSelector('[data-lesson]')
-  assert(!(await tierLocked(page, 'pro')), 'A: после теста Продвинутый должен открыться')
-  assert((await lockedNodes(page)).length === 0, 'A: остались закрытые узлы')
-  prog = await readProgress(page)
-  assert(prog.tiersByTest.includes('mid'), 'A: Средний не отмечен «пройден тестом»')
-  await go(page, '/profile')
-  assert((await page.locator('[data-profile-tier]').getAttribute('data-profile-tier')) === 'pro', 'A: в профиле текущий тир должен быть Продвинутый')
-  await overflowCheck(page, 'A profile')
-  console.log(`✓ A: блокировки, попап, прямые ссылки, тест на уровень (провал ${PLACEMENT_PASS - 2}/8, успех 8/8 и ${PLACEMENT_PASS}/8)`)
+  assert(!(await page.locator('[data-placement]').count()), 'A: маршрут /placement больше не работает')
+  console.log('✓ A: строго по шагам — замки, тост, прямые ссылки, без теста на уровень')
   await ctx.close()
 }
 

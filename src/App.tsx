@@ -7,18 +7,19 @@ import { Home } from './screens/Home'
 import { LessonScreen } from './screens/Lesson'
 import { Leaderboard } from './screens/Leaderboard'
 import { Profile } from './screens/Profile'
-import { MoreSoon } from './screens/Placeholder'
+import { HelpScreen, MoreScreen, SettingsScreen } from './screens/More'
+import { useDailyReminder } from './lib/reminder'
 import { QuestsScreen } from './components/Quests'
 import { IntroScreen } from './screens/Intro'
 import { GlossaryScreen } from './screens/GlossaryScreen'
 import { Wardrobe } from './screens/Wardrobe'
 import { Landing } from './screens/Landing'
-import { PlacementScreen } from './screens/Placement'
 import { TierUpScreen } from './screens/TierUp'
 import { LockedScreen } from './components/Locked'
 import { findLesson } from './data/course'
 import { findHomework } from './data/homework'
 import { isUnitLocked, needsPro, tierOfUnit } from './data/tiers'
+import { isNodeReachable } from './data/path'
 import { UNITS } from './data/course'
 import { BILLING_ENABLED, SUPABASE_ENABLED } from './lib/config'
 import { consumeAuthRedirect } from './lib/auth'
@@ -99,10 +100,11 @@ function useAnalyticsBridge(userId: string | undefined, route: string) {
 const debugRoutes = () => import.meta.env.DEV || localStorage.getItem('vaibik.debug') === '1'
 
 /** Урок/домашка: сначала блокировка тира, потом пейвол Pro */
-function Gate({ unitId, children }: { unitId: string; children: ReactNode }) {
+function Gate({ unitId, nodeId, children }: { unitId: string; nodeId: string; children: ReactNode }) {
   const { progress } = useStore()
   const pay = usePaywall(needsPro(unitId))
-  if (isUnitLocked(unitId, progress)) return <LockedScreen tier={tierOfUnit(unitId)} />
+  // строго по шагам: до пейвола дело доходит, только когда ученик честно дошёл до этого уровня
+  if (isUnitLocked(unitId, progress) || !isNodeReachable(nodeId, progress)) return <LockedScreen tier={tierOfUnit(unitId)} />
   if (pay.loading) return <Blank />
   if (pay.blocked) return <PaywallScreen title={UNITS.find((u) => u.id === unitId)?.title} unitId={unitId} />
   return <>{children}</>
@@ -141,6 +143,7 @@ const needsIntro = (p: { completed: string[]; homework: string[]; introSeen?: bo
 
 function AppRoutes({ route }: { route: string }) {
   useCheckoutReturn()
+  useDailyReminder()
   const { progress, setIntroSeen } = useStore()
 
   if (route === '/intro')
@@ -162,7 +165,7 @@ function AppRoutes({ route }: { route: string }) {
     const unit = findLesson(id)?.unit
     if (!unit) return <LessonScreen key={id} id={id} />
     return (
-      <Gate unitId={unit.id}>
+      <Gate unitId={unit.id} nodeId={id}>
         <LessonScreen key={id} id={id} />
       </Gate>
     )
@@ -176,11 +179,7 @@ function AppRoutes({ route }: { route: string }) {
         <HomeworkScreen key={id} id={id} />
       </Suspense>
     )
-    return hw ? <Gate unitId={hw.unitId}>{screen}</Gate> : screen
-  }
-  if (route.startsWith('/placement/')) {
-    const id = route.slice('/placement/'.length)
-    return <PlacementScreen key={id} target={id} />
+    return hw ? <Gate unitId={hw.unitId} nodeId={hw.id}>{screen}</Gate> : screen
   }
   if (route.startsWith('/tier-up/')) {
     const id = route.slice('/tier-up/'.length)
@@ -221,7 +220,19 @@ function AppRoutes({ route }: { route: string }) {
     case '/more':
       return (
         <AppShell active="/more">
-          <MoreSoon />
+          <MoreScreen />
+        </AppShell>
+      )
+    case '/settings':
+      return (
+        <AppShell active="/more">
+          <SettingsScreen />
+        </AppShell>
+      )
+    case '/help':
+      return (
+        <AppShell active="/more">
+          <HelpScreen />
         </AppShell>
       )
     default:

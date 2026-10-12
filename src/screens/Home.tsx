@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { UNIT_COLORS, type NodeKind, type Unit } from '../data/course'
 import { HOMEWORK_XP } from '../data/homework'
-import { currentNodeId, isNodeDone, unitNodes, type PathItem } from '../data/path'
+import { currentNodeId, isNodeDone, isNodeReachable, unitNodes, type PathItem } from '../data/path'
 import {
   TIERS,
   isTierComplete,
@@ -10,7 +10,6 @@ import {
   isTierUnlocked,
   pendingTierUp,
   tierItems,
-  tierNodeProgress,
   unitsOf,
   type Tier,
 } from '../data/tiers'
@@ -115,35 +114,10 @@ function Popover({ offset, solid, color, border, children }: { offset: number; s
   )
 }
 
-function LockedPop({ tier }: { tier: Tier }) {
-  const { progress } = useStore()
-  const prev = TIERS[TIERS.findIndex((t) => t.id === tier.id) - 1]
-  const items = tierItems(prev, progress)
-  const done = items.filter((i) => i.done).length
-  const nodes = tierNodeProgress(prev, progress)
-  return (
-    <>
-      <div className="flex items-center gap-2 text-[18px] font-black leading-tight">{tx('x068m9kf', { name: prev.name }, [() => <Lock size={20} className="shrink-0 text-muted" />])}</div>
-      <div className="mb-1.5 mt-3 flex items-center justify-between text-[13px] font-extrabold text-muted">
-        <span>{t('x08hocmv')}</span>
-        <span className="text-ink">
-          {done}/{items.length}
-        </span>
-      </div>
-      <div className="progress-track !h-[12px]">
-        <div className="progress-fill bg-brand" style={{ width: `${Math.max((done / items.length) * 100, 4)}%` }} />
-      </div>
-      <div className="mt-1.5 text-[12px] font-bold text-muted">{t('x193ptrk', { done: nodes.done, total: nodes.total })}</div>
-      <button className="btn btn-block mt-4" onClick={() => navigate(`/placement/${tier.id}`)}>{t('x0tw0ozv')}</button>
-    </>
-  )
-}
-
 function PathNode({
   item,
   first,
   unit,
-  tier,
   state,
   offset,
   open,
@@ -152,7 +126,6 @@ function PathNode({
   item: PathItem
   first: boolean
   unit: Unit
-  tier: Tier
   state: NodeState
   offset: number
   open: boolean
@@ -170,13 +143,7 @@ function PathNode({
   const lessonCount = unit.lessons.length
 
   let pop: ReactNode = null
-  if (open && locked) {
-    pop = (
-      <Popover offset={offset} solid={false} color="#fff" border={LOCK.edge}>
-        <LockedPop tier={tier} />
-      </Popover>
-    )
-  } else if (open && hw) {
+  if (open && hw && !locked) {
     pop = (
       <Popover offset={offset} solid={!soft} color={c.main} border={c.mid}>
         <div className={`text-[12px] font-black uppercase tracking-wider ${soft ? 'text-muted' : 'text-white/75'}`}>{t('x0klzw38')}</div>
@@ -193,7 +160,7 @@ function PathNode({
         </button>
       </Popover>
     )
-  } else if (open && item.type === 'lesson') {
+  } else if (open && !locked && item.type === 'lesson') {
     const lesson = item.lesson
     const label = isReward(lesson.kind) ? t('x12zyds7') : t('x06td5dg', { v: item.index + 1, lessonCount })
     pop = (
@@ -219,6 +186,7 @@ function PathNode({
       data-lesson={item.id}
       data-node={hw ? 'homework' : 'lesson'}
       data-locked={locked ? '1' : undefined}
+      data-state={state}
       className={`relative ${open ? 'z-[16]' : ''} ${first ? '' : state === 'current' ? 'mt-14' : hw ? 'mt-8' : 'mt-6'}`}
       style={{ transform: `translateX(${offset}px)` }}
     >
@@ -350,38 +318,9 @@ function TierBanner({ tier }: { tier: Tier }) {
         </div>
       ) : (
         <div className="relative mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1 text-[14px] font-bold text-muted">{tx('x1vzf5np', { name: prev?.name, prevDone, length: prevItems.length }, [(chunk) => <b className="text-ink">{chunk}</b>])}</div>
-          <button className="btn btn-sm shrink-0" style={{ '--c': c.main, '--e': c.dark } as CSSProperties} onClick={() => navigate(`/placement/${tier.id}`)}>{t('x0tw0ozv')}</button>
+          <div className="min-w-0 flex-1 text-[14px] font-bold text-muted">{tx('path.tierBannerLocked', { name: prev?.name, prevDone, length: prevItems.length }, [(chunk) => <b className="text-ink">{chunk}</b>])}</div>
         </div>
       )}
-    </section>
-  )
-}
-
-/** Первый вход: предложение пройти «Тест на уровень» (необязательно, можно пропустить) */
-function FirstRun() {
-  const { setPlacementSeen } = useStore()
-  const mid = TIERS[1]
-  return (
-    <section className="anim-fade-up relative mb-6 overflow-hidden rounded-[24px] bg-brand p-5 text-white shadow-[0_5px_0_#5B2FD6]" data-first-run>
-      <span className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10" />
-      <div className="relative flex items-center gap-4">
-        <Mascot size={70} mood="happy" className="shrink-0" />
-        <div className="min-w-0 flex-1">
-          <h3 className="text-[19px] font-black leading-tight">{t('x0eqr04a')}</h3>
-          <p className="mt-1 text-[14px] font-semibold leading-snug text-white/85">{t('x1yuo809', { name: mid.name })}</p>
-        </div>
-      </div>
-      <div className="relative mt-4 flex gap-2">
-        <button className="btn btn-sm flex-1 border-2 border-white/40" style={{ '--c': 'transparent', '--e': 'transparent' } as CSSProperties} onClick={setPlacementSeen}>{t('x1qm67sx')}</button>
-        <button
-          className="btn btn-white btn-sm flex-1"
-          onClick={() => {
-            setPlacementSeen()
-            navigate(`/placement/${mid.id}`)
-          }}
-        >{t('x1qewgb1')}</button>
-      </div>
     </section>
   )
 }
@@ -390,7 +329,7 @@ export function Home() {
   const { progress } = useStore()
   const [openId, setOpenId] = useState<string | null>(null)
   const current = currentNodeId(progress)
-  const showFirstRun = !progress.placementSeen && !progress.unlockAll && !isTierOpenByProgress(TIERS[1], progress)
+  const toast = useToast()
 
   // Esc закрывает попап урока
   useEffect(() => {
@@ -419,7 +358,6 @@ export function Home() {
   return (
     <div className="mx-auto max-w-[600px]">
       {openId && <div className="fixed inset-0 z-[15]" onClick={() => setOpenId(null)} />}
-      {showFirstRun && <FirstRun />}
       {TIERS.map((tier, ti) => {
         const locked = !isTierUnlocked(tier, progress)
         const units = unitsOf(tier)
@@ -439,18 +377,25 @@ export function Home() {
                   <div className="relative flex flex-col items-center pb-16 pt-14">
                     <UnitArt unit={unit} dir={dir} locked={locked} />
                     {nodes.map((item, i) => {
-                      const state: NodeState = locked ? 'locked' : isNodeDone(item, progress) ? 'done' : item.id === current ? 'current' : 'upcoming'
+                      const state: NodeState = locked || !isNodeReachable(item.id, progress) ? 'locked' : isNodeDone(item, progress) ? 'done' : item.id === current ? 'current' : 'upcoming'
                       return (
                         <PathNode
                           key={item.id}
                           item={item}
                           first={i === 0}
                           unit={unit}
-                          tier={tier}
                           state={state}
                           offset={OFFSETS[i % OFFSETS.length] * dir}
                           open={openId === item.id}
-                          onToggle={() => setOpenId((o) => (o === item.id ? null : item.id))}
+                          onToggle={() => {
+                            // закрытый уровень не открывается: только подсказка, что сначала нужен предыдущий
+                            if (state === 'locked') {
+                              setOpenId(null)
+                              toast(t('path.locked'))
+                              return
+                            }
+                            setOpenId((o) => (o === item.id ? null : item.id))
+                          }}
                         />
                       )
                     })}
