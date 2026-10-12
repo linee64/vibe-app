@@ -808,7 +808,9 @@ function Footer() {
         <div>
           <h4 className="text-[13px] font-black uppercase tracking-wider text-white/45">{t('x0nlt9wc')}</h4>
           <ul className="mt-3 space-y-2 text-[15px] font-bold">
-            {[t('x1xu950d'), t('x1kivthv'), t('x1y9umvl')].map((t) => (
+            <li><a href="/privacy" className="text-white/80 hover:text-white" data-footer-privacy>{t('x1y9umvl')}</a></li>
+            <li><a href="/terms" className="text-white/80 hover:text-white" data-footer-terms>{t('legal.terms')}</a></li>
+            {[t('x1xu950d'), t('x1kivthv')].map((t) => (
               <li key={t}>
                 <button onClick={soon(t)} className="text-left text-white/80 hover:text-white">
                   {t}

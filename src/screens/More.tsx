@@ -97,6 +97,8 @@ export function MoreScreen() {
         <Row icon="⚙️" bg="#EFE9FF" title={t('x01xs7fy')} desc={t('more.settingsDesc')} onClick={() => navigate('/settings')} data="settings" />
         <Row icon="🛍️" bg="#FFF4D6" title={t('x1f2lm2g')} desc={t('more.shopDesc')} onClick={() => navigate('/wardrobe')} data="shop" />
         <Row icon="❓" bg="#DCF8F3" title={t('x0m2n6mj')} desc={t('more.helpDesc')} onClick={() => navigate('/help')} data="help" />
+        <Row icon="🔒" bg="#EFE9FF" title={t('x1y9umvl')} desc={t('more.legalDesc')} onClick={() => window.location.assign('/privacy')} data="privacy" />
+        <Row icon="📄" bg="#FFF4D6" title={t('legal.terms')} desc={t('more.legalDesc')} onClick={() => window.location.assign('/terms')} data="terms" />
         <Row icon="💌" bg="#FFE9E2" title={t('x09a7sjx')} desc={t('more.inviteDesc')} onClick={invite} data="invite" />
         <Row icon={<FeedbackBubble size={30} />} bg="#EFE9FF" title={t('x1kira6i')} desc={t('x1pyd1w5')} onClick={() => feedback.open({ entry: 'more' })} data="feedback" />
       </div>
