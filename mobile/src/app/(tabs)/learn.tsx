@@ -12,12 +12,14 @@ import { MascotHead } from '../../components/Mascot'
 import { FeedbackButton } from '../../components/Feedback'
 import { C, font } from '../../theme'
 import { t } from '@web/i18n/core'
+import { useIsPro } from '../../lib/billing'
 import { tx } from '@web/i18n/rich'
 
 const NODE_ICON: Record<string, string> = { star: '⭐', book: '📘', dumbbell: '💪', chest: '🎁', trophy: '🏆' }
 
 export default function LearnScreen() {
   const { progress, chargeAt } = useStore()
+  const pro = useIsPro()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const current = currentNodeId(progress)
@@ -25,7 +27,7 @@ export default function LearnScreen() {
 
   const open = (item: PathItem, unitId: string) => {
     if (isUnitLocked(unitId, progress)) return
-    if (needsPro(unitId)) {
+    if (needsPro(unitId) && !pro) {
       router.push('/paywall')
       return
     }
@@ -85,6 +87,7 @@ function Stat({ emoji, label, value }: { emoji: string; label: string; value: st
 
 function TierBlock({ tier, current, onOpen }: { tier: Tier; current: string | null; onOpen: (item: PathItem, unitId: string) => void }) {
   const { progress } = useStore()
+  const pro = useIsPro()
   const router = useRouter()
   const open = isTierUnlocked(tier, progress)
   const passed = isTierPassed(tier, progress)
@@ -129,7 +132,7 @@ function TierBlock({ tier, current, onOpen }: { tier: Tier; current: string | nu
                   <Txt w={900} size={16}>{unit.title}</Txt>
                   <Txt w={700} size={12} color={C.muted}>{unit.subtitle}</Txt>
                 </View>
-                {needsPro(unit.id) ? (
+                {needsPro(unit.id) && !pro ? (
                   <Pressable testID={`pro-${unit.id}`} onPress={() => router.push('/paywall')} style={{ borderRadius: 99, backgroundColor: C.goldLight, paddingHorizontal: 9, paddingVertical: 3 }}>
                     <Text style={font(900, 11, C.goldDark)}>PRO</Text>
                   </Pressable>

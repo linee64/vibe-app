@@ -6,13 +6,17 @@
  * Нативный SDK работает только в dev build / стор-сборке, не в Expo Go.
  */
 import { Platform } from 'react-native'
+import { useEffect, useState } from 'react'
 import { PRICES, TRIAL_DAYS, annualSavePct, usd } from '@web/data/pricing'
 import { ENV } from './env'
 import { t } from '@web/i18n/core'
 
-export const ENTITLEMENT = 'pro'
+/** Идентификатор entitlement в RevenueCat. Сверяем без учёта регистра/пробелов; любой из вариантов даёт Pro */
+export const ENTITLEMENT = 'Vaibik Pro'
+const ENTITLEMENT_ALIASES = ['vaibikpro', 'pro', 'vaibik_pro', 'vaibik-pro']
+const normEnt = (k: string) => k.toLowerCase().replace(/[\s_-]+/g, '')
 /** Идентификаторы продуктов в App Store Connect / Play Console — совпадают с тарифами веба */
-export const PRODUCT_IDS = { monthly: 'vaibik_pro_monthly', annual: 'vaibik_pro_annual' } as const
+export const PRODUCT_IDS = { monthly: 'com.vaibik.app.pro.monthly', annual: 'com.vaibik.app.pro.yearly' } as const
 export type Plan = 'monthly' | 'annual'
 
 export interface PlanOffer {
@@ -100,8 +104,9 @@ const PLAN_META: Record<Plan, { title: string; per: string }> = {
 
 function planOf(p: RCPackage): Plan | null {
   const id = p.product.identifier
-  if (id === PRODUCT_IDS.monthly || p.packageType === 'MONTHLY') return 'monthly'
-  if (id === PRODUCT_IDS.annual || p.packageType === 'ANNUAL') return 'annual'
+  const pk = p.identifier.toLowerCase()
+  if (id === PRODUCT_IDS.monthly || p.packageType === 'MONTHLY' || pk === 'monthly' || pk === '$rc_monthly') return 'monthly'
+  if (id === PRODUCT_IDS.annual || p.packageType === 'ANNUAL' || pk === 'yearly' || pk === 'annual' || pk === '$rc_annual') return 'annual'
   return null
 }
 
@@ -113,7 +118,32 @@ function trialOf(p: RCPackage): number | null {
   return null
 }
 
-const isPro = (info: RCInfo) => !!info.entitlements.active[ENTITLEMENT]
+function isPro(info: RCInfo) {
+  const pro = Object.keys(info.entitlements?.active ?? {}).some((k) => ENTITLEMENT_ALIASES.includes(normEnt(k)) || normEnt(k) === normEnt(ENTITLEMENT))
+  setProCache(pro)
+  return pro
+}
+
+/** Кэш статуса Pro для экранов (путь обучения): обновляется при state/purchase/restore */
+let proCache = false
+const proListeners = new Set<(v: boolean) => void>()
+function setProCache(v: boolean) {
+  if (v === proCache) return
+  proCache = v
+  proListeners.forEach((l) => l(v))
+}
+/** true, если активна подписка Pro (RevenueCat). Без SDK/ключа — false */
+export function useIsPro(): boolean {
+  const [pro, setPro] = useState(proCache)
+  useEffect(() => {
+    proListeners.add(setPro)
+    void loadSdk().then((sdk) => sdk?.default.getCustomerInfo().then(isPro).catch(() => undefined))
+    return () => {
+      proListeners.delete(setPro)
+    }
+  }, [])
+  return pro
+}
 
 /** Демо-цены — из общего веб-модуля pricing.ts (те же $9.99 / $59.99 и 3 дня пробного периода) */
 export function demoOffers(): PlanOffer[] {

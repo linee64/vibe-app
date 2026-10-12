@@ -99,7 +99,7 @@ describe('оплата', () => {
     expect(PRICES.monthly).toBe(999)
   })
   it('идентификаторы продуктов стабильны', () => {
-    expect(PRODUCT_IDS).toEqual({ monthly: 'vaibik_pro_monthly', annual: 'vaibik_pro_annual' })
+    expect(PRODUCT_IDS).toEqual({ monthly: 'com.vaibik.app.pro.monthly', annual: 'com.vaibik.app.pro.yearly' })
   })
   it('секретный ключ Supabase распознаётся и не пройдёт в клиент', () => {
     expect(looksSecret('sb_secret_xxx')).toBe(true)
