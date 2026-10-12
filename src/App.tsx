@@ -11,6 +11,7 @@ import { MoreSoon } from './screens/Placeholder'
 import { QuestsScreen } from './components/Quests'
 import { IntroScreen } from './screens/Intro'
 import { GlossaryScreen } from './screens/GlossaryScreen'
+import { Wardrobe } from './screens/Wardrobe'
 import { Landing } from './screens/Landing'
 import { PlacementScreen } from './screens/Placement'
 import { TierUpScreen } from './screens/TierUp'
@@ -203,6 +204,12 @@ function AppRoutes({ route }: { route: string }) {
       return (
         <AppShell active="/quests">
           <QuestsScreen />
+        </AppShell>
+      )
+    case '/wardrobe':
+      return (
+        <AppShell active="/profile">
+          <Wardrobe />
         </AppShell>
       )
     case '/glossary':

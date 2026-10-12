@@ -5,6 +5,7 @@ import { Battery, Rocket, Token } from './Icons'
 import { MascotHead } from './Mascot'
 import { useToast } from './Toast'
 import { track } from '../lib/analytics'
+import { navigate } from '../router'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
 
@@ -97,8 +98,8 @@ export function EconomyBar({ compact = false }: { compact?: boolean }) {
               return (
                 <li key={s.id} className="flex items-center gap-3 rounded-2xl border-2 border-line px-3 py-2">
                   <div className="min-w-0 flex-1">
-                    <div className="text-[14px] font-black text-ink">{s.title}</div>
-                    <div className="text-[12px] font-semibold leading-snug text-muted">{s.desc}</div>
+                    <div className="text-[14px] font-black text-ink">{s.id === 'skin' ? t('wardrobe.title') : s.title}</div>
+                    <div className="text-[12px] font-semibold leading-snug text-muted">{s.id === 'skin' ? t('wardrobe.shopDesc') : s.desc}</div>
                   </div>
                   {s.id === 'recharge' ? (
                     <button
@@ -113,6 +114,10 @@ export function EconomyBar({ compact = false }: { compact?: boolean }) {
                       }}
                     >
                       <Token size={16} /> {s.cost}
+                    </button>
+                  ) : s.id === 'skin' ? (
+                    <button className="shrink-0 rounded-xl bg-brand px-2.5 py-1.5 text-[13px] font-black text-white" onClick={() => navigate('/wardrobe')} data-shop-wardrobe>
+                      {t('wardrobe.open')}
                     </button>
                   ) : (
                     <span className="flex shrink-0 items-center gap-1 rounded-xl bg-snow px-2.5 py-1.5 text-[13px] font-black text-muted">

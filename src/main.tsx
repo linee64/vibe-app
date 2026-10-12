@@ -12,6 +12,7 @@ import { StoreProvider } from './store.tsx'
 import { ToastProvider } from './components/Toast.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { FeedbackProvider } from './components/FeedbackProvider.tsx'
+import { BipiLookProvider } from './components/BipiLook.tsx'
 import { initSentry } from './lib/sentry.ts'
 import { initLocale, onUserLocaleChange } from './i18n/runtime.ts'
 import { track } from './lib/analytics.ts'
@@ -29,11 +30,13 @@ void initLocale().finally(() =>
       <ErrorBoundary>
         <ToastProvider>
           <StoreProvider>
-            <LocaleKeyed>
-              <FeedbackProvider>
-                <App />
-              </FeedbackProvider>
-            </LocaleKeyed>
+            <BipiLookProvider>
+              <LocaleKeyed>
+                <FeedbackProvider>
+                  <App />
+                </FeedbackProvider>
+              </LocaleKeyed>
+            </BipiLookProvider>
           </StoreProvider>
         </ToastProvider>
       </ErrorBoundary>

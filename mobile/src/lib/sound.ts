@@ -14,6 +14,7 @@ const SOURCES: Record<SfxName, number> = {
   wrong: require('../../assets/sounds/wrong.mp3'),
   complete: require('../../assets/sounds/complete.mp3'),
   levelup: require('../../assets/sounds/levelup.mp3'),
+  purchase: require('../../assets/sounds/purchase.mp3'),
 }
 
 let enabled = true

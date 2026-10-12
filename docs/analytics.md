@@ -40,14 +40,14 @@ Retention по `lesson_completed`; Trends `lesson_abandoned` с разбивко
 | `exercise_answered` | нажали «Проверить» (или пропуск) | `lesson_id`, `type`, `correct`, `retry`, `skipped` |
 | `hint_used` | куплена подсказка | `lesson_id`, `type` |
 | `charge_empty` | закончился заряд Бипи | `lesson_id`, `step` |
-| `tokens_spent` | потрачены токены | `reason` (`hint` / `recharge`), `amount`, `where`? (`charge_empty` / `shop`) |
+| `tokens_spent` | потрачены токены | `reason` (`hint` / `recharge` / `skin`), `amount`, `where`? (`charge_empty` / `shop` / `wardrobe`) |
 | `lesson_completed` | урок пройден | `lesson_id`, `unit`, `mistakes`, `duration_s`, `perfect`, `accuracy`, `repeat` |
 | `lesson_abandoned` | ушли из урока, не закончив | `lesson_id`, `unit`, `step`, `duration_s`, `reason` (`quit` / `charge_empty` / `left`), `mistakes` (веб) |
 | `homework_started` | открыта домашка | `homework_id`, `unit` |
 | `homework_submitted` | отправлен промпт в домашке | `homework_id`, `ai_or_sim`, `iteration`, `requirements_done`, `requirements_total` |
 | `homework_passed` | домашка сдана | `homework_id`, `ai_or_sim`, `iterations`, `repeat` |
 | `tier_unlocked` | открыт тир | `tier`, `via` (`progress` / `placement`), `completed_tier`? |
-| `paywall_viewed` | показан пейвол / тарифы | `source` (`unit_gate` / `pricing` / `paywall`), `unit`? |
+| `paywall_viewed` | показан пейвол / тарифы | `source` (`unit_gate` / `pricing` / `paywall` / `skin`), `unit`? |
 | `paywall_closed` | закрыли пейвол без покупки | `source`, `unit`? |
 | `checkout_started` | нажали «Оформить» / «Попробовать» | `plan` (`monthly` / `annual`), `source` |
 | `checkout_completed` | вернулись из оплаты / покупка в сторе | `plan`? |
@@ -65,6 +65,8 @@ Retention по `lesson_completed`; Trends `lesson_abandoned` с разбивко
 | `onboarding_skipped` | тур закрыт «Пропустить» / крестиком | `entry`, `step` |
 | `glossary_opened` | открыт термин или словарик | `where` (`lesson_term` / `lesson_list` / `profile`), `term`? |
 | `explore_action` | действие в блоке «Исследуй дальше» в конце пути | `action` (`practice` / `quests` / `homework` / `suggest`) |
+| `skin_purchased` | куплена вещь в «Гардеробе Бипи» | `skin_id`, `price` (токены), `slot` (`head` / `face` / `body`), `rarity`, `pro` |
+| `skin_equipped` | вещь надета или снята | `skin_id`, `slot`, `action` (`equip` / `unequip`), `via` (`purchase` / `wardrobe`) |
 | `error_screen_shown` | показан экран «Бипи споткнулся» | `route` (веб) / `boundary` (мобилка) |
 | `$pageview` / `$screen` | смена экрана | `$current_url` без query (веб) / имя экрана (мобилка) |
 

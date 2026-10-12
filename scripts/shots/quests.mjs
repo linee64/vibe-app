@@ -1,7 +1,7 @@
 // Задания (квесты): правая колонка, экран «Задания», награда забрана. node scripts/shots/quests.mjs [baseUrl]
 // Прогресс заданий набирается настоящими событиями — проходим урок через «решатель».
 import { chromium } from 'playwright'
-import { BASE, login, openLessonFromPath, playLesson, watch } from '../e2e/lib/solver.mjs'
+import { login, openLessonFromPath, playLesson, watch } from '../e2e/lib/solver.mjs'
 import { OUT } from './out.mjs'
 
 const errors = []

@@ -10,6 +10,7 @@ import type { Progress as WebProgress, Session as WebSession } from '@web/store'
 import { DEMO_MODE, REVIEW_MODE } from '../lib/env'
 import { t } from '@web/i18n/core'
 import { sanitizeQuests } from '@web/data/quests'
+import { sanitizeSkins } from '@web/data/skins'
 
 /** Та же форма, что в вебе (src/store.tsx) — тип берём оттуда, чтобы не разъехались */
 export type Progress = WebProgress
@@ -60,10 +61,13 @@ export function normalizeProgress(raw: Partial<Progress> | null | undefined, bas
   if (typeof raw.unlockAll === 'boolean') p.unlockAll = raw.unlockAll
   if (raw.placementSeen === true) p.placementSeen = true
   if (typeof raw.portfolioUrl === 'string') p.portfolioUrl = raw.portfolioUrl.slice(0, 300)
-  // задания и вводный тур веба: мобилка их пока не показывает, но и не теряет при сохранении в облако
+  // задания, вводный тур и гардероб веба: мобилка их пока не показывает, но и не теряет при сохранении в облако
   const quests = sanitizeQuests(raw.quests)
   if (quests) p.quests = quests
   if (raw.introSeen === true) p.introSeen = true
+  // гардероб Бипи: мобилка вещи пока не рисует, но купленное не теряет
+  const skins = sanitizeSkins(raw.skins)
+  if (skins) p.skins = skins
   p.hearts = Math.min(CHARGE_MAX, p.hearts)
   return rollDay(p)
 }

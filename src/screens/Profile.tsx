@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { useStore } from '../store'
 import { useToast } from '../components/Toast'
 import { Check, Rocket, Shield, Spark, Token } from '../components/Icons'
-import { MascotHead } from '../components/Mascot'
+import { Mascot, MascotHead } from '../components/Mascot'
+import { SKINS } from '../data/skins'
 import { ALL_LESSONS, UNITS } from '../data/course'
 import { TRIAL_DAYS, annualPerMonth, usd } from '../data/pricing'
 import { navigate } from '../router'
@@ -228,6 +229,23 @@ export function Profile() {
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => navigate('/wardrobe')}
+        className="card mt-6 flex w-full items-center gap-4 overflow-hidden p-4 text-left transition-transform hover:-translate-y-0.5"
+        data-profile-wardrobe
+      >
+        <span className="flex h-[76px] w-[76px] shrink-0 items-end justify-center overflow-hidden rounded-2xl bg-brand-light">
+          <Mascot mood="happy" laptop={false} size={66} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[19px] font-black leading-tight">{t('wardrobe.title')}</span>
+          <span className="mt-0.5 block text-[14px] font-semibold leading-snug text-muted">{t('wardrobe.profileDesc')}</span>
+          <span className="mt-1 block text-[13px] font-extrabold text-brand">{t('wardrobe.count', { n: progress.skins?.owned.length ?? 0, total: SKINS.length })}</span>
+        </span>
+        <span className="hidden shrink-0 rounded-xl bg-brand px-3 py-2 text-[13px] font-black uppercase tracking-wider text-white shadow-[0_3px_0_#5B2FD6] sm:block">{t('wardrobe.open')}</span>
+      </button>
 
       <div className="card mt-6 flex items-center gap-4 p-4" data-profile-tier={tier.id}>
         <TierBadge tier={tier} size={64} />

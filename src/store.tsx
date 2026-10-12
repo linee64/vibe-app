@@ -4,6 +4,7 @@ import { getSupabase } from './lib/supabase'
 import { syncAuthLocale } from './lib/auth'
 import { loadRemoteProgress, mergeProgress, saveRemoteProgress } from './lib/progressSync'
 import { RECHARGE_MS } from './data/economy'
+import { buySkin as buySkinPure, equipSkin as equipSkinPure, findSkin, sanitizeSkins, unequipSlot, type BuyResult, type SkinSlot, type SkinState } from './data/skins'
 import { applyQuestEvent, claimQuest as claimQuestPure, markNotified, newlyCompleted, rollQuests, type QuestEvent, type QuestState } from './data/quests'
 import { track } from './lib/analytics'
 import { t, isLocale, LOCALE_STORAGE_KEY } from './i18n/core'
@@ -51,6 +52,8 @@ export interface Progress {
   quests?: QuestState
   /** Вводный тур «Как это работает» пройден или пропущен */
   introSeen?: boolean
+  /** Гардероб Бипи: купленные и надетые вещи (src/data/skins.ts) */
+  skins?: SkinState
 }
 
 const SESSION_KEY = 'vaibik.session'
@@ -124,6 +127,7 @@ function loadProgress(): Progress {
   // Боевой режим с аккаунтами: демо-разблокировки нет
   if (!DEMO_MODE && !REVIEW_MODE) p.unlockAll = false
   if (p.quests) p.quests = rollQuests(p.quests)
+  if (p.skins) p.skins = sanitizeSkins(p.skins)
   return rollDay(p)
 }
 
@@ -160,6 +164,10 @@ interface Store {
   /** Забрать награду за задание: сколько токенов начислено (0 — нельзя) */
   claimQuest: (id: string) => number
   setIntroSeen: () => void
+  /** Купить вещь в гардеробе Бипи: токены списываются ровно один раз, вещь сразу надевается */
+  buySkin: (id: string, isPro: boolean) => BuyResult
+  equipSkin: (id: string) => void
+  unequipSkin: (slot: SkinSlot) => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -471,6 +479,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return res.reward
   }, [])
   const setIntroSeen = useCallback(() => setProgress((p) => (p.introSeen ? p : { ...p, introSeen: true })), [])
+  const buySkin = useCallback((id: string, isPro: boolean): BuyResult => {
+    // считаем по ref: двойной клик не спишет токены дважды
+    const res = buySkinPure(latest.current.skins, latest.current.gems, id, isPro)
+    if (!res.ok) return res
+    latest.current = { ...latest.current, skins: res.state, gems: res.gems }
+    setProgress((p) => {
+      const again = buySkinPure(p.skins, p.gems, id, isPro)
+      return again.ok ? { ...p, skins: again.state, gems: again.gems } : p
+    })
+    track('skin_purchased', { skin_id: id, price: res.skin.price, slot: res.skin.slot, rarity: res.skin.rarity, pro: !!res.skin.pro })
+    track('tokens_spent', { reason: 'skin', amount: res.skin.price, where: 'wardrobe' })
+    track('skin_equipped', { skin_id: id, slot: res.skin.slot, action: 'equip', via: 'purchase' })
+    return res
+  }, [])
+  const equipSkin = useCallback((id: string) => {
+    const next = equipSkinPure(latest.current.skins, id)
+    if (!next || next === latest.current.skins) return
+    latest.current = { ...latest.current, skins: next }
+    setProgress((p) => ({ ...p, skins: equipSkinPure(p.skins, id) ?? p.skins }))
+    track('skin_equipped', { skin_id: id, slot: findSkin(id)?.slot, action: 'equip', via: 'wardrobe' })
+  }, [])
+  const unequipSkin = useCallback((slot: SkinSlot) => {
+    const id = latest.current.skins?.equipped[slot]
+    if (!id) return
+    latest.current = { ...latest.current, skins: unequipSlot(latest.current.skins, slot) }
+    setProgress((p) => ({ ...p, skins: unequipSlot(p.skins, slot) }))
+    track('skin_equipped', { skin_id: id, slot, action: 'unequip', via: 'wardrobe' })
+  }, [])
   // явный выбор языка → в прогресс (уедет в облако вместе с ним)
   useEffect(() => onUserLocaleChange((l) => setProgress((p) => (p.locale === l ? p : { ...p, locale: l }))), [])
 
@@ -497,8 +533,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       recordAnswer,
       claimQuest,
       setIntroSeen,
+      buySkin,
+      equipSkin,
+      unequipSkin,
     }),
-    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen],
+    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

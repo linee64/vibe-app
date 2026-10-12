@@ -135,6 +135,15 @@ export function QuestsScreen() {
           {t('quests.toPath')}
         </button>
       </div>
+
+      <button type="button" onClick={() => navigate('/wardrobe')} className="mb-6 flex w-full items-center gap-4 rounded-[20px] border-2 border-brand-mid bg-brand-light/60 px-4 py-3 text-left transition-transform hover:-translate-y-0.5" data-quests-wardrobe>
+        <Mascot mood="happy" laptop={false} size={56} className="shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[16px] font-black leading-tight">{t('wardrobe.title')}</span>
+          <span className="block text-[14px] font-semibold leading-snug text-muted">{t('wardrobe.questsTeaser')}</span>
+        </span>
+        <span className="shrink-0 text-[13px] font-extrabold uppercase tracking-wider text-brand">{t('wardrobe.open')}</span>
+      </button>
     </div>
   )
 }

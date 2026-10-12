@@ -4,14 +4,15 @@
  *   correct  — «компиляция прошла»: клик клавиши + чирп-свип вверх + битовый «✓»;
  *   wrong    — мягкий «глитч»: заикающийся отфильтрованный пилообразный bzzt вниз;
  *   complete — «деплой запущен»: зажигание (саб-удар), восходящее арпеджио с открывающимся фильтром и вжух ракеты;
- *   levelup  — стингер нового тира: свип-аккорд суперпилы и «искры» сверху.
+ *   levelup  — стингер нового тира: свип-аккорд суперпилы и «искры» сверху;
+ *   purchase — покупка в гардеробе Бипи: «щелчок кассы» и два битовых «динь-динь» с мерцающим хвостом.
  *
  * Чистая функция без DOM: веб рендерит буфер прямо в браузере (src/lib/sound.ts),
  * мобильное приложение получает те же звуки готовыми mp3 (scripts/sounds/render.ts → mobile/assets/sounds).
  */
 
-export type SfxName = 'correct' | 'wrong' | 'complete' | 'levelup'
-export const SFX_NAMES: SfxName[] = ['correct', 'wrong', 'complete', 'levelup']
+export type SfxName = 'correct' | 'wrong' | 'complete' | 'levelup' | 'purchase'
+export const SFX_NAMES: SfxName[] = ['correct', 'wrong', 'complete', 'levelup', 'purchase']
 
 type Wave = 'sine' | 'tri' | 'square' | 'saw'
 
@@ -271,7 +272,24 @@ function levelup(sr: number) {
   return finish(c.buf, sr, 0.78)
 }
 
-const RENDERERS: Record<SfxName, (sr: number) => Float32Array> = { correct, wrong, complete, levelup }
+function purchase(sr: number) {
+  const c = new Canvas(sr, 0.7)
+  // «щелчок кассы»: короткий шумовой клик
+  const click = c.layer()
+  c.noise(0, 0.018, 0.55, (x) => 1 - x, click, 13)
+  c.mix(svf(click, sr, () => 3200, 1.2, 'bp'), 0.5)
+  // «динь-динь»: две битовые ноты вверх (B5 → E6)
+  const coin = c.layer()
+  c.tone({ at: 0.012, dur: 0.09, freq: midi(83), wave: 'square', pw: 0.25, gain: 0.26, decay: 0.06 }, coin)
+  c.tone({ at: 0.085, dur: 0.42, freq: midi(88), wave: 'square', pw: 0.25, gain: 0.26, decay: 0.16 }, coin)
+  c.mix(svf(crush(coin, 7, 2), sr, () => 7000, 0.7))
+  // мерцающий хвост
+  c.tone({ at: 0.085, dur: 0.5, freq: midi(100), wave: 'tri', gain: 0.08, decay: 0.14, vibRate: 30, vibDepth: 0.008 })
+  ;[91, 95, 98].forEach((n, i) => c.tone({ at: 0.16 + i * 0.05, dur: 0.18, freq: midi(n), wave: 'tri', gain: 0.07, decay: 0.06 }))
+  return finish(c.buf, sr, 0.7)
+}
+
+const RENDERERS: Record<SfxName, (sr: number) => Float32Array> = { correct, wrong, complete, levelup, purchase }
 
 /** Сырой звук (моно, −1…1) */
 export function renderSfx(name: SfxName, sampleRate = 44100): Float32Array {

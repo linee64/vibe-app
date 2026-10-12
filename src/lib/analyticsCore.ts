@@ -43,6 +43,8 @@ export type AnalyticsEvent =
   | 'onboarding_skipped'
   | 'glossary_opened'
   | 'explore_action'
+  | 'skin_purchased'
+  | 'skin_equipped'
 
 /** Минимум, который нужен от SDK (posthog-js и posthog-react-native оба подходят) */
 export interface AnalyticsClient {

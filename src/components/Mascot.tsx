@@ -1,4 +1,7 @@
 import { t } from '../i18n/core'
+import type { SkinLook } from '../data/skins'
+import { HIDES_ANTENNA, useMascotLook } from './mascotLook'
+import { SkinArt } from './BipiSkins'
 type Mood = 'default' | 'happy' | 'think'
 
 interface Props {
@@ -6,6 +9,8 @@ interface Props {
   size?: number
   className?: string
   laptop?: boolean
+  /** Вещи из гардероба; по умолчанию — то, что надето у ученика (примерка в гардеробе передаёт свой набор) */
+  look?: SkinLook
 }
 
 const INK = '#2F2A47'
@@ -15,7 +20,10 @@ const TEAL = '#13C2AE'
 const CORAL = '#FF7A59'
 
 /** Бипи — робот-талисман Вайбика (оригинальная иллюстрация, inline SVG) */
-export function Mascot({ mood = 'default', size = 160, className, laptop }: Props) {
+export function Mascot({ mood = 'default', size = 160, className, laptop, look: lookProp }: Props) {
+  const worn = useMascotLook()
+  const look = lookProp ?? worn
+  const { head, face, body } = look
   const happy = mood === 'happy'
   const think = mood === 'think'
   const showLaptop = laptop ?? !happy
@@ -30,10 +38,18 @@ export function Mascot({ mood = 'default', size = 160, className, laptop }: Prop
     >
       <ellipse cx="100" cy="211" rx="58" ry="7" fill={INK} opacity=".08" />
 
+      {/* гардероб: то, что за телом */}
+      {body && <SkinArt id={body} part="back" />}
+      {head && <SkinArt id={head} part="back" />}
+
       {/* antenna */}
-      <path d="M100 42 V22" stroke={VD} strokeWidth="6" strokeLinecap="round" />
-      <circle cx="100" cy="17" r="10" fill={CORAL} />
-      <circle cx="96.5" cy="13.5" r="3.2" fill="#fff" opacity=".75" />
+      {!(head && HIDES_ANTENNA.has(head)) && (
+        <g>
+          <path d="M100 42 V22" stroke={VD} strokeWidth="6" strokeLinecap="round" />
+          <circle cx="100" cy="17" r="10" fill={CORAL} />
+          <circle cx="96.5" cy="13.5" r="3.2" fill="#fff" opacity=".75" />
+        </g>
+      )}
 
       {/* arms (raised when happy) */}
       {happy && (
@@ -102,6 +118,11 @@ export function Mascot({ mood = 'default', size = 160, className, laptop }: Prop
         <path d="M89 103 Q100 113 111 103" stroke={INK} strokeWidth="4.5" strokeLinecap="round" fill="none" />
       )}
 
+      {/* гардероб: лицо, голова, образ */}
+      {face && <SkinArt id={face} part="front" />}
+      {head && <SkinArt id={head} part="front" />}
+      {body && <SkinArt id={body} part="front" happy={happy} />}
+
       {/* laptop */}
       {showLaptop && (
         <g>
@@ -122,11 +143,20 @@ export function Mascot({ mood = 'default', size = 160, className, laptop }: Prop
 }
 
 /** Маленькая голова маскота для аватаров/иконок */
-export function MascotHead({ size = 32 }: { size?: number }) {
+export function MascotHead({ size = 32, look: lookProp }: { size?: number; look?: SkinLook }) {
+  const worn = useMascotLook()
+  const { head, face } = lookProp ?? worn
+  // вещи нарисованы в координатах большого Бипи — переносим их на маленькую голову
+  const fit = 'translate(-6.1 -0.1) scale(0.381)'
   return (
-    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden>
-      <path d="M32 13V6" stroke={VD} strokeWidth="4" strokeLinecap="round" />
-      <circle cx="32" cy="6" r="4.5" fill={CORAL} />
+    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden overflow="visible">
+      {head && <g transform={fit}><SkinArt id={head} part="back" /></g>}
+      {!(head && HIDES_ANTENNA.has(head)) && (
+        <g>
+          <path d="M32 13V6" stroke={VD} strokeWidth="4" strokeLinecap="round" />
+          <circle cx="32" cy="6" r="4.5" fill={CORAL} />
+        </g>
+      )}
       <rect x="4" y="26" width="7" height="16" rx="3.5" fill={TEAL} />
       <rect x="53" y="26" width="7" height="16" rx="3.5" fill={TEAL} />
       <rect x="8" y="17" width="48" height="41" rx="17" fill={VD} />
@@ -135,6 +165,8 @@ export function MascotHead({ size = 32 }: { size?: number }) {
       <ellipse cx="25" cy="33" rx="3.6" ry="4.4" fill={INK} />
       <ellipse cx="39" cy="33" rx="3.6" ry="4.4" fill={INK} />
       <path d="M28 40 Q32 43.5 36 40" stroke={INK} strokeWidth="2.4" strokeLinecap="round" fill="none" />
+      {face && <g transform={fit}><SkinArt id={face} part="front" /></g>}
+      {head && <g transform={fit}><SkinArt id={head} part="front" /></g>}
     </svg>
   )
 }

@@ -10,19 +10,21 @@ import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
 
 /** Дружелюбный пейвол: раздел доступен в Pro (или в пробный период) */
-export function PaywallScreen({ title, unitId }: { title?: string; unitId?: string }) {
+export function PaywallScreen({ title, unitId, source = 'unit_gate', onClose }: { title?: string; unitId?: string; source?: string; onClose?: () => void }) {
   const toast = useToast()
   const [plan, setPlan] = useState<Plan>('annual')
   const [busy, setBusy] = useState(false)
   const annual = plan === 'annual'
 
   useEffect(() => {
-    track('paywall_viewed', { source: 'unit_gate', unit: unitId })
-  }, [unitId])
+    track('paywall_viewed', { source, unit: unitId })
+  }, [unitId, source])
 
   // Ушли без покупки — один короткий вопрос «Что остановило?» (на пути, не здесь)
   const close = () => {
-    track('paywall_closed', { source: 'unit_gate', unit: unitId })
+    track('paywall_closed', { source, unit: unitId })
+    // пейвол поверх экрана (например, Pro-вещь в гардеробе) — просто закрываем, без опроса
+    if (onClose) return onClose()
     requestMicroPrompt('paywall_exit')
     navigate('/learn')
   }
