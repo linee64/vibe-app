@@ -62,6 +62,7 @@ const noMicro = (page) => page.evaluate(() => localStorage.setItem('vaibik.fb.mi
     const pr = JSON.parse(localStorage.getItem('vaibik.progress') || '{}')
     pr.completed = []
     pr.perfect = []
+    pr.introSeen = true // вводный тур перед первым уроком проверяет scripts/shots/onboarding.mjs
     localStorage.setItem('vaibik.progress', JSON.stringify(pr))
     localStorage.removeItem('vaibik.fb.micro')
   })

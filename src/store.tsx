@@ -4,6 +4,7 @@ import { getSupabase } from './lib/supabase'
 import { syncAuthLocale } from './lib/auth'
 import { loadRemoteProgress, mergeProgress, saveRemoteProgress } from './lib/progressSync'
 import { RECHARGE_MS } from './data/economy'
+import { applyQuestEvent, claimQuest as claimQuestPure, markNotified, newlyCompleted, rollQuests, type QuestEvent, type QuestState } from './data/quests'
 import { track } from './lib/analytics'
 import { t, isLocale, LOCALE_STORAGE_KEY } from './i18n/core'
 import { changeLocale, onUserLocaleChange } from './i18n/runtime'
@@ -46,6 +47,10 @@ export interface Progress {
   portfolioUrl: string
   /** Явно выбранный язык интерфейса (синхронизируется с облаком; '' / нет — не выбирали) */
   locale?: string
+  /** Задания дня/недели (src/data/quests.ts); нет — ещё не было ни одного события */
+  quests?: QuestState
+  /** Вводный тур «Как это работает» пройден или пропущен */
+  introSeen?: boolean
 }
 
 const SESSION_KEY = 'vaibik.session'
@@ -118,6 +123,7 @@ function loadProgress(): Progress {
   }
   // Боевой режим с аккаунтами: демо-разблокировки нет
   if (!DEMO_MODE && !REVIEW_MODE) p.unlockAll = false
+  if (p.quests) p.quests = rollQuests(p.quests)
   return rollDay(p)
 }
 
@@ -149,6 +155,11 @@ interface Store {
   setUnlockAll: (on: boolean) => void
   setPlacementSeen: () => void
   setPortfolioUrl: (url: string) => void
+  /** Ответ в уроке проверен — для заданий «верных ответов подряд» */
+  recordAnswer: (correct: boolean) => void
+  /** Забрать награду за задание: сколько токенов начислено (0 — нельзя) */
+  claimQuest: (id: string) => number
+  setIntroSeen: () => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -361,7 +372,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })()
   }, [flush])
 
+  /**
+   * Событие для заданий: состояние заданий в updater-е (чистая функция), а quest_completed —
+   * снаружи, по свежему ref (один раз на задание и период: выполненные сразу помечаются notified).
+   */
+  const questStep = useCallback((e: QuestEvent) => {
+    const after = applyQuestEvent(latest.current.quests, e)
+    const fresh = newlyCompleted(after).map((q) => {
+      track('quest_completed', { quest_id: q.id, period: q.period, goal: q.goal })
+      return q.id
+    })
+    // и в ref — чтобы два события до перерисовки не отправили quest_completed дважды
+    latest.current = { ...latest.current, quests: fresh.length ? markNotified(after, fresh) : after }
+    return (q: QuestState | undefined) => {
+      const next = applyQuestEvent(q, e)
+      return fresh.length ? markNotified(next, fresh) : next
+    }
+  }, [])
+
   const completeLesson = useCallback((id: string, xp: number, perfect: boolean) => {
+    const step = questStep({ type: 'lesson', xp, perfect })
     setProgress((p) => ({
       ...p,
       completed: p.completed.includes(id) ? p.completed : [...p.completed, id],
@@ -370,8 +400,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       todayXp: p.todayXp + xp,
       perfectToday: p.perfectToday + (perfect ? 1 : 0),
       lessonsToday: p.lessonsToday + 1,
+      quests: step(p.quests),
     }))
-  }, [])
+  }, [questStep])
 
   const loseHeart = useCallback(() => setProgress((p) => ({ ...p, hearts: Math.max(0, p.hearts - 1) })), [])
   const refillHearts = useCallback(() => setProgress((p) => ({ ...p, hearts: MAX_HEARTS })), [])
@@ -386,6 +417,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // сохранение в облако перезаписывает строку целиком, так что сброс действует и там
   const resetProgress = useCallback(() => setProgress((p) => ({ ...defaultProgress(), unlockAll: p.unlockAll })), [])
   const completeHomework = useCallback((id: string, xp: number) => {
+    const again0 = latest.current.homework.includes(id)
+    const step = questStep({ type: 'homework', xp: again0 ? 10 : xp })
     setProgress((p) => {
       const again = p.homework.includes(id)
       const gain = again ? 10 : xp
@@ -396,9 +429,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         gems: p.gems + (again ? 5 : 20),
         todayXp: p.todayXp + gain,
         lessonsToday: p.lessonsToday + 1,
+        quests: step(p.quests),
       }
     })
-  }, [])
+  }, [questStep])
   const passTiersByTest = useCallback(
     (ids: string[]) =>
       setProgress((p) => ({
@@ -417,6 +451,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setUnlockAll = useCallback((on: boolean) => setProgress((p) => ({ ...p, unlockAll: on })), [])
   const setPlacementSeen = useCallback(() => setProgress((p) => ({ ...p, placementSeen: true })), [])
   const setPortfolioUrl = useCallback((url: string) => setProgress((p) => ({ ...p, portfolioUrl: url })), [])
+  const recordAnswer = useCallback(
+    (correct: boolean) => {
+      const step = questStep({ type: 'answer', correct })
+      setProgress((p) => ({ ...p, quests: step(p.quests) }))
+    },
+    [questStep],
+  )
+  const claimQuest = useCallback((id: string) => {
+    // считаем по ref, чтобы двойной клик не начислил награду дважды
+    const res = claimQuestPure(latest.current.quests, id)
+    if (!res) return 0
+    latest.current = { ...latest.current, quests: res.state, gems: latest.current.gems + res.reward }
+    setProgress((p) => {
+      const again = claimQuestPure(p.quests, id)
+      return again ? { ...p, quests: again.state, gems: p.gems + again.reward } : p
+    })
+    track('quest_claimed', { quest_id: id, period: res.quest.period, reward: res.reward })
+    return res.reward
+  }, [])
+  const setIntroSeen = useCallback(() => setProgress((p) => (p.introSeen ? p : { ...p, introSeen: true })), [])
   // явный выбор языка → в прогресс (уедет в облако вместе с ним)
   useEffect(() => onUserLocaleChange((l) => setProgress((p) => (p.locale === l ? p : { ...p, locale: l }))), [])
 
@@ -440,8 +494,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setUnlockAll,
       setPlacementSeen,
       setPortfolioUrl,
+      recordAnswer,
+      claimQuest,
+      setIntroSeen,
     }),
-    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl],
+    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

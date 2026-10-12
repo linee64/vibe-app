@@ -86,7 +86,8 @@ await p.evaluate(() => (location.hash = '/profile'))
 await p.waitForSelector('text=Достижения')
 await shot(p, '06-profile.png')
 await p.evaluate(() => (location.hash = '/quests'))
-await shot(p, '06b-quests-soon.png')
+await p.waitForSelector('[data-quests-screen]')
+await shot(p, '06b-quests.png')
 
 // ---------- Mobile ----------
 const mob = await browser.newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })

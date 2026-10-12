@@ -176,6 +176,31 @@ function SoundToggle() {
   )
 }
 
+/** Карточка-ссылка «Как это работает» / «Словарик» */
+function HelpLink({ emoji, title, desc, to, data, onOpen }: { emoji: string; title: string; desc: string; to: string; data: string; onOpen?: () => void }) {
+  return (
+    <button
+      className="card flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-snow"
+      onClick={() => {
+        onOpen?.()
+        navigate(to)
+      }}
+      data-profile-link={data}
+    >
+      <span className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-2xl bg-brand-light text-[24px]" aria-hidden>
+        {emoji}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[17px] font-black leading-tight">{title}</span>
+        <span className="block text-[13px] font-semibold leading-snug text-muted">{desc}</span>
+      </span>
+      <span className="shrink-0 text-[22px] font-black text-brand" aria-hidden>
+        ›
+      </span>
+    </button>
+  )
+}
+
 export function Profile() {
   const { session, progress, logout, resetProgress, setUnlockAll } = useStore()
   const tier = currentTier(progress)
@@ -230,6 +255,18 @@ export function Profile() {
           icon={<span className="text-[26px] leading-none">🌐</span>}
           value={progress.portfolioUrl ? t('x19al7ql') : '—'}
           label={progress.portfolioUrl ? progress.portfolioUrl.replace(/^https?:\/\//, '') : t('x1i7mfk2')}
+        />
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2" data-profile-basics>
+        <HelpLink emoji="🎬" title={t('intro.profileTitle')} desc={t('intro.profileDesc')} to="/intro" data="intro" />
+        <HelpLink
+          emoji="📖"
+          title={t('gloss.title')}
+          desc={t('gloss.profileDesc')}
+          to="/glossary"
+          data="glossary"
+          onOpen={() => track('glossary_opened', { where: 'profile' })}
         />
       </div>
 

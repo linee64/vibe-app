@@ -33,7 +33,7 @@ export function TierUpScreen({ id }: { id: string }) {
   const next = nextTier(tier)
   const c = UNIT_COLORS[tier.color]
   const go = () => {
-    sessionStorage.setItem(LAST_LESSON_KEY, next ? `tier-${next.id}` : 'tier-soon')
+    sessionStorage.setItem(LAST_LESSON_KEY, next ? `tier-${next.id}` : 'path-finish')
     navigate('/learn')
   }
   return (

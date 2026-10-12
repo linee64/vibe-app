@@ -3,7 +3,6 @@ import { UNITS, UNIT_COLORS, type NodeKind, type Unit } from '../data/course'
 import { HOMEWORK_XP } from '../data/homework'
 import { currentNodeId, isNodeDone, unitNodes, type PathItem } from '../data/path'
 import {
-  SOON_TOPICS,
   TIERS,
   isTierComplete,
   isTierOpenByProgress,
@@ -358,31 +357,6 @@ function TierBanner({ tier }: { tier: Tier }) {
   )
 }
 
-/** Тизер будущих разделов после последнего тира */
-function SoonCard() {
-  const toast = useToast()
-  return (
-    <section id="tier-soon" className="relative mb-10 overflow-hidden rounded-[26px] border-2 border-dashed border-brand-mid bg-snow p-5 sm:p-6" data-soon>
-      <div className="flex items-center gap-4">
-        <Mascot mood="think" size={84} className="shrink-0" />
-        <div className="min-w-0">
-          <div className="text-[12px] font-black uppercase tracking-wider text-brand">{t('x036ap5y')}</div>
-          <h3 className="text-[22px] font-black leading-tight">{t('x077e0kk')}</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {SOON_TOPICS.map((t, i) => (
-              <span key={t} className="rounded-full px-3 py-1 text-[14px] font-extrabold text-white" style={{ background: i === 0 ? '#7C4DFF' : '#FF7A59' }}>
-                {i === 0 ? '💳 ' : '🚀 '}
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-      <button className="btn btn-ghost btn-sm mt-4 w-full sm:w-auto" onClick={() => toast(t('x1djf9tz'))}>{t('x0k6jpmb')}</button>
-    </section>
-  )
-}
-
 /** Первый вход: предложение пройти «Тест на уровень» (необязательно, можно пропустить) */
 function FirstRun() {
   const { setPlacementSeen } = useStore()
@@ -489,8 +463,7 @@ export function Home() {
           </div>
         )
       })}
-      <SoonCard />
-      <div className="flex flex-col items-center gap-3 pb-6 text-center">
+      <div id="path-finish" className="flex flex-col items-center gap-3 pb-6 text-center">
         <div className="flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-wider text-[#b5b0c8]">{tx('x1i7hg7b', {}, [() => <span className="h-[2px] w-12 bg-line" />, () => <span className="h-[2px] w-12 bg-line" />])}</div>
         <Mascot mood={doneLessons >= totalLessons ? 'happy' : 'think'} size={96} />
         <h3 className="text-[20px] font-black">{tx('x1b3h82i', { doneLessons, totalLessons, length: progress.homework.length, length2: UNITS.length })}</h3>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { findLesson } from '../data/course'
 import { useStore } from '../store'
 import { continueAfter } from '../flow'
@@ -17,6 +17,9 @@ import { playSound } from '../lib/sound'
 import { requestMicroPrompt } from '../lib/feedback'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
+import { useLocale } from '../i18n/react'
+import { glossPlan } from '../data/glossary'
+import { GlossProvider, GlossText, GlossaryButton } from '../components/Glossary'
 
 
 const PRAISE = () => [t('lesson.praise.1'), t('lesson.praise.2'), t('lesson.praise.3'), t('lesson.praise.4'), t('lesson.praise.5')]
@@ -31,7 +34,8 @@ function Modal({ children, label }: { children: ReactNode; label: string }) {
 
 export function LessonScreen({ id }: { id: string }) {
   const found = findLesson(id)
-  const { progress, loseHeart, refillHearts, addCharge, spendGems, chargeAt, completeLesson } = useStore()
+  const { progress, loseHeart, refillHearts, addCharge, spendGems, chargeAt, completeLesson, recordAnswer } = useStore()
+  const locale = useLocale()
   const toast = useToast()
 
   const exercises = found?.exercises ?? []
@@ -98,6 +102,9 @@ export function LessonScreen({ id }: { id: string }) {
   }, [id, unitNum])
 
   const ex = exercises[queue[pos]]
+  // Словарик: термин подсвечивается там, где он впервые встречается в уроке
+  const plan = useMemo(() => glossPlan(findLesson(id)?.exercises ?? [], locale), [id, locale])
+  const glossFields = plan.get(queue[pos])
   /** Это упражнение уже решали с ошибкой (вернулось в очередь) */
   const isRetry = queue.indexOf(queue[pos]) < pos
 
@@ -109,6 +116,7 @@ export function LessonScreen({ id }: { id: string }) {
       const ok = !skip && isCorrect(ex, answer)
       track('exercise_answered', { lesson_id: id, type: ex.kind, correct: ok, retry: isRetry, skipped: skip })
       playSound(ok ? 'correct' : 'wrong')
+      recordAnswer(ok)
       if (ok) {
         setSolved((s) => s + 1)
         setPraise(PRAISE()[Math.floor(Math.random() * PRAISE().length)])
@@ -125,7 +133,7 @@ export function LessonScreen({ id }: { id: string }) {
         setQueue((q) => [...q, q[pos]])
       }
     },
-    [ex, status, answer, pos, isRetry, loseHeart, addCharge, id],
+    [ex, status, answer, pos, isRetry, loseHeart, addCharge, id, recordAnswer],
   )
 
   const advance = useCallback(() => {
@@ -217,6 +225,7 @@ export function LessonScreen({ id }: { id: string }) {
   const canHint = progress.gems >= HINT_COST && !hint
 
   return (
+    <GlossProvider fields={glossFields}>
     <div className="flex h-[100dvh] flex-col bg-white">
       <header className="mx-auto flex w-full max-w-[1040px] items-center gap-4 px-4 pt-5 md:gap-5 md:px-8 md:pt-10">
         <button onClick={() => setQuitOpen(true)} className="rounded-xl p-1 text-[#B3ADC8] transition-colors hover:text-muted" aria-label={t('x1fqusza')}>
@@ -225,6 +234,7 @@ export function LessonScreen({ id }: { id: string }) {
         <div className="progress-track flex-1 !h-[18px]">
           <div className="progress-fill bg-brand" style={{ width: `${Math.max(pct, 3)}%` }} />
         </div>
+        <GlossaryButton where="lesson_list" />
         <div className="text-[19px]" key={progress.hearts} title={t('x1k9q8ch')}>
           <ChargeMeter value={progress.hearts} size={26} shake={status === 'wrong'} />
         </div>
@@ -254,7 +264,7 @@ export function LessonScreen({ id }: { id: string }) {
                   {status === 'wrong' && (
                     <div className="mt-1 text-[16px] font-extrabold">{tx('x03h2ydh', { ex: correctText(ex) }, [(chunk) => <span className="font-bold [overflow-wrap:anywhere]">{chunk}</span>])}</div>
                   )}
-                  <p className="mt-1 max-w-[640px] text-[15px] font-semibold leading-snug opacity-90">{ex.explain}</p>
+                  <p className="mt-1 max-w-[640px] text-[15px] font-semibold leading-snug opacity-90"><GlossText text={ex.explain} field="explain" /></p>
                   {status === 'wrong' && progress.hearts > 0 && (
                     <p className="mt-1 text-[13px] font-extrabold opacity-80">{t('x017zrtc')}</p>
                   )}
@@ -366,5 +376,6 @@ export function LessonScreen({ id }: { id: string }) {
         </Modal>
       )}
     </div>
+    </GlossProvider>
   )
 }

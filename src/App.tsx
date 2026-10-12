@@ -7,7 +7,10 @@ import { Home } from './screens/Home'
 import { LessonScreen } from './screens/Lesson'
 import { Leaderboard } from './screens/Leaderboard'
 import { Profile } from './screens/Profile'
-import { MoreSoon, QuestsSoon } from './screens/Placeholder'
+import { MoreSoon } from './screens/Placeholder'
+import { QuestsScreen } from './components/Quests'
+import { IntroScreen } from './screens/Intro'
+import { GlossaryScreen } from './screens/GlossaryScreen'
 import { Landing } from './screens/Landing'
 import { PlacementScreen } from './screens/Placement'
 import { TierUpScreen } from './screens/TierUp'
@@ -132,12 +135,28 @@ function useCheckoutReturn() {
   }, [refresh, toast])
 }
 
+/** Новичок открывает самый первый урок — сначала короткий тур «Как это работает» (один раз) */
+const needsIntro = (p: { completed: string[]; homework: string[]; introSeen?: boolean }) => !p.introSeen && p.completed.length === 0 && p.homework.length === 0
+
 function AppRoutes({ route }: { route: string }) {
   useCheckoutReturn()
+  const { progress, setIntroSeen } = useStore()
+
+  if (route === '/intro')
+    return (
+      <IntroScreen
+        entry="profile"
+        onDone={() => {
+          setIntroSeen()
+          navigate('/profile')
+        }}
+      />
+    )
 
   if (route === '/debug/crash' && debugRoutes()) return <CrashTest />
   if (route.startsWith('/lesson/')) {
     const id = route.slice('/lesson/'.length)
+    if (needsIntro(progress)) return <IntroScreen entry="first_lesson" onDone={setIntroSeen} />
     // уроки закрытого тира по прямой ссылке не открываются
     const unit = findLesson(id)?.unit
     if (!unit) return <LessonScreen key={id} id={id} />
@@ -183,7 +202,13 @@ function AppRoutes({ route }: { route: string }) {
     case '/quests':
       return (
         <AppShell active="/quests">
-          <QuestsSoon />
+          <QuestsScreen />
+        </AppShell>
+      )
+    case '/glossary':
+      return (
+        <AppShell active="/profile">
+          <GlossaryScreen />
         </AppShell>
       )
     case '/more':

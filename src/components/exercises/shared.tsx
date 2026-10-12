@@ -5,6 +5,7 @@ import { KIND_META } from './meta'
 import { Mascot } from '../Mascot'
 import { highlight } from '../Code'
 import { t } from '../../i18n/core'
+import { GlossText } from '../Glossary'
 
 export interface ViewProps<E> {
   ex: E
@@ -42,7 +43,7 @@ function Speech({ text }: { text: string }) {
       <Mascot size={56} className="shrink-0" />
       <div className="relative mb-3 min-w-0 rounded-2xl border-2 border-line bg-white px-3.5 py-2.5 text-[15px] font-bold leading-snug text-ink md:text-[16px]">
         <span className="absolute -left-[9px] bottom-3 h-4 w-4 rotate-45 border-b-2 border-l-2 border-line bg-white" />
-        {text}
+        <GlossText text={text} field="prompt" />
       </div>
     </div>
   )

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const base = process.argv[2] || 'http://localhost:5173'
 const mobile = process.argv.includes('--mobile')
-const list = mobile ? ['mobile-feedback', 'mobile-i18n'] : ['app', 'landing', 'pricing', 'path', 'homework', 'exercises', 'feedback', 'i18n']
+const list = mobile ? ['mobile-feedback', 'mobile-i18n'] : ['app', 'landing', 'pricing', 'path', 'homework', 'exercises', 'feedback', 'i18n', 'quests', 'onboarding']
 const args = mobile ? process.argv.slice(2).filter((a) => a !== '--mobile') : [base]
 
 let failed = 0

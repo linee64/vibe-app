@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { navigate } from '../router'
 import { useStore } from '../store'
-import { Spark, NavLearn, NavLeague, NavLogout, NavMore, NavProfile, NavQuests, Shield, Target, Clock, FeedbackBubble } from './Icons'
+import { NavLearn, NavLeague, NavLogout, NavMore, NavProfile, NavQuests, Shield, FeedbackBubble } from './Icons'
+import { DailyQuests } from './Quests'
+import { useClaimable } from './questText'
 import { MicroPromptHost, useFeedback } from './FeedbackProvider'
 import { EconomyBar } from './Economy'
 import { Mascot, MascotHead } from './Mascot'
@@ -21,6 +23,17 @@ const NAV = [
 export function Logo({ className = '' }: { className?: string }) {
   return (
     <span className={`select-none text-[30px] font-black lowercase leading-none tracking-tight text-brand ${className}`}>{tx('x1ctbm6o', {}, [(chunk) => <span className="text-coral">{chunk}</span>])}</span>
+  )
+}
+
+/** Кружок с числом наград, которые можно забрать (на пункте «Задания») */
+function NavBadge({ path }: { path: string }) {
+  const n = useClaimable()
+  if (path !== '/quests' || !n) return null
+  return (
+    <span className="absolute -right-1 -top-1 flex h-[20px] min-w-[20px] items-center justify-center rounded-full border-2 border-white bg-coral px-1 text-[11px] font-black text-white" data-quests-badge={n} aria-label={t('quests.badge', { n })}>
+      {n}
+    </span>
   )
 }
 
@@ -46,7 +59,10 @@ function Sidebar({ active }: { active: string }) {
                 aria-current={on ? 'page' : undefined}
                 title={label}
               >
-                <Icon size={30} />
+                <span className="relative">
+                  <Icon size={30} />
+                  <NavBadge path={path} />
+                </span>
                 <span className="hidden lg:inline">{label}</span>
               </button>
             </li>
@@ -86,9 +102,12 @@ function BottomNav({ active }: { active: string }) {
             key={path}
             onClick={() => navigate(path)}
             aria-label={label}
-            className={`flex h-12 w-14 items-center justify-center rounded-2xl border-2 ${on ? 'border-brand-mid bg-brand-light' : 'border-transparent'}`}
+            className={`relative flex h-12 w-14 items-center justify-center rounded-2xl border-2 ${on ? 'border-brand-mid bg-brand-light' : 'border-transparent'}`}
           >
-            <Icon size={30} />
+            <span className="relative">
+              <Icon size={30} />
+              <NavBadge path={path} />
+            </span>
           </button>
         )
       })}
@@ -98,41 +117,6 @@ function BottomNav({ active }: { active: string }) {
 
 export function StatsBar({ compact = false }: { compact?: boolean }) {
   return <EconomyBar compact={compact} />
-}
-
-function QuestRow({ icon, title, value, goal }: { icon: ReactNode; title: string; value: number; goal: number }) {
-  const v = Math.min(value, goal)
-  return (
-    <div className="flex items-center gap-4">
-      <div className="shrink-0">{icon}</div>
-      <div className="min-w-0 flex-1">
-        <div className="mb-2 text-[15px] font-bold text-ink">{title}</div>
-        <div className="progress-track !h-[18px] bg-line">
-          <div className="progress-fill bg-gold" style={{ width: `${(v / goal) * 100}%` }} />
-          <span className="absolute inset-0 flex items-center justify-center text-[11px] font-extrabold text-[#8a6a1e]">
-            {v} / {goal}
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function DailyQuests({ title = t('x00e91ep') }: { title?: string }) {
-  const { progress } = useStore()
-  return (
-    <section className="card p-5">
-      <div className="mb-5 flex items-center justify-between">
-        <h3 className="text-[19px] font-extrabold">{title}</h3>
-        <button onClick={() => navigate('/quests')} className="text-[13px] font-extrabold uppercase tracking-wider text-brand hover:opacity-80">{t('x0xg36bv')}</button>
-      </div>
-      <div className="space-y-5">
-        <QuestRow icon={<Spark size={32} />} title={t('x1rhal7i')} value={progress.todayXp} goal={30} />
-        <QuestRow icon={<Target size={32} />} title={t('x08tsyug')} value={progress.perfectToday} goal={2} />
-        <QuestRow icon={<Clock size={32} />} title={t('x1b9mx5z')} value={progress.lessonsToday} goal={3} />
-      </div>
-    </section>
-  )
 }
 
 export function RightRail() {

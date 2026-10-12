@@ -4,6 +4,7 @@
  */
 import type { Progress } from '../store'
 import { getSupabase } from './supabase'
+import { mergeQuests, sanitizeQuests } from '../data/quests'
 
 const union = (a: string[] = [], b: string[] = []) => [...new Set([...a, ...b])]
 const num = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : d)
@@ -30,6 +31,8 @@ export function sanitizeRemote(raw: unknown): Partial<Progress> | null {
     placementSeen: r.placementSeen === true,
     portfolioUrl: typeof r.portfolioUrl === 'string' ? r.portfolioUrl.slice(0, 300) : '',
     ...(typeof r.locale === 'string' && /^(ru|en|kk|es|zh)$/.test(r.locale) ? { locale: r.locale } : {}),
+    ...(sanitizeQuests(r.quests) ? { quests: sanitizeQuests(r.quests) } : {}),
+    ...(r.introSeen === true ? { introSeen: true } : {}),
   }
 }
 
@@ -67,6 +70,8 @@ export function mergeProgress(local: Progress, remote: Partial<Progress> | null)
     placementSeen: local.placementSeen || !!remote.placementSeen,
     portfolioUrl: local.portfolioUrl || remote.portfolioUrl || '',
     ...(local.locale || remote.locale ? { locale: local.locale || remote.locale } : {}),
+    ...(local.quests || remote.quests ? { quests: mergeQuests(local.quests, remote.quests) } : {}),
+    ...(local.introSeen || remote.introSeen ? { introSeen: true } : {}),
   }
 }
 

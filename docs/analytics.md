@@ -58,6 +58,12 @@ Retention по `lesson_completed`; Trends `lesson_abandoned` с разбивко
 | `micro_prompt_dismissed` | микро-опрос закрыт крестиком | `source` |
 | `language_changed` | сменили язык в переключателе | `from`, `to` |
 | `sound_toggled` | переключили «Звуки» в профиле | `enabled`, `where` (`profile`) |
+| `quest_completed` | задание дня/недели выполнено (один раз на период) | `quest_id`, `period` (`day` / `week`), `goal` |
+| `quest_claimed` | забрали награду за задание | `quest_id`, `period`, `reward` (токены) |
+| `onboarding_started` | открыт тур «Как это работает» | `entry` (`first_lesson` / `profile`) |
+| `onboarding_completed` | тур пройден до конца | `entry`, `warmup_correct` |
+| `onboarding_skipped` | тур закрыт «Пропустить» / крестиком | `entry`, `step` |
+| `glossary_opened` | открыт термин или словарик | `where` (`lesson_term` / `lesson_list` / `profile`), `term`? |
 | `error_screen_shown` | показан экран «Бипи споткнулся» | `route` (веб) / `boundary` (мобилка) |
 | `$pageview` / `$screen` | смена экрана | `$current_url` без query (веб) / имя экрана (мобилка) |
 

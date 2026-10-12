@@ -2,6 +2,7 @@ import type { ChoiceExercise } from '../../data/types'
 import { Head, HintNote, Letter, type ViewProps } from './shared'
 import { optState } from './meta'
 import { t } from '../../i18n/core'
+import { GlossText } from '../Glossary'
 
 /** «Ситуация»: карточка-сценарий → что сделаешь? */
 export function ScenarioView({ ex, answer, setAnswer, status, hint }: ViewProps<ChoiceExercise>) {
@@ -14,7 +15,7 @@ export function ScenarioView({ ex, answer, setAnswer, status, hint }: ViewProps<
           🧭
         </span>
         <div className="text-[11px] font-black uppercase tracking-wider text-[#B86A00]">{t('x0mg5v7s')}</div>
-        <div className="relative mt-0.5 text-[16px] font-bold leading-snug text-ink md:text-[17px]">{ex.situation ?? ex.prompt}</div>
+        <div className="relative mt-0.5 text-[16px] font-bold leading-snug text-ink md:text-[17px]"><GlossText text={ex.situation ?? ex.prompt ?? ""} field="situation" /></div>
       </div>
       <div className="mb-2.5 text-[15px] font-black text-ink">{t('x0qv5swp')}</div>
       <HintNote hint={hint} />
