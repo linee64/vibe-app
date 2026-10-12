@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { CreditCard, Coffee, Bug, MessageSquare, Rocket as RocketIcon, Palette, Smartphone, Bot, Wrench } from 'lucide-react'
 import { navigate } from '../router'
 import { useStore } from '../store'
 import { useToast } from '../components/Toast'
@@ -306,6 +307,27 @@ function Program() {
   )
 }
 
+/** Icon component for homework badges - replaces emoji with clean line icons */
+function HomeworkIcon({ id }: { id: string }) {
+  const iconMap: Record<string, typeof CreditCard> = {
+    hw1: CreditCard,
+    hw2: Coffee,
+    hw3: Bug,
+    hw4: MessageSquare,
+    hw5: RocketIcon,
+    hw6: Palette,
+    hw7: Smartphone,
+    hw8: Bot,
+    hw9: Wrench,
+  }
+  const Icon = iconMap[id] || CreditCard
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
+      <Icon size={20} strokeWidth={2} className="text-white" />
+    </span>
+  )
+}
+
 /** Компактный блок: домашки-мини-проекты и три тира */
 function TiersAndHomework() {
   return (
@@ -317,8 +339,8 @@ function TiersAndHomework() {
           <p className="mt-2 text-[15px] font-semibold leading-relaxed text-white/85">{t('x03l49c0')}</p>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {HOMEWORKS.map((h) => (
-              <li key={h.id} className="flex items-center gap-2 rounded-xl bg-white/12 px-3 py-2 text-[14px] font-extrabold" style={{ background: 'rgba(255,255,255,.12)' }}>
-                <span className="text-[18px]">{h.badge.emoji}</span>
+              <li key={h.id} className="flex items-center gap-2.5 rounded-xl bg-white/12 px-3 py-2 text-[14px] font-extrabold" style={{ background: 'rgba(255,255,255,.12)' }}>
+                <HomeworkIcon id={h.id} />
                 {h.short}
               </li>
             ))}
