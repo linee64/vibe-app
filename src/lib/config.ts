@@ -5,7 +5,8 @@
  *  VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY → настоящие аккаунты и синхронизация прогресса.
  *  + серверный DEEPSEEK_API_KEY → ИИ-проверка домашек через /api/ai/review (VITE_AI_ENABLED=false — выключить).
  *  + VITE_BILLING_ENABLED=true и серверные POLAR_* → оплата Pro и пейвол разделов 2–5.
- *  VITE_REVIEW_MODE (по умолчанию 'true') — режим ревью: тиры и пейвол открыты. Перед запуском поставить 'false'.
+ *  VITE_REVIEW_MODE — режим ревью: тиры и пейвол открыты. С настоящими аккаунтами (Supabase) включается ТОЛЬКО явным 'true'
+ *  (Vercel Preview), в продакшене переменная 'false' или не задана — всё закрыто. В демо без Supabase по умолчанию включён.
  *  VITE_POSTHOG_KEY (+ VITE_POSTHOG_HOST) → продуктовая аналитика PostHog; VITE_SENTRY_DSN → отчёты об ошибках Sentry.
  *  Оба значения публичные по замыслу (ключ проекта PostHog и DSN Sentry предназначены для браузера).
  */
@@ -42,8 +43,12 @@ export const DEMO_MODE = !SUPABASE_ENABLED
 export const API_BASE = (env.VITE_API_BASE ?? '').trim().replace(/\/+$/, '')
 export const AI_ENABLED = SUPABASE_ENABLED && env.VITE_AI_ENABLED !== 'false'
 export const BILLING_ENABLED = SUPABASE_ENABLED && env.VITE_BILLING_ENABLED === 'true'
-/** Режим ревью: все тиры открыты по умолчанию и пейвол не показывается */
-export const REVIEW_MODE = env.VITE_REVIEW_MODE !== 'false'
+/**
+ * Режим ревью: все тиры открыты по умолчанию и пейвол не показывается.
+ * Безопасно по умолчанию: с Supabase (боевой сайт) — только при явном VITE_REVIEW_MODE=true,
+ * чтобы случайно удалённая переменная не открыла продакшен; в демо-прототипе — пока не выключен явно.
+ */
+export const REVIEW_MODE = env.VITE_REVIEW_MODE === 'true' || (DEMO_MODE && env.VITE_REVIEW_MODE !== 'false')
 /** Пейвол реально действует (оплата подключена и ревью выключено) */
 export const PAYWALL_ACTIVE = BILLING_ENABLED && !REVIEW_MODE
 

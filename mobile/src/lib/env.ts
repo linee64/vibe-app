@@ -49,8 +49,8 @@ export const DEMO_MODE = !SUPABASE_ENABLED
 /** Мобильному приложению нужен абсолютный адрес бэкенда (в вебе /api на том же домене) */
 export const API_BASE = ENV.apiBase
 export const AI_ENABLED = SUPABASE_ENABLED && !!API_BASE
-/** Режим ревью (по умолчанию включён): тиры открыты, пейвол не мешает */
-export const REVIEW_MODE = ENV.reviewMode !== 'false'
+/** Режим ревью: тиры открыты, пейвол не мешает. С Supabase — только при явном EXPO_PUBLIC_REVIEW_MODE=true (как в вебе) */
+export const REVIEW_MODE = ENV.reviewMode === 'true' || (DEMO_MODE && ENV.reviewMode !== 'false')
 
 export const ANALYTICS_ENABLED = !!ENV.posthogKey
 export const SENTRY_ENABLED = !!ENV.sentryDsn
