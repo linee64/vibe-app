@@ -11,8 +11,9 @@ const sentryPlugin: NonNullable<ExpoConfig['plugins']> =
     : []
 
 const config: ExpoConfig = {
-  name: 'Вайбик',
+  name: 'Vaibik',
   slug: 'vaibik',
+  owner: 'linee64',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -21,6 +22,7 @@ const config: ExpoConfig = {
   backgroundColor: '#F6F4FB',
   ios: {
     bundleIdentifier: 'com.vaibik.app',
+    buildNumber: '1',
     supportsTablet: false,
     infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
@@ -43,7 +45,7 @@ const config: ExpoConfig = {
     ...sentryPlugin,
   ],
   experiments: { typedRoutes: true, reactCompiler: true },
-  extra: { router: {}, eas: { projectId: '00000000-0000-0000-0000-000000000000' } },
+  extra: { router: {}, eas: { projectId: '0e57280f-becc-4d8b-aede-76ca6fead006' } },
 }
 
 export default config
