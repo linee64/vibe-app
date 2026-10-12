@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Поддельный клиент Supabase: запоминаем, с чем вызывали auth.*
-const calls: { signUp: unknown[]; updateUser: unknown[][] } = { signUp: [], updateUser: [] }
+const calls: { signUp: unknown[]; updateUser: unknown[][]; resend: unknown[] } = { signUp: [], updateUser: [], resend: [] }
 let sessionUser: { user_metadata?: Record<string, unknown> } | null = null
 const fake = {
   auth: {
@@ -13,6 +13,11 @@ const fake = {
       calls.updateUser.push(args)
       return { data: {}, error: null }
     }),
+    resend: vi.fn(async (args: unknown) => {
+      calls.resend.push(args)
+      return { data: {}, error: null }
+    }),
+    signInWithPassword: vi.fn(async () => ({ data: {}, error: { code: 'email_not_confirmed', message: 'Email not confirmed' } })),
     getSession: vi.fn(async () => ({ data: { session: sessionUser ? { user: sessionUser } : null } })),
   },
 }
@@ -25,6 +30,7 @@ beforeEach(() => {
   vi.stubGlobal('window', { location: { origin: 'https://vaibik.test', pathname: '/' } })
   calls.signUp = []
   calls.updateUser = []
+  calls.resend = []
   sessionUser = null
 })
 afterEach(async () => {
@@ -68,5 +74,18 @@ describe('locale в user_metadata (язык писем Supabase)', () => {
   it('syncAuthLocale без сессии ничего не делает', async () => {
     await auth.syncAuthLocale()
     expect(calls.updateUser).toHaveLength(0)
+  })
+})
+
+describe('повторная отправка письма подтверждения', () => {
+  it('resendSignup вызывает auth.resend с type signup', async () => {
+    calls.resend = []
+    const res = await auth.resendSignup('a@b.kz')
+    expect(res.ok).toBe(true)
+    expect(calls.resend[0]).toMatchObject({ type: 'signup', email: 'a@b.kz' })
+  })
+  it('signIn помечает неподтверждённую почту', async () => {
+    const res = await auth.signIn('a@b.kz', 'x')
+    expect(res).toMatchObject({ ok: false, unconfirmed: true })
   })
 })

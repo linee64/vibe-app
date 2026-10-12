@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { createRoot } from 'react-dom/client'
 import '@fontsource/nunito/400.css'
 import '@fontsource/nunito/600.css'
@@ -39,6 +40,7 @@ void initLocale().finally(() =>
             </BipiLookProvider>
           </StoreProvider>
         </ToastProvider>
+        <Analytics />
       </ErrorBoundary>
     </StrictMode>,
   ),

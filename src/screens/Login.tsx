@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useStore } from '../store'
 import { useToast } from '../components/Toast'
 import { Mascot } from '../components/Mascot'
@@ -74,6 +74,42 @@ function Notice({ tone, children }: { tone: 'info' | 'error'; children: ReactNod
   )
 }
 
+const RESEND_COOLDOWN = 60
+
+/** «Не пришло письмо?» — подсказка про «Спам» + повторная отправка с паузой 60 с */
+export function ResendConfirm({ email }: { email: string }) {
+  const [left, setLeft] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  useEffect(() => {
+    if (left <= 0) return
+    const id = setTimeout(() => setLeft((n) => n - 1), 1000)
+    return () => clearTimeout(id)
+  }, [left])
+  const resend = async () => {
+    if (busy || left > 0 || !email) return
+    setBusy(true)
+    const res = await auth.resendSignup(email)
+    setBusy(false)
+    setLeft(RESEND_COOLDOWN)
+    setMsg(res.ok ? { ok: true, text: res.message ?? t('login.resent') } : { ok: false, text: res.error })
+  }
+  return (
+    <div className="mb-5 rounded-2xl border-2 border-brand-mid bg-brand-light/60 px-4 py-3 text-[14px] font-bold leading-snug text-ink" data-testid="resend-confirm">
+      <p>{t('login.spamHint')}</p>
+      <button
+        type="button"
+        onClick={resend}
+        disabled={busy || left > 0}
+        className="mt-2 font-extrabold text-brand hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
+      >
+        {busy ? t('x15d421k') : left > 0 ? t('login.resendIn', { n: left }) : t('login.resend')}
+      </button>
+      {msg && <p role="status" className={`mt-1 ${msg.ok ? '' : 'text-coral-dark'}`}>{msg.text}</p>}
+    </div>
+  )
+}
+
 export function Login({ initialError }: { initialError?: string | null } = {}) {
   const { login } = useStore()
   const toast = useToast()
@@ -84,12 +120,15 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
   const [shake, setShake] = useState(0)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<{ tone: 'info' | 'error'; text: string } | null>(initialError ? { tone: 'error', text: initialError } : null)
+  // адрес, на который ждём письмо подтверждения (после регистрации или входа без подтверждения)
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
 
   const switchMode = (m: Mode) => {
     if (m === 'signup') track('signup_started', { entry: 'login' })
     setMode(m)
     setErrors({})
     setNotice(null)
+    setPendingEmail(null)
     setPassword('')
   }
 
@@ -117,6 +156,7 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
     }
     setBusy(true)
     setNotice(null)
+    setPendingEmail(null)
     const res =
       mode === 'signin' ? await auth.signIn(mail, password) : mode === 'signup' ? await auth.signUp(mail, password) : await auth.sendPasswordReset(mail)
     setBusy(false)
@@ -124,11 +164,15 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
     if (res.ok && mode === 'signup') track('signup_completed', { needs_confirm: !!res.needsConfirm })
     if (!res.ok) {
       setNotice({ tone: 'error', text: res.error })
+      if (res.unconfirmed) setPendingEmail(mail)
       setShake((s) => s + 1)
       return
     }
     if (res.message) setNotice({ tone: 'info', text: res.message })
-    if (mode === 'signup' && res.needsConfirm) setPassword('')
+    if (mode === 'signup' && res.needsConfirm) {
+      setPassword('')
+      setPendingEmail(mail)
+    }
     // успешный вход: сессия придёт из Supabase, App сам переведёт на /learn
   }
 
@@ -150,6 +194,7 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
           <p className="mb-6 mt-1 text-[16px] font-semibold text-muted">{subtitle}</p>
 
           {notice && <Notice tone={notice.tone}>{notice.text}</Notice>}
+          {pendingEmail && !DEMO_MODE && <ResendConfirm key={pendingEmail} email={pendingEmail} />}
 
           <div key={shake} className={shake ? 'anim-shake' : ''}>
             <label className="mb-4 block">

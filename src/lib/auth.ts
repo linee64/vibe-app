@@ -5,7 +5,7 @@
 import { getSupabase } from './supabase'
 import { getLocale, t } from '../i18n/core'
 
-export type AuthResult = { ok: true; message?: string; needsConfirm?: boolean } | { ok: false; error: string }
+export type AuthResult = { ok: true; message?: string; needsConfirm?: boolean } | { ok: false; error: string; unconfirmed?: boolean }
 
 const appUrl = () => `${window.location.origin}${window.location.pathname}`
 
@@ -55,7 +55,9 @@ async function client() {
 export async function signIn(email: string, password: string): Promise<AuthResult> {
   try {
     const { error } = await (await client()).auth.signInWithPassword({ email, password })
-    return error ? { ok: false, error: authErrorRu(error) } : { ok: true }
+    if (!error) return { ok: true }
+    const unconfirmed = (error as ErrLike).code === 'email_not_confirmed' || /email not confirmed/i.test(error.message ?? '')
+    return unconfirmed ? { ok: false, error: authErrorRu(error), unconfirmed: true } : { ok: false, error: authErrorRu(error) }
   } catch (e) {
     return { ok: false, error: authErrorRu(e) }
   }
@@ -74,6 +76,16 @@ export async function signUp(email: string, password: string, displayName?: stri
       return { ok: false, error: t('x05lb746') }
     if (data.session) return { ok: true }
     return { ok: true, needsConfirm: true, message: t('x1u8ebih') }
+  } catch (e) {
+    return { ok: false, error: authErrorRu(e) }
+  }
+}
+
+/** Повторно отправить письмо подтверждения регистрации */
+export async function resendSignup(email: string): Promise<AuthResult> {
+  try {
+    const { error } = await (await client()).auth.resend({ type: 'signup', email, options: { emailRedirectTo: appUrl() } })
+    return error ? { ok: false, error: authErrorRu(error) } : { ok: true, message: t('login.resent') }
   } catch (e) {
     return { ok: false, error: authErrorRu(e) }
   }
