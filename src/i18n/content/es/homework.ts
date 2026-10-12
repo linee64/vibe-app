@@ -198,7 +198,7 @@ export const homework: ContentPack['homework'] = {
       {
         group: 'Objetivo',
         label: 'Tarjeta de plan',
-        text: 'Haz una tarjeta del plan “Pro” para la escuela “Acuarela”: nombre, precio $4.99 al mes, 3 puntos de “qué incluye” y el botón “Empezar”.',
+        text: 'Haz una tarjeta del plan “Pro” para la escuela “Acuarela”: nombre, precio $9.90 al mes, 3 puntos de “qué incluye” y el botón “Empezar”.',
       },
       {
         group: 'Sistema',
@@ -251,6 +251,7 @@ export const homework: ContentPack['homework'] = {
       preview: {
         empty: 'Describe la tarjeta y aparecerá aquí',
         plan: 'Pro',
+        price: '$9.90',
         per: '/ mes',
         item1: 'Las 40 lecciones de acuarela',
         item2: 'Revisión de trabajos por un artista',

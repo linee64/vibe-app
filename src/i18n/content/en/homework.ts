@@ -198,7 +198,7 @@ export const homework: ContentPack['homework'] = {
       {
         group: 'Goal',
         label: 'Plan card',
-        text: 'Make a “Pro” plan card for the “Aquarelle” school: name, price $49 per month, 3 items “what\'s included” and a “Start” button.',
+        text: 'Make a “Pro” plan card for the “Aquarelle” school: name, price $9.90 per month, 3 items “what\'s included” and a “Start” button.',
       },
       {
         group: 'System',
@@ -251,6 +251,7 @@ export const homework: ContentPack['homework'] = {
       preview: {
         empty: 'Describe the card — and it will appear here',
         plan: 'Pro',
+        price: '$9.90',
         per: '/ mo',
         item1: 'All 40 watercolor lessons',
         item2: 'Feedback on your work from an artist',

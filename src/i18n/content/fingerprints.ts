@@ -295,7 +295,7 @@ export const FINGERPRINTS: Record<string, string> = {
   'hw3': 'ce8f7e60',
   'hw4': '6a801cc6',
   'hw5': '94f0541f',
-  'hw6': '411b99df',
+  'hw6': 'f6303403',
   'hw7': 'eeeaa75c',
   'hw8': '5783e13b',
   'hw9': 'a6ea08ca',

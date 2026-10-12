@@ -198,7 +198,7 @@ export const homework: ContentPack['homework'] = {
       {
         group: '目标',
         label: '方案卡片',
-        text: '给“水彩”学校做一张“Pro”方案卡片：名称、每月价格 ¥120、3 条“包含什么”和“开始”按钮。',
+        text: '给“水彩”学校做一张“Pro”方案卡片：名称、每月价格 ¥69、3 条“包含什么”和“开始”按钮。',
       },
       {
         group: '系统',
@@ -251,6 +251,7 @@ export const homework: ContentPack['homework'] = {
       preview: {
         empty: '描述卡片——它就会出现在这里',
         plan: 'Pro',
+        price: '¥69',
         per: '/ 月',
         item1: '全部 40 节水彩课',
         item2: '画家点评作品',
