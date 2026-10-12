@@ -1047,7 +1047,7 @@ export const zh = {
   "intro.skip": "跳过",
   "intro.start": "开始第一课",
   "intro.vibe.body": "在这里你是甲方，也是测试员。不用自己写代码——要做的是把任务说清楚，并检查结果。",
-  "intro.vibe.loop": "……循环往复，直到满意 🔁",
+  "intro.vibe.loop": "……循环往复，直到做出来 🔁",
   "intro.vibe.s1": "用文字描述任务",
   "intro.vibe.s2": "AI 写代码",
   "intro.vibe.s3": "运行并检查",

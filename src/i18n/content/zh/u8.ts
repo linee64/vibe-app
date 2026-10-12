@@ -27,7 +27,7 @@ export const u8: UnitTr = {
           title: '没有记忆的模型',
           prompt: '你只把用户最后一条消息发到 API。模型会怎么回答？',
           tool: '模型 API',
-          input: '消息 1：“我叫阿尼亚”。消息 2（单独请求，没有历史记录）：“我叫什么？”',
+          input: '消息 1：“我叫阿尼娅”。消息 2（单独请求，没有历史记录）：“我叫什么？”',
           outcomes: [
             {
               label: '不知道',
@@ -35,7 +35,7 @@ export const u8: UnitTr = {
             },
             {
               label: '记得',
-              text: '你叫阿尼亚！',
+              text: '你叫阿尼娅！',
             },
             {
               label: '服务器错误',
@@ -161,7 +161,7 @@ export const u8: UnitTr = {
         },
         {
           title: '用 JSON 回答',
-          prompt: '你让 AI 让模型以 JSON 返回订单。检查改动。',
+          prompt: '你让 AI 改代码，让模型以 JSON 返回订单。检查改动。',
           request: '让机器人从消息中提取订单为 JSON：饮品和尺寸。',
           hunks: [
             {
@@ -230,7 +230,7 @@ export const u8: UnitTr = {
                 ui: {
                   blocks: [
                     {
-                      text: '有的，燕麦奶有，加 ¥300…',
+                      text: '有的，燕麦奶有，加 300 ₸…',
                     },
                     {
                       text: '停止',

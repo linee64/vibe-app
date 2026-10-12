@@ -305,7 +305,7 @@ export const u9: UnitTr = {
         {
           title: '智能体的 diff',
           prompt: '智能体修好了折扣计算。检查一下改动。',
-          request: '10% 的折扣应适用于 5000 ¥ 及以上的订单。',
+          request: '10% 的折扣应适用于 5000 ₸ 及以上的订单。',
           hunks: {
             1: {
               lines: [

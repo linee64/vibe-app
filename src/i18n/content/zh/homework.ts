@@ -505,7 +505,7 @@ export const homework: ContentPack['homework'] = {
         question: '有燕麦奶吗？',
         ask: '提问',
         locked: '先完成：服务器、密钥和规则',
-        answer: '有的！燕麦奶可以加到任何饮品里，加 ¥300。',
+        answer: '有的！燕麦奶可以加到任何饮品里，加 300 ₸。',
         retry: '重试',
         site: 'zerno-coffee.com',
       },
