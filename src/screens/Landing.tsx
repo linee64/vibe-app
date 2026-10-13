@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { CreditCard, Coffee, Bug, MessageSquare, Rocket as RocketIcon, Palette, Smartphone, Bot, Wrench } from 'lucide-react'
+import { Bell, Bot, CalendarCheck, ClipboardCheck, Coffee, Eye, Gift, Hand, LayoutTemplate, ListTodo, MessageSquare, Rocket as RocketIcon, SlidersHorizontal, Sparkles, Star, Swords, WalletCards, Workflow, type LucideIcon } from 'lucide-react'
 import { navigate } from '../router'
 import { useStore } from '../store'
 import { useToast } from '../components/Toast'
@@ -146,7 +146,7 @@ function Hero() {
       <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-teal-light" />
       <div className="relative mx-auto grid max-w-[1160px] items-center gap-4 px-5 pb-12 pt-8 md:px-8 md:pb-16 md:pt-10 lg:min-h-[calc(100vh-76px)] lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:py-6">
         <div className="text-center lg:text-left">
-          <span className="anim-fade-up inline-flex items-center gap-2 rounded-full border-2 border-brand-mid bg-brand-light px-3.5 py-1.5 text-[13px] font-extrabold text-brand-dark">{t('x11ztz6x')}</span>
+          <span className="anim-fade-up inline-flex items-center gap-2 rounded-full border-2 border-brand-mid bg-brand-light px-3.5 py-1.5 text-[13px] font-extrabold text-brand-dark"><Ico icon={Sparkles} />{t('x11ztz6x')}</span>
           <h1 className="anim-fade-up mt-5 text-balance text-[38px] font-black leading-[1.08] tracking-tight text-ink md:text-[54px] lg:text-[56px]">{tx('landing.hero', {}, [() => <br className="hidden sm:block" />, (chunk) => <span className="relative inline-block whitespace-nowrap text-brand">{chunk}<Squiggle /></span>])}</h1>
           <p className="anim-fade-up mx-auto mt-6 max-w-[520px] text-[18px] font-semibold leading-relaxed text-muted lg:mx-0 md:text-[19px]">{t('x0uw287d')}</p>
           <div className="anim-fade-up mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center lg:justify-start">
@@ -307,26 +307,30 @@ function Program() {
   )
 }
 
-/** Icon component for homework badges - replaces emoji with clean line icons */
+/** Линейные иконки домашек (вместо эмодзи): белые ~22px в скруглённом квадрате white/15% */
+const HOMEWORK_ICONS: Record<string, LucideIcon> = {
+  hw1: LayoutTemplate, // Карточка товара
+  hw2: Coffee, // Лендинг кофейни
+  hw3: ListTodo, // Почини список дел
+  hw4: MessageSquare, // Форма отзывов
+  hw5: RocketIcon, // Запуск
+  hw6: WalletCards, // Карточка тарифа
+  hw7: CalendarCheck, // Трекер привычек
+  hw8: Bot, // ИИ-ассистент
+  hw9: ClipboardCheck, // Задание для агента
+}
+
 function HomeworkIcon({ id }: { id: string }) {
-  const iconMap: Record<string, typeof CreditCard> = {
-    hw1: CreditCard,
-    hw2: Coffee,
-    hw3: Bug,
-    hw4: MessageSquare,
-    hw5: RocketIcon,
-    hw6: Palette,
-    hw7: Smartphone,
-    hw8: Bot,
-    hw9: Wrench,
-  }
-  const Icon = iconMap[id] || CreditCard
+  const Icon = HOMEWORK_ICONS[id] ?? LayoutTemplate
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
-      <Icon size={20} strokeWidth={2} className="text-white" />
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15" aria-hidden>
+      <Icon size={22} strokeWidth={2} className="text-white" />
     </span>
   )
 }
+
+/** Инлайн-иконка в чипах/бейджах: ~16px, цвет текста */
+const Ico = ({ icon: Icon, size = 16 }: { icon: LucideIcon; size?: number }) => <Icon size={size} strokeWidth={2.4} className="shrink-0" aria-hidden />
 
 /** Компактный блок: домашки-мини-проекты и три тира */
 function TiersAndHomework() {
@@ -395,9 +399,10 @@ function Demo() {
           <h2 className="mt-2 text-balance text-[30px] font-black leading-tight tracking-tight md:text-[42px]">{t('x0dmf93p')}</h2>
           <p className="mx-auto mt-3 max-w-[460px] text-[17px] font-semibold leading-relaxed text-white/80 lg:mx-0 md:text-[18px]">{t('x1xc2vqr')}</p>
           <ul className="mx-auto mt-5 flex max-w-[460px] flex-wrap justify-center gap-2 lg:mx-0 lg:justify-start">
-            {[t('x1215h8d'), t('x044tiqa'), t('x0pp41s2'), t('x04w5rjd')].map((t) => (
-              <li key={t} className="rounded-full bg-white/15 px-3 py-1 text-[13px] font-extrabold text-white">
-                {t}
+            {([[Swords, t('x1215h8d')], [Eye, t('x044tiqa')], [ClipboardCheck, t('x0pp41s2')], [Workflow, t('x04w5rjd')]] as const).map(([icon, label]) => (
+              <li key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[13px] font-extrabold text-white">
+                <Ico icon={icon} />
+                {label}
               </li>
             ))}
           </ul>
@@ -418,7 +423,7 @@ function Demo() {
               </span>
             </div>
             <div className="px-5 pb-5 pt-4">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-coral-light px-3 py-1 text-[12px] font-black uppercase tracking-wider text-coral-dark">{t('x0p1zksc')}</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-coral-light px-3 py-1 text-[12px] font-black uppercase tracking-wider text-coral-dark"><Ico icon={SlidersHorizontal} size={14} />{t('x0p1zksc')}</span>
               <h3 className="mt-2 text-[21px] font-black leading-tight">{ex.title}</h3>
               <p className="mb-3 mt-1 text-[15px] font-semibold text-muted">{ex.prompt}</p>
               <UpgradeView ex={ex} answer={answer} setAnswer={setAnswer} status={status} compact />
@@ -631,7 +636,8 @@ function Pricing() {
           {/* Pro — рекомендованный */}
           <Reveal delay={120} className="order-1 min-w-0 md:order-2">
             <div className="relative h-full pt-5">
-              <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-coral px-4 py-1.5 text-[13px] font-black uppercase tracking-wider text-white shadow-[0_3px_0_#E0573A]">
+              <div className="absolute left-1/2 top-0 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-coral px-4 py-1.5 text-[13px] font-black uppercase tracking-wider text-white shadow-[0_3px_0_#E0573A]">
+                <Ico icon={Star} />
                 {annual ? t('x0s9x1z7') : t('x18bxzdc')}
               </div>
               <div className="relative flex h-full flex-col overflow-hidden rounded-[22px] bg-brand p-6 pt-8 text-white shadow-[0_6px_0_#5B2FD6] ring-4 md:p-7 md:pt-8 ring-brand-mid/60">
@@ -640,7 +646,7 @@ function Pricing() {
 
                 <div className="relative flex flex-wrap items-center justify-between gap-2">
                   <div className="text-[15px] font-black uppercase tracking-wider text-white/85">Pro · {annual ? t('x0y80z8r') : t('x0bptiqn')}</div>
-                  <span className="rounded-full bg-gold px-3 py-1 text-[13px] font-black text-[#5a3d00] shadow-[0_3px_0_#E5A100]">{tx('x1i0nujw', { TRIAL_DAYS })}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-[13px] font-black text-[#5a3d00] shadow-[0_3px_0_#E5A100]"><Ico icon={Gift} />{tx('x1i0nujw', { TRIAL_DAYS })}</span>
                 </div>
 
                 <div className="relative mt-3 min-h-[92px]">
@@ -681,12 +687,12 @@ function Pricing() {
         </div>
 
         <Reveal delay={160} className="mx-auto mt-10 flex max-w-[900px] flex-col items-center gap-3 md:flex-row md:justify-center md:gap-4">
-          {[
-            ['✋', t('x05gubbo')],
-            ['🔔', t('x04n2926')],
-          ].map(([icon, text]) => (
+          {([
+            [Hand, t('x05gubbo')],
+            [Bell, t('x04n2926')],
+          ] as const).map(([icon, text]) => (
             <div key={text} className="flex items-center gap-2 rounded-full border-2 border-line bg-white px-4 py-2 text-center text-[14px] font-bold text-ink md:text-[15px]">
-              <span aria-hidden>{icon}</span>
+              <Ico icon={icon} />
               {text}
             </div>
           ))}

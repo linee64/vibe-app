@@ -190,7 +190,7 @@ function Agent(p: Props) {
           <Text style={mono(12, C.muted)}>src/discount.ts</Text>
           <Text style={[mono(11.5, C.coralDark), { backgroundColor: C.coralLight }]}>- if (total {'>'} 5000)</Text>
           <Text style={[mono(11.5, C.tealDark), { backgroundColor: C.tealLight }]}>+ if (total {'>='} 5000)</Text>
-          {s.done.tests ? <Text style={[mono(11.5, C.tealDark), { backgroundColor: C.tealLight }]}>+ test('5000 → 4500')</Text> : null}
+          {s.done.tests ? <Text style={[mono(11.5, C.tealDark), { backgroundColor: C.tealLight }]}>{"+ test('5000 → 4500')"}</Text> : null}
           {!s.done.scope ? <Note ok={false} text={tr('wide')} /> : null}
         </View>
       ) : null}

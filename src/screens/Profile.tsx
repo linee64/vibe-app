@@ -1,3 +1,4 @@
+import { Gift } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useStore } from '../store'
 import { useToast } from '../components/Toast'
@@ -82,7 +83,7 @@ function PlanCard() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[13px] font-black uppercase tracking-wider text-white/75">{t('x1sl243q')}</span>
-            <span className="rounded-full bg-gold px-2.5 py-0.5 text-[12px] font-black text-[#5a3d00]">{tx('x1i0nujw', { TRIAL_DAYS })}</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-gold px-2.5 py-0.5 text-[12px] font-black text-[#5a3d00]"><Gift size={14} strokeWidth={2.4} aria-hidden />{tx('x1i0nujw', { TRIAL_DAYS })}</span>
           </div>
           <h3 className="mt-1.5 text-[20px] font-black leading-tight">{t('x1xtdtme')}</h3>
           <p className="mt-1 text-[14px] font-semibold text-white/80">{tx('x1fcvmfh', { annualPerMonth: usd(annualPerMonth) })}</p>
