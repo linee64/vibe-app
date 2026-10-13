@@ -48,6 +48,7 @@ export const ru = {
   "sound.off": "Выкл",
   "sound.on": "Вкл",
   "layout.rank": "Ты на <0>{rank}-м месте</0>.",
+  "lesson.fullChargeIn": "Полный заряд через {time}",
   "lesson.chargePause": "Это не штраф — просто пауза. Разбери ошибку, и Бипи получит деление заряда. Или подожди: +1 деление каждые {min} мин",
   "lesson.praise.1": "Отлично!",
   "lesson.praise.2": "Супер!",

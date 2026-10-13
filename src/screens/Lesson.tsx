@@ -10,6 +10,9 @@ import { Mascot } from '../components/Mascot'
 import { ExerciseView } from '../components/Exercises'
 import { canCheck, correctText, hintFor, isCorrect, keyOptions, type Answer, type Hint, type Status } from '../data/exerciseLogic'
 import { HINT_COST, RECHARGE_COST, RECHARGE_MINUTES, tokens, waitText } from '../data/economy'
+import { hhmm } from '../data/charge'
+import { useSubscription } from '../lib/billing'
+import { DEMO_MODE } from '../lib/config'
 import type { Exercise } from '../data/types'
 import { LessonComplete, type LessonResult } from './LessonComplete'
 import { track } from '../lib/analytics'
@@ -34,7 +37,9 @@ function Modal({ children, label }: { children: ReactNode; label: string }) {
 
 export function LessonScreen({ id }: { id: string }) {
   const found = findLesson(id)
-  const { progress, loseHeart, refillHearts, addCharge, spendGems, chargeAt, completeLesson, recordAnswer } = useStore()
+  const { progress, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, completeLesson, recordAnswer } = useStore()
+  // Pro: заряд безлимитный — ошибки его не тратят
+  const { isPro } = useSubscription()
   const locale = useLocale()
   const toast = useToast()
 
@@ -69,7 +74,7 @@ export function LessonScreen({ id }: { id: string }) {
     wasDone.current = progress.completed.includes(id)
     finished.current = false
     track('lesson_started', { lesson_id: id, unit: unitNum, repeat: wasDone.current })
-    if (progress.hearts === 0) {
+    if (progress.hearts === 0 && (DEMO_MODE || isPro)) {
       refillHearts()
       toast(t('x1imvgi9'))
     }
@@ -129,11 +134,11 @@ export function LessonScreen({ id }: { id: string }) {
         setMistakes((m) => m + 1)
         setStatus('wrong')
         setLastWrong(ex)
-        if (!skip) loseHeart()
+        if (!skip && !isPro) loseHeart()
         setQueue((q) => [...q, q[pos]])
       }
     },
-    [ex, status, answer, pos, isRetry, loseHeart, addCharge, id, recordAnswer],
+    [ex, status, answer, pos, isRetry, isPro, loseHeart, addCharge, id, recordAnswer],
   )
 
   const advance = useCallback(() => {
@@ -326,6 +331,7 @@ export function LessonScreen({ id }: { id: string }) {
           <h2 className="mt-3 text-[22px] font-black">{t('x11e7xbg')}</h2>
           <p className="mb-5 mt-1 text-[15px] font-semibold leading-snug text-muted">{t('lesson.chargePause', { min: RECHARGE_MINUTES })}{chargeAt ? t('x0p88rx4', { chargeAt: waitText(chargeAt) }) : ''}.
           </p>
+          {fullAt && <p className="-mt-3 mb-5 text-[14px] font-extrabold text-teal-dark" data-full-charge>{t('lesson.fullChargeIn', { time: hhmm(fullAt) })}</p>}
           <button className="btn btn-teal btn-block" onClick={() => setEmpty('review')} data-empty="review">{t('x0s2jy7a')}</button>
           <button
             className="btn btn-ghost btn-block mt-3"

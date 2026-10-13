@@ -50,6 +50,7 @@ export const kk = {
   "sound.off": "Өшірулі",
   "sound.on": "Қосулы",
   "layout.rank": "Сен <0>{rank}-орындасың</0>.",
+  "lesson.fullChargeIn": "Толық заряд {time} кейін",
   "lesson.chargePause": "Бұл айып емес — жай үзіліс. Қатені талда, сонда Бипи бір заряд бөлігін алады. Немесе күт: әр {min} мин сайын +1 бөлік",
   "lesson.praise.1": "Тамаша!",
   "lesson.praise.2": "Керемет!",

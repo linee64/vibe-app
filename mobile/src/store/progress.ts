@@ -4,7 +4,8 @@
  * src/lib/progressSync.ts (mergeProgress, sanitizeRemote).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { CHARGE_MAX, RECHARGE_MS } from '@web/data/economy'
+import { CHARGE_MAX } from '@web/data/economy'
+import { settleCharge, withChargeFields, type ChargeState } from '@web/data/charge'
 import { loadRemoteProgress, mergeProgress, recordHomeworkSubmission, saveRemoteProgress } from '@web/lib/progressSync'
 import type { Progress as WebProgress, Session as WebSession } from '@web/store'
 import { DEMO_MODE, REVIEW_MODE } from '../lib/env'
@@ -69,19 +70,22 @@ export function normalizeProgress(raw: Partial<Progress> | null | undefined, bas
   const skins = sanitizeSkins(raw.skins)
   if (skins) p.skins = skins
   p.hearts = Math.min(CHARGE_MAX, p.hearts)
+  for (const k of ['chargeAt', 'depletedAt'] as const) {
+    const v = raw[k]
+    if (typeof v === 'number' && Number.isFinite(v) && v > 0) p[k] = Math.floor(v)
+    else delete p[k]
+  }
   return rollDay(p)
 }
 
-/** Сколько делений заряда накопилось с момента chargeAt (локальный таймер, в облако не уходит) */
-export function accruedCharge(hearts: number, chargeAt: number | null, now = Date.now()) {
-  if (hearts >= CHARGE_MAX || !chargeAt || chargeAt > now) return { hearts, chargeAt: hearts >= CHARGE_MAX ? null : chargeAt }
-  const n = Math.floor((now - chargeAt) / RECHARGE_MS)
-  if (n <= 0) return { hearts, chargeAt }
-  const add = Math.min(n, CHARGE_MAX - hearts)
-  const nextHearts = hearts + add
-  const at = chargeAt + n * RECHARGE_MS
-  return { hearts: nextHearts, chargeAt: nextHearts >= CHARGE_MAX ? null : at }
+/**
+ * Пересчитать заряд по таймстемпам (общая логика веба: src/data/charge.ts — +1 деление каждые
+ * RECHARGE_MS и гарантированный полный заряд через 12 ч после нуля)
+ */
+export function accruedCharge(p: Progress, now = Date.now()): Progress {
+  return withChargeFields(p, settleCharge(p, now))
 }
+export type { ChargeState }
 
 export function nameFromEmail(email: string) {
   const first = (email.split('@')[0] ?? '').replace(/[._-]+/g, ' ').trim().split(' ')[0] || t('x0oxr2kn')

@@ -13,6 +13,9 @@ export const CHARGE_MAX = 5
 /** +1 деление заряда каждые N минут */
 export const RECHARGE_MINUTES = 20
 export const RECHARGE_MS = RECHARGE_MINUTES * 60 * 1000
+/** Гарантия: через 12 ч после того, как заряд сел до 0, он полностью восстанавливается */
+export const FULL_RESTORE_HOURS = 12
+export const FULL_RESTORE_MS = FULL_RESTORE_HOURS * 60 * 60 * 1000
 /** Подсказка Бипи в упражнении */
 export const HINT_COST = 10
 /** Мгновенная полная подзарядка */

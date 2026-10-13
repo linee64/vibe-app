@@ -3,7 +3,7 @@ import { DEMO_MODE, REVIEW_MODE, SUPABASE_ENABLED } from './lib/config'
 import { getSupabase } from './lib/supabase'
 import { syncAuthLocale } from './lib/auth'
 import { loadRemoteProgress, mergeProgress, saveRemoteProgress } from './lib/progressSync'
-import { RECHARGE_MS } from './data/economy'
+import { addChargeState, fullChargeAt, nextChargeAt, settleCharge, spendCharge, withChargeFields, type ChargeState } from './data/charge'
 import { buySkin as buySkinPure, equipSkin as equipSkinPure, findSkin, sanitizeSkins, unequipSlot, type BuyResult, type SkinSlot, type SkinState } from './data/skins'
 import { applyQuestEvent, claimQuest as claimQuestPure, markNotified, newlyCompleted, rollQuests, type QuestEvent, type QuestState } from './data/quests'
 import { track } from './lib/analytics'
@@ -28,6 +28,10 @@ export interface Progress {
   gems: number
   /** заряд Бипи: деления батарейки (0…MAX_HEARTS) */
   hearts: number
+  /** заряд: начало отсчёта до следующего деления, мс (src/data/charge.ts); нет — заряд полный */
+  chargeAt?: number
+  /** заряд: когда сел до 0, мс — через 12 ч после этого заряд гарантированно полный */
+  depletedAt?: number
   /** деплой-серия: дней подряд */
   streak: number
   todayXp: number
@@ -61,7 +65,7 @@ const PROGRESS_KEY = 'vaibik.progress'
 /** Чей прогресс лежит в localStorage (id пользователя Supabase) — чтобы не смешивать аккаунты */
 const OWNER_KEY = 'vaibik.progress.owner'
 export const MAX_HEARTS = 5
-/** localStorage: когда начался отсчёт до следующего деления заряда (локально, в облако не уходит) */
+/** Старый ключ localStorage с отсчётом заряда (теперь отсчёт лежит в progress.chargeAt) — только для миграции */
 const CHARGE_AT_KEY = 'vaibik.chargeAt'
 /** sessionStorage: урок, из которого вернулись на путь (чтобы прокрутить к нему) */
 export const LAST_LESSON_KEY = 'vaibik.lastLesson'
@@ -128,8 +132,14 @@ function loadProgress(): Progress {
   if (!DEMO_MODE && !REVIEW_MODE) p.unlockAll = false
   if (p.quests) p.quests = rollQuests(p.quests)
   if (p.skins) p.skins = sanitizeSkins(p.skins)
-  return rollDay(p)
+  // миграция: отсчёт заряда раньше жил отдельным ключом
+  const legacyAt = Number(localStorage.getItem(CHARGE_AT_KEY)) || 0
+  if (legacyAt && !p.chargeAt) p.chargeAt = legacyAt
+  localStorage.removeItem(CHARGE_AT_KEY)
+  return rollDay(withCharge(p, settleCharge(p)))
 }
+
+export const withCharge = (p: Progress, c: ChargeState): Progress => withChargeFields(p, c)
 
 interface Store {
   session: Session | null
@@ -150,6 +160,8 @@ interface Store {
   spendGems: (n: number) => boolean
   /** Когда добавится следующее деление заряда (null — батарейка полная) */
   chargeAt: number | null
+  /** Когда заряд станет полным (null — уже полный) */
+  fullAt: number | null
   resetProgress: () => void
   /** Сдать домашку: +xp (повторно — меньше), отметить узел пройденным */
   completeHomework: (id: string, xp: number) => void
@@ -198,6 +210,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   /** Для какого пользователя прогресс уже загружен из облака (до этого в облако не пишем) */
   const [syncedFor, setSyncedFor] = useState<string | null>(null)
   const [chargeAt, setChargeAt] = useState<number | null>(null)
+  const [fullAt, setFullAt] = useState<number | null>(null)
   const latest = useRef(progress)
   const saveTimer = useRef<number | undefined>(undefined)
   const dirty = useRef(false)
@@ -207,34 +220,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
   }, [progress])
 
-  // Заряд Бипи сам восстанавливается: +1 деление каждые RECHARGE_MS (отсчёт хранится локально)
+  // Заряд Бипи восстанавливается по таймстемпам (progress.chargeAt / depletedAt): пересчёт при загрузке,
+  // раз в 15 с и при возвращении на вкладку — переживает перезагрузки и синк с облаком
   useEffect(() => {
     const tick = () => {
       const p = latest.current
       const now = Date.now()
-      if (p.hearts >= MAX_HEARTS) {
-        localStorage.removeItem(CHARGE_AT_KEY)
-        setChargeAt(null)
-        return
-      }
-      let at = Number(localStorage.getItem(CHARGE_AT_KEY)) || 0
-      if (!at || at > now) at = now
-      const n = Math.floor((now - at) / RECHARGE_MS)
-      if (n > 0) {
-        const add = Math.min(n, MAX_HEARTS - p.hearts)
-        at += n * RECHARGE_MS
-        setProgress((q) => ({ ...q, hearts: Math.min(MAX_HEARTS, q.hearts + add) }))
-      }
-      localStorage.setItem(CHARGE_AT_KEY, String(at))
-      setChargeAt(p.hearts + n >= MAX_HEARTS ? null : at + RECHARGE_MS)
+      const c = settleCharge(p, now)
+      if (c.hearts !== p.hearts || c.chargeAt !== p.chargeAt || c.depletedAt !== p.depletedAt) setProgress((q) => withCharge(q, settleCharge(q, now)))
+      setChargeAt(nextChargeAt(c, now))
+      setFullAt(fullChargeAt(c, now))
     }
-    const first = window.setTimeout(tick, 0)
+    tick()
     const timer = window.setInterval(tick, 15_000)
+    const onFocus = () => document.visibilityState === 'visible' && tick()
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
     return () => {
-      window.clearTimeout(first)
       window.clearInterval(timer)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
     }
-  }, [progress.hearts])
+  }, [progress.hearts, progress.chargeAt, progress.depletedAt])
 
   // ---------------------------------------------------------------- настоящие аккаунты (Supabase)
   useEffect(() => {
@@ -412,9 +419,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [questStep])
 
-  const loseHeart = useCallback(() => setProgress((p) => ({ ...p, hearts: Math.max(0, p.hearts - 1) })), [])
-  const refillHearts = useCallback(() => setProgress((p) => ({ ...p, hearts: MAX_HEARTS })), [])
-  const addCharge = useCallback((n: number) => setProgress((p) => ({ ...p, hearts: Math.min(MAX_HEARTS, p.hearts + n) })), [])
+  const loseHeart = useCallback(() => setProgress((p) => withCharge(p, spendCharge(p))), [])
+  const refillHearts = useCallback(() => setProgress((p) => withCharge(p, { hearts: MAX_HEARTS })), [])
+  const addCharge = useCallback((n: number) => setProgress((p) => withCharge(p, addChargeState(p, n))), [])
   const spendGems = useCallback((n: number) => {
     if (latest.current.gems < n) return false
     // сразу уменьшаем и в ref — чтобы два быстрых клика не потратили больше, чем есть
@@ -523,6 +530,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addCharge,
       spendGems,
       chargeAt,
+      fullAt,
       resetProgress,
       completeHomework,
       passTiersByTest,
@@ -537,7 +545,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       equipSkin,
       unequipSkin,
     }),
-    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin],
+    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

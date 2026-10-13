@@ -50,6 +50,7 @@ export const en = {
   "sound.off": "Off",
   "sound.on": "On",
   "layout.rank": "You’re <0>#{rank}</0>.",
+  "lesson.fullChargeIn": "Full charge in {time}",
   "lesson.chargePause": "It’s not a penalty — just a pause. Review your mistake and Bipi gets a charge bar. Or wait: +1 bar every {min} min",
   "lesson.praise.1": "Great!",
   "lesson.praise.2": "Awesome!",

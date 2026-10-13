@@ -4,6 +4,7 @@
  */
 import type { Progress } from '../store'
 import { getSupabase } from './supabase'
+import { mergeCharge, withChargeFields } from '../data/charge'
 import { mergeQuests, sanitizeQuests } from '../data/quests'
 import { mergeSkins, sanitizeSkins } from '../data/skins'
 
@@ -21,6 +22,8 @@ export function sanitizeRemote(raw: unknown): Partial<Progress> | null {
     xp: num(r.xp),
     gems: num(r.gems),
     hearts: num(r.hearts, 5),
+    ...(num(r.chargeAt) ? { chargeAt: num(r.chargeAt) } : {}),
+    ...(num(r.depletedAt) ? { depletedAt: num(r.depletedAt) } : {}),
     streak: num(r.streak),
     todayXp: num(r.todayXp),
     perfectToday: num(r.perfectToday),
@@ -58,7 +61,7 @@ export function mergeProgress(local: Progress, remote: Partial<Progress> | null)
   } else {
     dayPart = { lastDay: local.lastDay, todayXp: local.todayXp, perfectToday: local.perfectToday, lessonsToday: local.lessonsToday }
   }
-  return {
+  return withChargeFields({
     ...local,
     ...dayPart,
     completed: union(local.completed, remote.completed),
@@ -68,14 +71,13 @@ export function mergeProgress(local: Progress, remote: Partial<Progress> | null)
     xp: Math.max(local.xp, remote.xp ?? 0),
     gems: Math.max(local.gems, remote.gems ?? 0),
     streak: Math.max(local.streak, remote.streak ?? 0),
-    hearts: Math.min(local.hearts, remote.hearts ?? local.hearts),
     placementSeen: local.placementSeen || !!remote.placementSeen,
     portfolioUrl: local.portfolioUrl || remote.portfolioUrl || '',
     ...(local.locale || remote.locale ? { locale: local.locale || remote.locale } : {}),
     ...(local.quests || remote.quests ? { quests: mergeQuests(local.quests, remote.quests) } : {}),
     ...(local.introSeen || remote.introSeen ? { introSeen: true } : {}),
     ...(local.skins || remote.skins ? { skins: mergeSkins(local.skins, remote.skins) } : {}),
-  }
+  }, mergeCharge(local, remote))
 }
 
 /** null — записи ещё нет; бросает исключение при сетевой/серверной ошибке */

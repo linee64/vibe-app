@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { MAX_HEARTS, useStore } from '../store'
 import { CHARGE_MAX, RECHARGE_COST, RECHARGE_MINUTES, SHOP, days, tokens, waitText } from '../data/economy'
+import { hhmm } from '../data/charge'
 import { Battery, Rocket, Token } from './Icons'
 import { MascotHead } from './Mascot'
 import { useToast } from './Toast'
@@ -36,7 +37,7 @@ function PanelCard({ title, icon, children }: { title: string; icon: ReactNode; 
 
 /** Верхняя панель экономики: деплой-серия, токены (с мини-магазином), заряд Бипи */
 export function EconomyBar({ compact = false }: { compact?: boolean }) {
-  const { progress, chargeAt, spendGems, refillHearts } = useStore()
+  const { progress, chargeAt, fullAt, spendGems, refillHearts } = useStore()
   const toast = useToast()
   const [open, setOpen] = useState<Panel>(null)
   const ref = useRef<HTMLDivElement>(null)
@@ -136,6 +137,7 @@ export function EconomyBar({ compact = false }: { compact?: boolean }) {
           <ul className="space-y-1.5 text-[14px] font-semibold leading-snug text-muted">
             <li>{t('x1bwsbbd')}</li>
             <li>{t('economy.rechargeEvery', { min: RECHARGE_MINUTES })}{chargeAt ? t('x0p88rx4', { chargeAt: waitText(chargeAt) }) : ''}.</li>
+            {fullAt && <li className="font-extrabold text-teal-dark">{t('lesson.fullChargeIn', { time: hhmm(fullAt) })}</li>}
             <li>{t('x0398cbq')}</li>
             <li>{tx('x0s5mlrg', { RECHARGE_COST: tokens(RECHARGE_COST) }, [() => <Token size={14} className="inline align-[-2px]" />])}</li>
           </ul>

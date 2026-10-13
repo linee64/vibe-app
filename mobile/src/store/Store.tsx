@@ -1,7 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { track } from '../lib/analytics'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { CHARGE_MAX, RECHARGE_MS } from '@web/data/economy'
+import { AppState } from 'react-native'
+import { CHARGE_MAX } from '@web/data/economy'
+import { addChargeState, fullChargeAt, nextChargeAt, settleCharge, spendCharge, withChargeFields } from '@web/data/charge'
 import { DEMO_MODE, REVIEW_MODE, SUPABASE_ENABLED } from '../lib/env'
 import { getSupabase } from '../lib/web-adapters/supabase'
 import { CHARGE_AT_KEY, OWNER_KEY, PROGRESS_KEY, REVIEW_FLAG, SESSION_KEY, accruedCharge, defaultProgress, freshProgress, nameFromEmail, normalizeProgress, pullProgress, pushProgress, rollDay, type Progress, type Session } from './progress'
@@ -22,6 +24,8 @@ interface Store {
   addCharge: (n: number) => void
   spendGems: (n: number) => boolean
   chargeAt: number | null
+  /** Когда заряд станет полным (null — уже полный) */
+  fullAt: number | null
   resetProgress: () => void
   completeHomework: (id: string, xp: number) => void
   passTiersByTest: (tierIds: string[]) => void
@@ -53,6 +57,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false)
   const [syncedFor, setSyncedFor] = useState<string | null>(null)
   const [chargeAt, setChargeAt] = useState<number | null>(null)
+  const [fullAt, setFullAt] = useState<number | null>(null)
   const latest = useRef(progress)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dirty = useRef(false)
@@ -64,6 +69,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const [rawP, rawS, reviewFlag] = await Promise.all([AsyncStorage.getItem(PROGRESS_KEY), AsyncStorage.getItem(SESSION_KEY), AsyncStorage.getItem(REVIEW_FLAG)])
       if (!alive) return
       let p = normalizeProgress(rawP ? (JSON.parse(rawP) as Partial<Progress>) : null)
+      // миграция: отсчёт заряда раньше жил отдельным ключом
+      const legacyAt = Number(await AsyncStorage.getItem(CHARGE_AT_KEY)) || 0
+      if (legacyAt && !p.chargeAt) p = { ...p, chargeAt: legacyAt }
+      await AsyncStorage.removeItem(CHARGE_AT_KEY)
+      p = accruedCharge(p)
       if (REVIEW_MODE && !reviewFlag) {
         await AsyncStorage.setItem(REVIEW_FLAG, '1')
         p = { ...p, unlockAll: true }
@@ -83,31 +93,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (hydrated) void AsyncStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
   }, [progress, hydrated])
 
-  // --- заряд Бипи: +1 деление каждые RECHARGE_MS
+  // --- заряд Бипи: по таймстемпам (progress.chargeAt / depletedAt), пересчёт раз в 15 с и при возврате в приложение
   useEffect(() => {
     if (!hydrated) return
-    let alive = true
-    const tick = async () => {
+    const tick = () => {
       const p = latest.current
-      if (p.hearts >= CHARGE_MAX) {
-        await AsyncStorage.removeItem(CHARGE_AT_KEY)
-        if (alive) setChargeAt(null)
-        return
-      }
-      const stored = Number(await AsyncStorage.getItem(CHARGE_AT_KEY)) || Date.now()
-      const r = accruedCharge(p.hearts, stored)
-      if (r.hearts !== p.hearts) setProgress((q) => ({ ...q, hearts: Math.max(q.hearts, r.hearts) }))
-      if (r.chargeAt) await AsyncStorage.setItem(CHARGE_AT_KEY, String(r.chargeAt))
-      else await AsyncStorage.removeItem(CHARGE_AT_KEY)
-      if (alive) setChargeAt(r.chargeAt ? r.chargeAt + RECHARGE_MS : null)
+      const now = Date.now()
+      const c = settleCharge(p, now)
+      if (c.hearts !== p.hearts || c.chargeAt !== p.chargeAt || c.depletedAt !== p.depletedAt) setProgress((q) => withChargeFields(q, settleCharge(q, now)))
+      setChargeAt(nextChargeAt(c, now))
+      setFullAt(fullChargeAt(c, now))
     }
-    void tick()
-    const timer = setInterval(() => void tick(), 15_000)
+    tick()
+    const timer = setInterval(tick, 15_000)
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && tick())
     return () => {
-      alive = false
       clearInterval(timer)
+      sub.remove()
     }
-  }, [hydrated, progress.hearts])
+  }, [hydrated, progress.hearts, progress.chargeAt, progress.depletedAt])
 
   // --- настоящие аккаунты
   useEffect(() => {
@@ -212,9 +216,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const completeLesson = useCallback((id: string, xp: number, perfect: boolean) => {
     setProgress((p) => rollDay({ ...p, completed: p.completed.includes(id) ? p.completed : [...p.completed, id], xp: p.xp + xp, gems: p.gems + (perfect ? 10 : 5), todayXp: p.todayXp + xp, perfectToday: p.perfectToday + (perfect ? 1 : 0), lessonsToday: p.lessonsToday + 1 }))
   }, [])
-  const loseHeart = useCallback(() => setProgress((p) => ({ ...p, hearts: Math.max(0, p.hearts - 1) })), [])
-  const refillHearts = useCallback(() => setProgress((p) => ({ ...p, hearts: CHARGE_MAX })), [])
-  const addCharge = useCallback((n: number) => setProgress((p) => ({ ...p, hearts: Math.min(CHARGE_MAX, p.hearts + n) })), [])
+  const loseHeart = useCallback(() => setProgress((p) => withChargeFields(p, spendCharge(p))), [])
+  const refillHearts = useCallback(() => setProgress((p) => withChargeFields(p, { hearts: CHARGE_MAX })), [])
+  const addCharge = useCallback((n: number) => setProgress((p) => withChargeFields(p, addChargeState(p, n))), [])
   const spendGems = useCallback((n: number) => {
     if (latest.current.gems < n) return false
     latest.current = { ...latest.current, gems: latest.current.gems - n }
@@ -236,8 +240,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setPortfolioUrl = useCallback((url: string) => setProgress((p) => ({ ...p, portfolioUrl: url })), [])
 
   const value = useMemo<Store>(
-    () => ({ session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl }),
-    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl],
+    () => ({ session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl }),
+    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

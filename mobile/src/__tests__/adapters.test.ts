@@ -34,7 +34,7 @@ describe('прогресс: форма, совместимая с вебом и 
 
   it('слияние с облаком: max для счётчиков, min для заряда, объединение множеств', () => {
     const local = { ...base(), xp: 100, gems: 5, hearts: 4, completed: ['u1-1'], homework: [], lastDay: today() }
-    const remote = sanitizeRemote({ xp: 80, gems: 30, hearts: 2, completed: ['u1-2'], homework: ['hw1'], lastDay: today(), unlockAll: true })
+    const remote = sanitizeRemote({ xp: 80, gems: 30, hearts: 2, chargeAt: Date.now() - 1000, completed: ['u1-2'], homework: ['hw1'], lastDay: today(), unlockAll: true })
     const m = mergeProgress(local, remote) as Progress
     expect(m.xp).toBe(100)
     expect(m.gems).toBe(30)
@@ -54,15 +54,20 @@ describe('прогресс: форма, совместимая с вебом и 
 describe('заряд Бипи', () => {
   const now = 1_000_000_000_000
   it('полная батарейка не копит заряд', () => {
-    expect(accruedCharge(CHARGE_MAX, now - RECHARGE_MS * 3, now)).toEqual({ hearts: CHARGE_MAX, chargeAt: null })
+    const r = accruedCharge({ ...base(), hearts: CHARGE_MAX, chargeAt: now - RECHARGE_MS * 3 }, now)
+    expect(r.hearts).toBe(CHARGE_MAX)
+    expect(r.chargeAt).toBeUndefined()
   })
   it('+1 деление за каждые RECHARGE_MS, не больше максимума', () => {
-    const r = accruedCharge(2, now - RECHARGE_MS * 2.5, now)
+    const r = accruedCharge({ ...base(), hearts: 2, chargeAt: now - RECHARGE_MS * 2.5 }, now)
     expect(r.hearts).toBe(4)
     expect(r.chargeAt).toBe(now - RECHARGE_MS * 2.5 + RECHARGE_MS * 2)
   })
   it('не переполняется', () => {
-    expect(accruedCharge(4, now - RECHARGE_MS * 10, now).hearts).toBe(CHARGE_MAX)
+    expect(accruedCharge({ ...base(), hearts: 4, chargeAt: now - RECHARGE_MS * 10 }, now).hearts).toBe(CHARGE_MAX)
+  })
+  it('через 12 ч после нуля — полный заряд, даже без таймера', () => {
+    expect(accruedCharge({ ...base(), hearts: 0, depletedAt: now - 12 * 3600_000 }, now).hearts).toBe(CHARGE_MAX)
   })
   it('цены магазина совпадают с веб-экономикой', () => {
     expect(HINT_COST).toBe(10)

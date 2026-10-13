@@ -50,6 +50,7 @@ export const zh = {
   "sound.off": "关",
   "sound.on": "开",
   "layout.rank": "你排<0>第 {rank} 名</0>。",
+  "lesson.fullChargeIn": "{time} 后充满",
   "lesson.chargePause": "这不是惩罚——只是暂停一下。复盘错题，Bipi 就能充一格电。或者等待：每 {min} 分钟 +1 格",
   "lesson.praise.1": "太棒了！",
   "lesson.praise.2": "超赞！",
