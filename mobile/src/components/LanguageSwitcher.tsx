@@ -26,9 +26,9 @@ export function LanguageSwitcher({ returnTo = '/(tabs)/profile' }: { returnTo?: 
               setBusy(true)
               void switchLocale(l, returnTo).finally(() => setBusy(false))
             }}
-            style={{ borderRadius: 12, borderWidth: 2, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandLight : C.white, paddingHorizontal: 12, paddingVertical: 7 }}
+            style={{ borderRadius: 12, borderWidth: 2, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandLight : C.white, paddingHorizontal: 14, paddingVertical: 8 }}
           >
-            <Text style={font(800, 14, on ? C.brandDark : C.ink)}>{LOCALE_META[l].native}</Text>
+            <Text style={font(800, 15, on ? C.brandDark : C.ink)}>{LOCALE_META[l].native}</Text>
           </Pressable>
         )
       })}
