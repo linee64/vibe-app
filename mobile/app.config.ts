@@ -14,7 +14,7 @@ const config: ExpoConfig = {
   name: 'Vaibik',
   slug: 'vaibik',
   owner: 'linee64',
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'vaibik',
@@ -22,7 +22,8 @@ const config: ExpoConfig = {
   backgroundColor: '#F6F4FB',
   ios: {
     bundleIdentifier: 'com.vaibik.app',
-    buildNumber: '1',
+    // eas.json: appVersionSource "remote" + autoIncrement — EAS сам выставит номер сборки; локальное значение для справки
+    buildNumber: '2',
     supportsTablet: false,
     infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
