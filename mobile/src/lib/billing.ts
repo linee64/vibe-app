@@ -5,11 +5,12 @@
  * Без ключей — демо: пейвол показывает цены, но ничего не списывает.
  * Нативный SDK работает только в dev build / стор-сборке, не в Expo Go.
  */
-import { Platform } from 'react-native'
+import { Linking, Platform } from 'react-native'
 import { useEffect, useState } from 'react'
-import { PRICES, TRIAL_DAYS, annualSavePct, usd } from '@web/data/pricing'
+import { PRICES, TRIAL_DAYS, annualPerMonth, annualSavePct, usd } from '@web/data/pricing'
+import { LOCALE_META } from '@web/i18n/locales'
 import { ENV } from './env'
-import { t } from '@web/i18n/core'
+import { getLocale, t } from '@web/i18n/core'
 
 /** Идентификатор entitlement в RevenueCat. Сверяем без учёта регистра/пробелов; любой из вариантов даёт Pro */
 export const ENTITLEMENT = 'Vaibik Pro'
@@ -27,6 +28,11 @@ export interface PlanOffer {
   per: string
   trialDays: number | null
   badge?: string
+  /** Годовой тариф: цена в месяц в валюте стора («≈ 2 490 ₸»); нет — не показываем */
+  perMonth?: string
+  /** Числовая цена и валюта из стора (для расчёта «в месяц» и скидки) */
+  amount?: number
+  currency?: string
   /** Пакет RevenueCat (есть только в живом режиме) */
   pkg?: unknown
 }
@@ -37,6 +43,8 @@ export interface BillingState {
   reason?: string
   pro: boolean
   offers: PlanOffer[]
+  /** Ссылка управления подпиской из RevenueCat (App Store / Google Play) */
+  managementURL?: string | null
 }
 
 export interface Billing {
@@ -70,11 +78,15 @@ interface RCPackage {
   product: {
     identifier: string
     priceString: string
+    price?: number
+    currencyCode?: string
+    pricePerMonthString?: string | null
     introPrice?: { price: number; periodNumberOfUnits: number; periodUnit: string } | null
   }
 }
 interface RCInfo {
   entitlements: { active: Record<string, { productIdentifier: string }> }
+  managementURL?: string | null
 }
 
 let rc: RCModule | null | undefined
@@ -119,6 +131,7 @@ function trialOf(p: RCPackage): number | null {
 }
 
 function isPro(info: RCInfo) {
+  proKnown = true
   const pro = Object.keys(info.entitlements?.active ?? {}).some((k) => ENTITLEMENT_ALIASES.includes(normEnt(k)) || normEnt(k) === normEnt(ENTITLEMENT))
   setProCache(pro)
   return pro
@@ -126,6 +139,8 @@ function isPro(info: RCInfo) {
 
 /** Кэш статуса Pro для экранов (путь обучения): обновляется при state/purchase/restore */
 let proCache = false
+/** Статус уже узнали у RevenueCat (или SDK нет) — до этого пейвол не показываем, чтобы Pro не мигал */
+let proKnown = false
 const proListeners = new Set<(v: boolean) => void>()
 function setProCache(v: boolean) {
   if (v === proCache) return
@@ -145,10 +160,29 @@ export function useIsPro(): boolean {
   return pro
 }
 
+/** Pro и «ещё проверяем» — для пейвола на входе в урок/домашку */
+export function useProStatus(): { pro: boolean; loading: boolean } {
+  const pro = useIsPro()
+  const [known, setKnown] = useState(proKnown)
+  useEffect(() => {
+    if (known) return
+    let alive = true
+    void loadSdk().then(async (sdk) => {
+      if (sdk) await sdk.default.getCustomerInfo().then(isPro).catch(() => undefined)
+      proKnown = true
+      if (alive) setKnown(true)
+    })
+    return () => {
+      alive = false
+    }
+  }, [known])
+  return { pro, loading: !known && !pro }
+}
+
 /** Демо-цены — из общего веб-модуля pricing.ts (те же $9.99 / $59.99 и 3 дня пробного периода) */
 export function demoOffers(): PlanOffer[] {
   return [
-    { plan: 'annual', ...PLAN_META.annual, price: usd(PRICES.annual), trialDays: TRIAL_DAYS, badge: `−${annualSavePct}%` },
+    { plan: 'annual', ...PLAN_META.annual, price: usd(PRICES.annual), trialDays: TRIAL_DAYS, badge: `−${annualSavePct}%`, perMonth: usd(annualPerMonth) },
     { plan: 'monthly', ...PLAN_META.monthly, price: usd(PRICES.monthly), trialDays: TRIAL_DAYS },
   ]
 }
@@ -171,11 +205,24 @@ export function createBilling(): Billing {
         for (const p of offerings.current?.availablePackages ?? []) {
           const plan = planOf(p)
           if (!plan || offers.some((o) => o.plan === plan)) continue
-          offers.push({ plan, ...PLAN_META[plan], price: p.product.priceString, per: PLAN_META[plan].per, trialDays: trialOf(p), badge: plan === 'annual' ? `−${annualSavePct}%` : undefined, pkg: p })
+          const amount = typeof p.product.price === 'number' ? p.product.price : undefined
+          const currency = p.product.currencyCode || undefined
+          offers.push({ plan, ...PLAN_META[plan], price: p.product.priceString, per: PLAN_META[plan].per, trialDays: trialOf(p), amount, currency, pkg: p })
+        }
+        // «в месяц» для годового и скидка — только из цен стора в местной валюте (никаких «$5» рядом с ₸/€)
+        const annual = offers.find((o) => o.plan === 'annual')
+        const monthly = offers.find((o) => o.plan === 'monthly')
+        if (annual) {
+          const pkg = annual.pkg as RCPackage
+          annual.perMonth = pkg.product.pricePerMonthString || (annual.amount != null && annual.currency ? formatMoney(annual.amount / 12, annual.currency) : undefined)
+          if (monthly?.amount && annual.amount != null && monthly.currency === annual.currency) {
+            const pct = Math.round((1 - annual.amount / (monthly.amount * 12)) * 100)
+            if (pct > 0) annual.badge = `−${pct}%`
+          }
         }
         offers.sort((a, b) => Number(b.plan === 'annual') - Number(a.plan === 'annual'))
         const info = await sdk.default.getCustomerInfo()
-        return { mode: 'live', pro: isPro(info), offers: offers.length ? offers : demoOffers() }
+        return { mode: 'live', pro: isPro(info), offers: offers.length ? offers : demoOffers(), managementURL: info.managementURL ?? null }
       } catch {
         return { mode: 'demo', reason: t('x0qp34vx'), pro: false, offers: demoOffers() }
       }
@@ -214,4 +261,37 @@ export function createBilling(): Billing {
       }
     },
   }
+}
+
+/** Сумма в валюте стора на языке интерфейса; без Intl — null (тогда «в месяц» просто не показываем) */
+export function formatMoney(amount: number, currency: string): string | undefined {
+  try {
+    return new Intl.NumberFormat(LOCALE_META[getLocale()].tag, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount)
+  } catch {
+    return undefined
+  }
+}
+
+/** Управление подпиской: ссылка RevenueCat, иначе страница подписок стора */
+export function manageSubscriptions(url?: string | null) {
+  const fallback = Platform.OS === 'android' ? 'https://play.google.com/store/account/subscriptions' : 'https://apps.apple.com/account/subscriptions'
+  void Linking.openURL(url || fallback).catch(() => {})
+}
+
+/** Пейвол для раздела: Pro нужен (раздел не бесплатный) и подписки нет */
+export { needsPro } from '@web/data/tiers'
+
+/** Состояние оплаты для экранов (профиль, пейвол): грузится один раз на экран */
+export function useBillingState(): BillingState | null {
+  const [state, setState] = useState<BillingState | null>(null)
+  useEffect(() => {
+    let alive = true
+    void createBilling()
+      .state()
+      .then((s) => alive && setState(s))
+    return () => {
+      alive = false
+    }
+  }, [])
+  return state
 }
