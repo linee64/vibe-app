@@ -17,7 +17,9 @@ import { TIERS, unitsOf } from '../data/tiers'
 import { TierBadge } from '../components/TierBadge'
 import { FREE_FEATURES, PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSaveAmount, annualSavePct, usd } from '../data/pricing'
 import { BILLING_ENABLED, DEMO_MODE } from '../lib/config'
-import { startCheckout } from '../lib/billing'
+import { startCheckout, usePro } from '../lib/billing'
+import { showPlanPurchase } from '../data/proStatus'
+import { ProActiveCard, toSubscriptionSettings } from '../components/ProStatus'
 import { track } from '../lib/analytics'
 import { useFeedback } from '../components/FeedbackProvider'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
@@ -594,6 +596,29 @@ function Feature({ children, light = false }: { children: ReactNode; light?: boo
 }
 
 function Pricing() {
+  const cta = useCta()
+  const pro = usePro()
+  if (cta.loggedIn && !showPlanPurchase(pro)) return <PricingPro />
+  return <PricingPlans />
+}
+
+/** Вошедший Pro-пользователь: вместо тарифов и «Попробовать бесплатно» — статус подписки */
+function PricingPro() {
+  const pro = usePro()
+  return (
+    <section id="pricing" className="scroll-mt-20 bg-snow py-16 md:py-24" data-pricing="pro">
+      <div className="mx-auto max-w-[620px] px-5 md:px-8">
+        <SectionHead eyebrow={t('x1658fq6')} title={t('x16nd0og')} sub={t('pro.landingSub')} />
+        <ProActiveCard pro={pro} className="mt-0" action={toSubscriptionSettings} />
+        <div className="mt-6 flex justify-center">
+          <button className="btn btn-bouncy" onClick={() => navigate('/learn')}>{t('pro.toLearn')}</button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PricingPlans() {
   const cta = useCta()
   const toast = useToast()
   const [period, setPeriod] = useState<Period>('annual')

@@ -7,6 +7,7 @@ import { useStore } from '../../store/Store'
 import { useToast } from '../../components/Toast'
 import { Card } from '../../components/ui'
 import { BackHeader, GoalPicker, LanguageCard, SoundToggle } from '../../components/Settings'
+import { SubscriptionSettings } from '../../components/ProStatus'
 import { C, font } from '../../theme'
 
 export default function SettingsScreen() {
@@ -20,6 +21,7 @@ export default function SettingsScreen() {
       <LanguageCard returnTo="/(tabs)/settings" style={{ marginTop: 0 }} />
       <SoundToggle where="settings" />
       <GoalPicker onSaved={(g) => toast(t('settings.goalSaved', { xp: g }))} />
+      <SubscriptionSettings />
       <Card style={{ marginTop: 24, padding: 16 }}>
         <Text style={[font(900, 18), { lineHeight: 22 }]}>{t('settings.account')}</Text>
         <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderRadius: 16, backgroundColor: C.snow, paddingHorizontal: 16, paddingVertical: 12 }}>

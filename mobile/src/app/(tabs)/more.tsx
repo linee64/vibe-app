@@ -8,6 +8,8 @@ import { INVITE_URL, useDailyGoal } from '../../lib/prefs'
 import { openLegal } from '../../lib/legal'
 import { track } from '../../lib/analytics'
 import { useStore } from '../../store/Store'
+import { useProInfo } from '../../lib/billing'
+import { ProActiveCard } from '../../components/ProStatus'
 import { useFeedback } from '../../components/feedbackContext'
 import { FeedbackBubble, Mascot } from '../../components/art'
 import { Blob, Card, Chevron, IconBox, ProgressBar } from '../../components/ui'
@@ -54,6 +56,7 @@ export default function MoreScreen() {
   const router = useRouter()
   const { logout } = useStore()
   const feedback = useFeedback()
+  const pro = useProInfo()
   const invite = async () => {
     try {
       const res = await Share.share({ title: t('invite.title'), message: `${t('invite.text')} ${INVITE_URL}`, url: INVITE_URL })
@@ -67,6 +70,7 @@ export default function MoreScreen() {
       <Text style={[font(900, 28), { lineHeight: 33 }]}>{t('x0vosrby')}</Text>
       <Text style={[font(600, 15, C.muted), { marginBottom: 20 }]}>{t('more.subtitle')}</Text>
       <DailyGoalCard />
+      {pro.pro ? <ProActiveCard pro={pro} style={{ marginTop: 24 }} action={{ label: t('pro.details'), onPress: () => router.push('/(tabs)/settings') }} /> : null}
       <Card style={{ marginTop: 24, overflow: 'hidden' }}>
         <Row first testID="more-settings" icon={<Settings {...I} color={C.brand} />} bg="#EFE9FF" title={t('x01xs7fy')} desc={t('more.settingsDesc')} onPress={() => router.push('/(tabs)/settings')} />
         <Row testID="more-shop" icon={<ShoppingBag {...I} color={C.goldDark} />} bg="#FFF4D6" title={t('x1f2lm2g')} desc={t('more.shopDesc')} onPress={() => router.push('/(tabs)/wardrobe')} />

@@ -52,6 +52,7 @@ Retention по `lesson_completed`; Trends `lesson_abandoned` с разбивко
 | `checkout_started` | нажали «Оформить» / «Попробовать» | `plan` (`monthly` / `annual`), `source` |
 | `checkout_completed` | вернулись из оплаты / покупка в сторе | `plan`? |
 | `trial_started` | подписка в статусе trialing | `plan`, `days`? |
+| `subscription_manage_opened` | «Управлять» / «Отменить подписку» в настройках (портал Polar, App Store, Google Play) | `intent` (manage/cancel), `source` (web/app_store/play_store/demo) |
 | `feedback_opened` | открыт лист «Отзыв» | `entry` (`profile` / `sidebar` / `header` / `landing` / `more` / `explore`) |
 | `feedback_submitted` | отправлен отзыв (в т.ч. микро-опрос) | `rating`, `category`, `source` — **без текста и почты** |
 | `micro_prompt_shown` | показан микро-опрос | `source` (`first_lesson` / `paywall_exit` / `homework`) |

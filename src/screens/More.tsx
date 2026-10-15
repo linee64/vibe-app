@@ -13,6 +13,8 @@ import { SoundToggle, Switch } from '../components/SettingsControls'
 import { navigate } from '../router'
 import { t, type UIKey } from '../i18n/core'
 import { track } from '../lib/analytics'
+import { usePro } from '../lib/billing'
+import { ProActiveCard, SubscriptionSettings, toSubscriptionSettings } from '../components/ProStatus'
 import {
   GOAL_OPTIONS,
   INVITE_URL,
@@ -80,6 +82,7 @@ export function MoreScreen() {
   const { logout } = useStore()
   const toast = useToast()
   const feedback = useFeedback()
+  const pro = usePro()
 
   const invite = async () => {
     const res = await shareInvite({ title: t('invite.title'), text: t('invite.text'), url: INVITE_URL })
@@ -93,6 +96,7 @@ export function MoreScreen() {
       <h1 className="text-[28px] font-black leading-tight">{t('x0vosrby')}</h1>
       <p className="mb-5 text-[15px] font-semibold text-muted">{t('more.subtitle')}</p>
       <DailyGoalCard />
+      {pro.pro && <ProActiveCard pro={pro} className="mt-6" action={toSubscriptionSettings} />}
       <div className="card mt-6 divide-y-2 divide-line overflow-hidden">
         <Row icon="⚙️" bg="#EFE9FF" title={t('x01xs7fy')} desc={t('more.settingsDesc')} onClick={() => navigate('/settings')} data="settings" />
         <Row icon="🛍️" bg="#FFF4D6" title={t('x1f2lm2g')} desc={t('more.shopDesc')} onClick={() => navigate('/wardrobe')} data="shop" />
@@ -199,6 +203,7 @@ export function SettingsScreen() {
       <SoundToggle where="settings" />
       <GoalPicker />
       <RemindersToggle />
+      <SubscriptionSettings />
       <section className="card mt-6 p-4" aria-labelledby="settings-account" data-settings-account>
         <h2 id="settings-account" className="text-[18px] font-black leading-tight">{t('settings.account')}</h2>
         <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-snow px-4 py-3">

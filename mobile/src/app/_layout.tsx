@@ -15,6 +15,7 @@ import { C } from '../theme'
 import { LocaleKeyed } from '@web/i18n/react'
 import { onUserLocaleChange } from '@web/i18n/runtime'
 import { initMobileLocale, takeReturnRoute } from '../lib/locale'
+import { useProSync } from '../lib/billing'
 
 initSentry()
 
@@ -51,6 +52,13 @@ function AnalyticsBridge() {
   useEffect(() => {
     if (pathname) trackScreen(pathname)
   }, [pathname])
+  return null
+}
+
+/** Статус Pro для всех экранов: RevenueCat (слушатель покупок) + подписка с сайта; обновляется при входе и возврате в приложение */
+function ProSync() {
+  const { session } = useStore()
+  useProSync(session?.real ? (session.id ?? null) : null)
   return null
 }
 
@@ -94,6 +102,7 @@ export default function RootLayout() {
             <LocaleKeyed>
             <Gate>
               <AnalyticsBridge />
+              <ProSync />
               <StatusBar style="dark" />
               <FeedbackProvider>
               <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.white }, animation: 'slide_from_right' }}>

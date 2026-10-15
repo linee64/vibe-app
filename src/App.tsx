@@ -38,6 +38,15 @@ const RECOVERY_KEY = 'vaibik.recovery'
 const Blank = () => <div className="min-h-dvh bg-white" />
 
 export default function App() {
+  // статус Pro нужен и лендингу (тарифы для вошедших Pro), и приложению
+  return (
+    <SubscriptionProvider>
+      <AppInner />
+    </SubscriptionProvider>
+  )
+}
+
+function AppInner() {
   const { session, authReady } = useStore()
   const route = useRoute()
   // ссылки из писем Supabase (?reset=1, ошибки) — разбираем один раз при старте
@@ -71,11 +80,7 @@ export default function App() {
       />
     )
 
-  return (
-    <SubscriptionProvider>
-      <AppRoutes route={route} />
-    </SubscriptionProvider>
-  )
+  return <AppRoutes route={route} />
 }
 
 /** Аналитика и Sentry: id пользователя Supabase при входе, сброс при выходе, просмотры экранов */

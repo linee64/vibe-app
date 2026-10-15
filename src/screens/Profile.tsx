@@ -12,7 +12,9 @@ import { HOMEWORKS } from '../data/homework'
 import { TIERS, currentTier, isTierComplete } from '../data/tiers'
 import { TierBadge } from '../components/TierBadge'
 import { BILLING_ENABLED, DEMO_MODE, REVIEW_MODE } from '../lib/config'
-import { openPortal, useSubscription, type Subscription } from '../lib/billing'
+import { openPortal, setDemoPro, useSubscription, type Subscription } from '../lib/billing'
+import { showPlanPurchase } from '../data/proStatus'
+import { ProActiveCard, toSubscriptionSettings } from '../components/ProStatus'
 import { useFeedback } from '../components/FeedbackProvider'
 import { FeedbackBubble } from '../components/Icons'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
@@ -41,10 +43,10 @@ function subLine(sub: Subscription): string {
   return t('x0shboys', { status: STATUS_RU[sub.status] ?? sub.status })
 }
 
-/** Карточка тарифа: Free → «Попробовать Pro», Pro → статус и «Управлять подпиской» */
+/** Карточка тарифа: Free → «Попробовать Pro»; Pro → только компактный статус «Вайбик Pro активен» (без покупки) */
 function PlanCard() {
   const toast = useToast()
-  const { isPro, subscription: sub } = useSubscription()
+  const { pro, subscription: sub } = useSubscription()
   const [busy, setBusy] = useState(false)
   const manage = async () => {
     if (busy) return
@@ -55,27 +57,7 @@ function PlanCard() {
       setBusy(false)
     }
   }
-  if (BILLING_ENABLED && isPro && sub) {
-    return (
-      <div className="relative mt-8 overflow-hidden rounded-[20px] bg-brand p-5 text-white shadow-[0_5px_0_#5B2FD6] sm:p-6" data-plan="pro">
-        <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[13px] font-black uppercase tracking-wider text-white/75">{t('x0qd05yb')}{sub.plan ? ` · ${sub.plan === 'annual' ? t('x0y80z8r') : t('x0bptiqn')}` : ''}
-              </span>
-              <span className="rounded-full bg-gold px-2.5 py-0.5 text-[12px] font-black text-[#5a3d00]">{STATUS_RU[sub.status]}</span>
-            </div>
-            <h3 className="mt-1.5 text-[20px] font-black leading-tight">{t('x1abqfqj')}</h3>
-            <p className="mt-1 text-[14px] font-semibold text-white/80">{subLine(sub)}</p>
-          </div>
-          <button className="btn btn-white btn-sm shrink-0" onClick={manage} disabled={busy}>
-            {busy ? t('x0vfsu1y') : t('x0nbowwd')}
-          </button>
-        </div>
-      </div>
-    )
-  }
+  if (!showPlanPurchase(pro)) return <ProActiveCard pro={pro} action={toSubscriptionSettings} />
   return (
     <div className="relative mt-8 overflow-hidden rounded-[20px] bg-brand p-5 text-white shadow-[0_5px_0_#5B2FD6] sm:p-6" data-plan="free">
       <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
@@ -171,6 +153,7 @@ function HelpLink({ emoji, title, desc, to, data, onOpen }: { emoji: string; tit
 
 export function Profile() {
   const { session, progress, logout, resetProgress, setUnlockAll } = useStore()
+  const { isPro } = useSubscription()
   const tier = currentTier(progress)
   const tierDone = isTierComplete(tier, progress)
   const tierStatus = tierDone ? t('x0eei137') : tier.num === 1 ? t('x1y4r5mn') : t('x1psb0nk')
@@ -322,6 +305,11 @@ export function Profile() {
         >
           {progress.unlockAll ? t('x1tl2xlk') : t('x0wtvn78')}
         </button>
+        {DEMO_MODE && (
+          <button className="btn btn-ghost sm:col-span-2" onClick={() => setDemoPro(!isPro)} data-demo-pro={isPro ? 'on' : 'off'}>
+            {isPro ? t('pro.demoOff') : t('pro.demoOn')}
+          </button>
+        )}
           </>
         )}
         <button className="btn btn-coral sm:col-span-2" onClick={logout}>{t('x0c80x6j')}</button>

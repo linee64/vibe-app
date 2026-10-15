@@ -3,7 +3,9 @@ import { navigate } from '../router'
 import { useToast } from './Toast'
 import { Mascot } from './Mascot'
 import { PRICES, PRO_FEATURES, TRIAL_DAYS, annualPerMonth, annualSavePct, usd } from '../data/pricing'
-import { startCheckout, type Plan } from '../lib/billing'
+import { startCheckout, usePro, type Plan } from '../lib/billing'
+import { showPlanPurchase } from '../data/proStatus'
+import { ProActiveCard } from './ProStatus'
 import { track } from '../lib/analytics'
 import { requestMicroPrompt } from '../lib/feedback'
 import { t } from '../i18n/core'
@@ -15,10 +17,12 @@ export function PaywallScreen({ title, unitId, source = 'unit_gate', onClose }: 
   const [plan, setPlan] = useState<Plan>('annual')
   const [busy, setBusy] = useState(false)
   const annual = plan === 'annual'
+  const pro = usePro()
+  const buying = showPlanPurchase(pro)
 
   useEffect(() => {
-    track('paywall_viewed', { source, unit: unitId })
-  }, [unitId, source])
+    if (buying) track('paywall_viewed', { source, unit: unitId })
+  }, [unitId, source, buying])
 
   // Ушли без покупки — один короткий вопрос «Что остановило?» (на пути, не здесь)
   const close = () => {
@@ -38,6 +42,24 @@ export function PaywallScreen({ title, unitId, source = 'unit_gate', onClose }: 
       setBusy(false)
     }
   }
+
+  // Pro уже есть (например, статус пришёл сразу после оплаты) — никакой покупки, только статус
+  if (!buying)
+    return (
+      <div className="flex min-h-screen items-end justify-center bg-ink/40 sm:items-center sm:p-6" data-paywall="pro">
+        <div className="anim-fade-up w-full max-w-[460px] rounded-t-[28px] bg-white p-6 pb-8 shadow-[0_-6px_0_rgba(47,42,71,.08)] sm:rounded-[28px] sm:shadow-[0_8px_0_rgba(47,42,71,.12)]">
+          <div className="flex items-center gap-4">
+            <Mascot mood="happy" size={84} className="anim-float shrink-0" />
+            <div>
+              <div className="text-[13px] font-black uppercase tracking-wider text-coral">{t('x0x0c6hg')}</div>
+              <h1 className="text-[24px] font-black leading-tight">{t('x16nd0og')}</h1>
+            </div>
+          </div>
+          <ProActiveCard pro={pro} className="mt-5" />
+          <button className="btn btn-block mt-4" onClick={() => (onClose ? onClose() : navigate('/learn'))}>{t('pro.toLearn')}</button>
+        </div>
+      </div>
+    )
 
   return (
     <div className="flex min-h-screen items-end justify-center bg-ink/40 sm:items-center sm:p-6" data-paywall>

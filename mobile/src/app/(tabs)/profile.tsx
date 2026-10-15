@@ -11,7 +11,9 @@ import { TIERS, currentTier, isTierComplete } from '@web/data/tiers'
 import { formatDate, t } from '@web/i18n/core'
 import { tx } from '@web/i18n/rich'
 import { DEMO_MODE, REVIEW_MODE } from '../../lib/env'
-import { manageSubscriptions, useBillingState } from '../../lib/billing'
+import { setDemoPro, useBillingState, useProInfo } from '../../lib/billing'
+import { showPlanPurchase } from '@web/data/proStatus'
+import { ProActiveCard } from '../../components/ProStatus'
 import { track } from '../../lib/analytics'
 import { useStore } from '../../store/Store'
 import { useToast } from '../../components/Toast'
@@ -21,33 +23,34 @@ import { Blob, Btn, Card, ProgressBar } from '../../components/ui'
 import { LanguageCard, LinkRow, SoundToggle } from '../../components/Settings'
 import { C, alpha, caps, font } from '../../theme'
 
+/** Карточка тарифа: Free → «Попробовать Pro»; Pro → только компактный статус «Вайбик Pro активен» (как веб) */
 function PlanCard() {
   const router = useRouter()
+  const pro = useProInfo()
+  if (!showPlanPurchase(pro)) return <ProActiveCard pro={pro} action={{ label: t('pro.details'), onPress: () => router.push('/(tabs)/settings') }} />
+  return <FreePlanCard />
+}
+
+function FreePlanCard() {
+  const router = useRouter()
   const billing = useBillingState()
-  const pro = !!billing?.pro
   const annual = billing?.offers.find((o) => o.plan === 'annual')
   return (
-    <View testID={pro ? 'plan-pro' : 'plan-free'} style={{ marginTop: 32, borderRadius: 20, backgroundColor: C.brandDark, paddingBottom: 5 }}>
+    <View testID="plan-free" style={{ marginTop: 32, borderRadius: 20, backgroundColor: C.brandDark, paddingBottom: 5 }}>
       <View style={{ borderRadius: 20, backgroundColor: C.brand, padding: 20, overflow: 'hidden', gap: 16 }}>
         <Blob />
         <View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-            <Text style={[font(900, 13, 'rgba(255,255,255,0.75)'), caps(13)]}>{pro ? t('x0qd05yb') : t('x1sl243q')}</Text>
-            {!pro ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 99, backgroundColor: C.gold, paddingHorizontal: 10, paddingVertical: 2 }}>
-                <Gift size={14} strokeWidth={2.4} color={C.goldInk} />
-                <Text style={font(900, 12, C.goldInk)}>{tx('x1i0nujw', { TRIAL_DAYS: annual?.trialDays ?? TRIAL_DAYS })}</Text>
-              </View>
-            ) : null}
+            <Text style={[font(900, 13, 'rgba(255,255,255,0.75)'), caps(13)]}>{t('x1sl243q')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 99, backgroundColor: C.gold, paddingHorizontal: 10, paddingVertical: 2 }}>
+              <Gift size={14} strokeWidth={2.4} color={C.goldInk} />
+              <Text style={font(900, 12, C.goldInk)}>{tx('x1i0nujw', { TRIAL_DAYS: annual?.trialDays ?? TRIAL_DAYS })}</Text>
+            </View>
           </View>
-          <Text style={[font(900, 20, C.white), { marginTop: 6, lineHeight: 24 }]}>{pro ? t('x1abqfqj') : t('x1xtdtme')}</Text>
-          {!pro && annual?.perMonth ? <Text style={[font(600, 14, 'rgba(255,255,255,0.8)'), { marginTop: 4, lineHeight: 19 }]}>{tx('x1fcvmfh', { annualPerMonth: annual.perMonth })}</Text> : null}
+          <Text style={[font(900, 20, C.white), { marginTop: 6, lineHeight: 24 }]}>{t('x1xtdtme')}</Text>
+          {annual?.perMonth ? <Text style={[font(600, 14, 'rgba(255,255,255,0.8)'), { marginTop: 4, lineHeight: 19 }]}>{tx('x1fcvmfh', { annualPerMonth: annual.perMonth })}</Text> : null}
         </View>
-        {pro ? (
-          <Btn testID="plan-manage" tone="white" small label={t('x0nbowwd')} onPress={() => manageSubscriptions(billing?.managementURL)} />
-        ) : (
-          <Btn testID="open-paywall" tone="white" small label={t('x17v6d93')} onPress={() => router.push({ pathname: '/paywall', params: { source: 'profile' } })} />
-        )}
+        <Btn testID="open-paywall" tone="white" small label={t('x17v6d93')} onPress={() => router.push({ pathname: '/paywall', params: { source: 'profile' } })} />
       </View>
     </View>
   )
@@ -103,6 +106,7 @@ export default function ProfileScreen() {
   const toast = useToast()
   const feedback = useFeedback()
   const { session, progress, logout, resetProgress, setUnlockAll } = useStore()
+  const isPro = useProInfo().pro
   const tier = currentTier(progress)
   const tierDone = isTierComplete(tier, progress)
   const tierStatus = tierDone ? t('x0eei137') : tier.num === 1 ? t('x1y4r5mn') : t('x1psb0nk')
@@ -230,6 +234,7 @@ export default function ProfileScreen() {
                 toast(progress.unlockAll ? t('x0p3aj4m') : t('x1y16fjs'))
               }}
             />
+            {DEMO_MODE ? <Btn testID="demo-pro" tone="ghost" block label={isPro ? t('pro.demoOff') : t('pro.demoOn')} onPress={() => setDemoPro(!isPro)} /> : null}
           </>
         ) : null}
         <Btn testID="logout" tone="coral" block label={t('x0c80x6j')} onPress={logout} />

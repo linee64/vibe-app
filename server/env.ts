@@ -22,6 +22,10 @@ export const serverEnv = {
   polarProductMonthly: () => str('POLAR_PRODUCT_MONTHLY_ID'),
   polarProductAnnual: () => str('POLAR_PRODUCT_ANNUAL_ID'),
   polarWebhookSecret: () => str('POLAR_WEBHOOK_SECRET'),
+  /** RevenueCat: секретный ключ REST API (sk_…) — сайт узнаёт о подписке из App Store / Google Play. Необязателен */
+  revenuecatSecretKey: () => str('REVENUECAT_SECRET_API_KEY'),
+  /** Идентификатор entitlement в RevenueCat (как в приложении) */
+  revenuecatEntitlement: () => str('REVENUECAT_ENTITLEMENT_ID') || 'Vaibik Pro',
   /** Публичный адрес сайта (https://vaibik.site) — для ссылок возврата из оплаты */
   appUrl: () => str('APP_URL').replace(/\/+$/, ''),
 }
@@ -30,5 +34,7 @@ export const isSupabaseServerConfigured = () => !!(serverEnv.supabaseUrl() && se
 export const isAiConfigured = () => !!serverEnv.deepseekKey()
 export const isBillingConfigured = () =>
   !!(serverEnv.polarToken() && serverEnv.polarProductMonthly() && serverEnv.polarProductAnnual())
+
+export const isRevenueCatConfigured = () => !!serverEnv.revenuecatSecretKey()
 
 export const polarBaseUrl = () => (serverEnv.polarServer() === 'production' ? 'https://api.polar.sh' : 'https://sandbox-api.polar.sh')

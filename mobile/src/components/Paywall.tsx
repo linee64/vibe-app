@@ -10,7 +10,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { PRO_FEATURES } from '@web/data/pricing'
 import { t } from '@web/i18n/core'
 import { tx } from '@web/i18n/rich'
-import { createBilling, formatMoney, manageSubscriptions, type BillingState, type Plan, type PlanOffer } from '../lib/billing'
+import { createBilling, formatMoney, useProInfo, type BillingState, type Plan, type PlanOffer } from '../lib/billing'
+import { ProActiveCard } from './ProStatus'
+import { useRouter } from 'expo-router'
 import { REVIEW_MODE } from '../lib/env'
 import { openLegal } from '../lib/legal'
 import { useStore } from '../store/Store'
@@ -69,7 +71,10 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
   }, [state])
   const offer = offers.find((o) => o.plan === plan) ?? offers[0] ?? null
   const demo = state?.mode === 'demo'
-  const pro = !!state?.pro
+  // общий статус Pro: обновляется сразу после покупки/восстановления (слушатель RevenueCat) — пейвол превращается в статус
+  const proInfo = useProInfo()
+  const pro = proInfo.pro
+  const router = useRouter()
 
   const back = onClose
   /** Ушли без покупки — короткий вопрос «Что остановило?» (уже на пути, не поверх пейвола) */
@@ -100,7 +105,7 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
     const res = await billing.restore()
     setBusy(false)
     toast(res.message ?? (res.pro ? t('x1e0jmys') : t('x0orhexg')))
-    if (res.pro) setState((s) => (s ? { ...s, pro: true } : s))
+    if (res.pro) setState((s) => (s ? { ...s, pro: true } : s)) // статус Pro уже обновлён в billing.ts
   }
 
   const trialDays = offer?.trialDays ?? null
@@ -127,14 +132,11 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
 
           {pro ? (
             <View testID="paywall-pro-active">
-              <Text style={[font(600, 16, C.muted), { marginTop: 12, lineHeight: 22 }]}>{t('x1abqfqj')}</Text>
-              <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, borderWidth: 2, borderColor: C.teal, backgroundColor: alpha(C.tealLight, 0.5), padding: 14 }}>
-                <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.teal, alignItems: 'center', justifyContent: 'center' }}>
-                  <Check size={16} color={C.white} />
-                </View>
-                <Text style={[font(900, 16, C.tealDark), { flex: 1 }]}>{t('x0qd05yb')}</Text>
-              </View>
-              {!demo ? <Btn testID="paywall-manage" tone="teal" block big label={t('x0nbowwd')} onPress={() => manageSubscriptions(state?.managementURL)} style={{ marginTop: 16 }} /> : null}
+              <ProActiveCard pro={proInfo} style={{ marginTop: 16 }} />
+              <Btn testID="paywall-manage" block big label={t('pro.toSettings')} onPress={() => {
+                back()
+                router.push('/(tabs)/settings')
+              }} style={{ marginTop: 16 }} />
               <Btn tone="ghost" block label={t('x09wpu9j')} onPress={back} style={{ marginTop: 12 }} />
             </View>
           ) : (

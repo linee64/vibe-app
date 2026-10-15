@@ -5,11 +5,14 @@
  * Без ключей — демо: пейвол показывает цены, но ничего не списывает.
  * Нативный SDK работает только в dev build / стор-сборке, не в Expo Go.
  */
-import { Linking, Platform } from 'react-native'
-import { useEffect, useState } from 'react'
+import { AppState, Linking, Platform } from 'react-native'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { PRICES, TRIAL_DAYS, annualPerMonth, annualSavePct, usd } from '@web/data/pricing'
+import { FREE, demoPro, fromPolar, fromStore, mergePro, type AppPlatform, type PolarSubscriptionLike, type ProStatus, type StoreEntitlementLike } from '@web/data/proStatus'
 import { LOCALE_META } from '@web/i18n/locales'
-import { ENV } from './env'
+import { DEMO_MODE, ENV } from './env'
+import { getSupabase } from './web-adapters/supabase'
 import { getLocale, t } from '@web/i18n/core'
 
 /** Идентификатор entitlement в RevenueCat. Сверяем без учёта регистра/пробелов; любой из вариантов даёт Pro */
@@ -68,6 +71,8 @@ interface RCModule {
     getCustomerInfo: () => Promise<RCInfo>
     logIn: (id: string) => Promise<unknown>
     logOut: () => Promise<unknown>
+    showManageSubscriptions?: () => Promise<void>
+    addCustomerInfoUpdateListener?: (l: (info: RCInfo) => void) => void
   }
   PURCHASES_ERROR_CODE: { PURCHASE_CANCELLED_ERROR: string }
 }
@@ -84,8 +89,17 @@ interface RCPackage {
     introPrice?: { price: number; periodNumberOfUnits: number; periodUnit: string } | null
   }
 }
+interface RCEntitlement {
+  productIdentifier: string
+  isActive?: boolean
+  willRenew?: boolean
+  periodType?: string
+  expirationDate?: string | null
+  store?: string
+  billingIssueDetectedAt?: string | null
+}
 interface RCInfo {
-  entitlements: { active: Record<string, { productIdentifier: string }> }
+  entitlements: { active: Record<string, RCEntitlement> }
   managementURL?: string | null
 }
 
@@ -102,6 +116,8 @@ async function loadSdk(): Promise<RCModule | null> {
     const mod = (await import('react-native-purchases')) as unknown as RCModule
     const ready = await mod.default.isConfigured().catch(() => false)
     if (!ready) mod.default.configure({ apiKey: key })
+    // любое изменение подписки (покупка, продление, отмена, восстановление) — сразу в статус Pro, без перезапуска
+    mod.default.addCustomerInfoUpdateListener?.((info) => void isPro(info))
     rc = mod
   } catch {
     rc = null
@@ -130,32 +146,118 @@ function trialOf(p: RCPackage): number | null {
   return null
 }
 
-function isPro(info: RCInfo) {
-  proKnown = true
-  const pro = Object.keys(info.entitlements?.active ?? {}).some((k) => ENTITLEMENT_ALIASES.includes(normEnt(k)) || normEnt(k) === normEnt(ENTITLEMENT))
-  setProCache(pro)
-  return pro
+/** Активный entitlement Pro из CustomerInfo (сверка без учёта регистра/пробелов) */
+function proEntitlement(info: RCInfo): RCEntitlement | null {
+  const active = info.entitlements?.active ?? {}
+  const key = Object.keys(active).find((k) => ENTITLEMENT_ALIASES.includes(normEnt(k)) || normEnt(k) === normEnt(ENTITLEMENT))
+  return key ? active[key] : null
 }
 
-/** Кэш статуса Pro для экранов (путь обучения): обновляется при state/purchase/restore */
-let proCache = false
+/** CustomerInfo → ProStatus (тариф, продлится ли, до какого числа, какой магазин) */
+export function statusFromInfo(info: RCInfo): ProStatus {
+  const e = proEntitlement(info)
+  if (!e) return FREE
+  const ent: StoreEntitlementLike = {
+    isActive: e.isActive ?? true,
+    willRenew: e.willRenew ?? true,
+    periodType: e.periodType ?? null,
+    expirationDate: e.expirationDate ?? null,
+    store: e.store ?? (Platform.OS === 'android' ? 'PLAY_STORE' : 'APP_STORE'),
+    productIdentifier: e.productIdentifier,
+    billingIssueDetectedAt: e.billingIssueDetectedAt ?? null,
+  }
+  return fromStore(ent)
+}
+
+function isPro(info: RCInfo) {
+  proKnown = true
+  managementURL = info.managementURL ?? managementURL
+  setSource('rc', statusFromInfo(info))
+  return current.pro
+}
+
+// ---------------------------------------------------------------- общий статус Pro (все экраны)
+const PLATFORM: AppPlatform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web'
+const DEMO_PRO_KEY = 'vaibik.demoPro'
+/** Источники: RevenueCat (App Store / Google Play), Polar (подписка с сайта, таблица subscriptions), демо-переключатель */
+const sources: { rc: ProStatus; polar: ProStatus; demo: boolean } = { rc: FREE, polar: FREE, demo: false }
+let current: ProStatus = FREE
+let managementURL: string | null = null
 /** Статус уже узнали у RevenueCat (или SDK нет) — до этого пейвол не показываем, чтобы Pro не мигал */
 let proKnown = false
-const proListeners = new Set<(v: boolean) => void>()
-function setProCache(v: boolean) {
-  if (v === proCache) return
-  proCache = v
-  proListeners.forEach((l) => l(v))
+const proListeners = new Set<() => void>()
+function recompute() {
+  const next = sources.demo ? demoPro() : mergePro(PLATFORM, sources.polar, sources.rc)
+  if (JSON.stringify(next) === JSON.stringify(current)) return
+  current = next
+  proListeners.forEach((l) => l())
 }
-/** true, если активна подписка Pro (RevenueCat). Без SDK/ключа — false */
-export function useIsPro(): boolean {
-  const [pro, setPro] = useState(proCache)
+function setSource(k: 'rc' | 'polar', v: ProStatus) {
+  sources[k] = v
+  recompute()
+}
+const subscribePro = (l: () => void) => {
+  proListeners.add(l)
+  return () => void proListeners.delete(l)
+}
+export const getProStatus = () => current
+
+if (DEMO_MODE) {
+  void AsyncStorage.getItem(DEMO_PRO_KEY)
+    .then((v) => {
+      sources.demo = v === '1'
+      recompute()
+    })
+    .catch(() => {})
+}
+/** Только демо без бэкенда: «как будто купили Pro» — для проверки экранов */
+export function setDemoPro(on: boolean) {
+  if (!DEMO_MODE) return
+  sources.demo = on
+  void (on ? AsyncStorage.setItem(DEMO_PRO_KEY, '1') : AsyncStorage.removeItem(DEMO_PRO_KEY)).catch(() => {})
+  recompute()
+}
+
+/** Подписка с сайта (Polar): строку subscriptions пишет вебхук, читаем свою по RLS */
+async function refreshPolar(userId: string | null) {
+  if (!userId) return setSource('polar', FREE)
+  try {
+    const sb = await getSupabase()
+    if (!sb) return
+    const { data, error } = await sb.from('subscriptions').select('status, plan, current_period_end, trial_end, cancel_at_period_end').maybeSingle()
+    if (error) return
+    setSource('polar', fromPolar((data as PolarSubscriptionLike | null) ?? null))
+  } catch {
+    /* сеть — оставим прежний статус */
+  }
+}
+
+/** Перечитать статус Pro: RevenueCat + Polar */
+export async function refreshPro(userId: string | null) {
+  const sdk = await loadSdk()
+  await Promise.all([sdk ? sdk.default.getCustomerInfo().then(isPro).catch(() => undefined) : undefined, refreshPolar(userId)])
+  proKnown = true
+}
+
+/** Один раз в корне приложения: при входе/выходе и при возврате в приложение (из настроек App Store) обновляем статус */
+export function useProSync(userId: string | null) {
   useEffect(() => {
-    proListeners.add(setPro)
+    void createBilling().identify(userId).finally(() => void refreshPro(userId))
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') void refreshPro(userId)
+    })
+    return () => sub.remove()
+  }, [userId])
+}
+
+/** Итоговый статус Pro: тариф, «отменена», даты, магазин */
+export const useProInfo = (): ProStatus => useSyncExternalStore(subscribePro, getProStatus, getProStatus)
+
+/** true, если активна подписка Pro (RevenueCat, сайт или демо). Без SDK/ключа и подписки — false */
+export function useIsPro(): boolean {
+  const pro = useProInfo().pro
+  useEffect(() => {
     void loadSdk().then((sdk) => sdk?.default.getCustomerInfo().then(isPro).catch(() => undefined))
-    return () => {
-      proListeners.delete(setPro)
-    }
   }, [])
   return pro
 }
@@ -195,7 +297,7 @@ export function createBilling(): Billing {
         return {
           mode: 'demo',
           reason: Platform.OS === 'web' ? t('x06e94q2') : platformKey() ? t('x1msfcvt') : t('x1al1pw1'),
-          pro: false,
+          pro: current.pro,
           offers: demoOffers(),
         }
       }
@@ -222,9 +324,10 @@ export function createBilling(): Billing {
         }
         offers.sort((a, b) => Number(b.plan === 'annual') - Number(a.plan === 'annual'))
         const info = await sdk.default.getCustomerInfo()
-        return { mode: 'live', pro: isPro(info), offers: offers.length ? offers : demoOffers(), managementURL: info.managementURL ?? null }
+        isPro(info)
+        return { mode: 'live', pro: current.pro, offers: offers.length ? offers : demoOffers(), managementURL: info.managementURL ?? null }
       } catch {
-        return { mode: 'demo', reason: t('x0qp34vx'), pro: false, offers: demoOffers() }
+        return { mode: 'demo', reason: t('x0qp34vx'), pro: current.pro, offers: demoOffers() }
       }
     },
     async purchase(offer) {
@@ -232,6 +335,7 @@ export function createBilling(): Billing {
       if (!sdk || !offer.pkg) return { ok: false, message: t('x05fnbyp') }
       try {
         const res = await sdk.default.purchasePackage(offer.pkg as RCPackage)
+        // статус Pro обновляется сразу — карточка тарифа и пейвол исчезают без перезапуска
         return { ok: isPro(res.customerInfo) }
       } catch (e) {
         const err = e as { code?: string; userCancelled?: boolean }
@@ -272,10 +376,30 @@ export function formatMoney(amount: number, currency: string): string | undefine
   }
 }
 
-/** Управление подпиской: ссылка RevenueCat, иначе страница подписок стора */
-export function manageSubscriptions(url?: string | null) {
-  const fallback = Platform.OS === 'android' ? 'https://play.google.com/store/account/subscriptions' : 'https://apps.apple.com/account/subscriptions'
-  void Linking.openURL(url || fallback).catch(() => {})
+export const APPLE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/subscriptions'
+export const PLAY_SUBSCRIPTIONS_URL = 'https://play.google.com/store/account/subscriptions'
+
+/**
+ * Управление / отмена подписки. Отменить подписку App Store может только сам пользователь у Apple —
+ * открываем системный экран подписок (RevenueCat showManageSubscriptions), иначе apps.apple.com/account/subscriptions.
+ * Android — ссылка RevenueCat (managementURL) или страница подписок Google Play.
+ */
+export async function manageSubscriptions(url?: string | null) {
+  if (Platform.OS === 'ios') {
+    const sdk = await loadSdk()
+    try {
+      if (sdk?.default.showManageSubscriptions) {
+        await sdk.default.showManageSubscriptions()
+        return
+      }
+    } catch {
+      /* нет StoreKit-листа — откроем страницу подписок */
+    }
+    await Linking.openURL(APPLE_SUBSCRIPTIONS_URL).catch(() => {})
+    return
+  }
+  const fallback = Platform.OS === 'android' ? PLAY_SUBSCRIPTIONS_URL : APPLE_SUBSCRIPTIONS_URL
+  await Linking.openURL(url || managementURL || fallback).catch(() => {})
 }
 
 /** Пейвол для раздела: Pro нужен (раздел не бесплатный) и подписки нет */

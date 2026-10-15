@@ -29,6 +29,7 @@ export type AnalyticsEvent =
   | 'checkout_started'
   | 'checkout_completed'
   | 'trial_started'
+  | 'subscription_manage_opened'
   | 'feedback_opened'
   | 'feedback_submitted'
   | 'micro_prompt_shown'
