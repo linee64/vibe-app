@@ -8,6 +8,10 @@ import { DEMO_MODE, REVIEW_MODE, SUPABASE_ENABLED } from '../lib/env'
 import { getSupabase } from '../lib/web-adapters/supabase'
 import { CHARGE_AT_KEY, OWNER_KEY, PROGRESS_KEY, REVIEW_FLAG, SESSION_KEY, accruedCharge, defaultProgress, freshProgress, nameFromEmail, normalizeProgress, pullProgress, pushProgress, rollDay, type Progress, type Session } from './progress'
 import { t } from '@web/i18n/core'
+import { applyQuestEvent, claimQuest as claimQuestPure, markNotified, newlyCompleted, rollQuests, type QuestEvent, type QuestState } from '@web/data/quests'
+import { lookOf, buySkin as buySkinPure, equipSkin as equipSkinPure, findSkin, unequipSlot, type BuyResult, type SkinSlot } from '@web/data/skins'
+import { onUserLocaleChange } from '@web/i18n/runtime'
+import { MascotLookContext } from '@web/components/mascotLook'
 
 const SAVE_DEBOUNCE_MS = 1200
 
@@ -33,6 +37,15 @@ interface Store {
   setUnlockAll: (on: boolean) => void
   setPlacementSeen: () => void
   setPortfolioUrl: (url: string) => void
+  /** Ответ в уроке проверен — для заданий «верных ответов подряд» */
+  recordAnswer: (correct: boolean) => void
+  /** Забрать награду за задание: сколько токенов начислено (0 — нельзя) */
+  claimQuest: (id: string) => number
+  setIntroSeen: () => void
+  /** Гардероб Бипи: токены списываются ровно один раз, вещь сразу надевается */
+  buySkin: (id: string, isPro: boolean) => BuyResult
+  equipSkin: (id: string) => void
+  unequipSkin: (slot: SkinSlot) => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -74,6 +87,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (legacyAt && !p.chargeAt) p = { ...p, chargeAt: legacyAt }
       await AsyncStorage.removeItem(CHARGE_AT_KEY)
       p = accruedCharge(p)
+      if (p.quests) p = { ...p, quests: rollQuests(p.quests) }
       if (REVIEW_MODE && !reviewFlag) {
         await AsyncStorage.setItem(REVIEW_FLAG, '1')
         p = { ...p, unlockAll: true }
@@ -213,9 +227,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })()
   }, [flush])
 
-  const completeLesson = useCallback((id: string, xp: number, perfect: boolean) => {
-    setProgress((p) => rollDay({ ...p, completed: p.completed.includes(id) ? p.completed : [...p.completed, id], xp: p.xp + xp, gems: p.gems + (perfect ? 10 : 5), todayXp: p.todayXp + xp, perfectToday: p.perfectToday + (perfect ? 1 : 0), lessonsToday: p.lessonsToday + 1 }))
+  /**
+   * Событие для заданий (как в вебе, src/store.tsx): состояние заданий — в updater-е, quest_completed — по ref
+   * (один раз на задание и период: выполненные сразу помечаются notified).
+   */
+  const questStep = useCallback((e: QuestEvent) => {
+    const after = applyQuestEvent(latest.current.quests, e)
+    const fresh = newlyCompleted(after).map((q) => {
+      track('quest_completed', { quest_id: q.id, period: q.period, goal: q.goal })
+      return q.id
+    })
+    latest.current = { ...latest.current, quests: fresh.length ? markNotified(after, fresh) : after }
+    return (q: QuestState | undefined) => {
+      const next = applyQuestEvent(q, e)
+      return fresh.length ? markNotified(next, fresh) : next
+    }
   }, [])
+
+  const completeLesson = useCallback((id: string, xp: number, perfect: boolean) => {
+    const step = questStep({ type: 'lesson', xp, perfect })
+    setProgress((p) => rollDay({ ...p, completed: p.completed.includes(id) ? p.completed : [...p.completed, id], xp: p.xp + xp, gems: p.gems + (perfect ? 10 : 5), todayXp: p.todayXp + xp, perfectToday: p.perfectToday + (perfect ? 1 : 0), lessonsToday: p.lessonsToday + 1, quests: step(p.quests) }))
+  }, [questStep])
   const loseHeart = useCallback(() => setProgress((p) => withChargeFields(p, spendCharge(p))), [])
   const refillHearts = useCallback(() => setProgress((p) => withChargeFields(p, { hearts: CHARGE_MAX })), [])
   const addCharge = useCallback((n: number) => setProgress((p) => withChargeFields(p, addChargeState(p, n))), [])
@@ -227,23 +259,80 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
   const resetProgress = useCallback(() => setProgress((p) => ({ ...defaultProgress(), unlockAll: p.unlockAll })), [])
   const completeHomework = useCallback((id: string, xp: number) => {
+    const again0 = latest.current.homework.includes(id)
+    const step = questStep({ type: 'homework', xp: again0 ? 10 : xp })
     setProgress((p) => {
       const again = p.homework.includes(id)
       const gain = again ? 10 : xp
-      return rollDay({ ...p, homework: again ? p.homework : [...p.homework, id], xp: p.xp + gain, gems: p.gems + (again ? 5 : 20), todayXp: p.todayXp + gain, lessonsToday: p.lessonsToday + 1 })
+      return rollDay({ ...p, homework: again ? p.homework : [...p.homework, id], xp: p.xp + gain, gems: p.gems + (again ? 5 : 20), todayXp: p.todayXp + gain, lessonsToday: p.lessonsToday + 1, quests: step(p.quests) })
     })
-  }, [])
+  }, [questStep])
   const passTiersByTest = useCallback((ids: string[]) => setProgress((p) => ({ ...p, tiersByTest: [...new Set([...p.tiersByTest, ...ids])], tiersCelebrated: [...new Set([...p.tiersCelebrated, ...ids])], placementSeen: true })), [])
   const markTierCelebrated = useCallback((id: string) => setProgress((p) => (p.tiersCelebrated.includes(id) ? p : { ...p, tiersCelebrated: [...p.tiersCelebrated, id] })), [])
   const setUnlockAll = useCallback((on: boolean) => setProgress((p) => ({ ...p, unlockAll: on })), [])
   const setPlacementSeen = useCallback(() => setProgress((p) => ({ ...p, placementSeen: true })), [])
   const setPortfolioUrl = useCallback((url: string) => setProgress((p) => ({ ...p, portfolioUrl: url })), [])
+  const recordAnswer = useCallback(
+    (correct: boolean) => {
+      const step = questStep({ type: 'answer', correct })
+      setProgress((p) => ({ ...p, quests: step(p.quests) }))
+    },
+    [questStep],
+  )
+  const claimQuest = useCallback((id: string) => {
+    // считаем по ref, чтобы двойное нажатие не начислило награду дважды
+    const res = claimQuestPure(latest.current.quests, id)
+    if (!res) return 0
+    latest.current = { ...latest.current, quests: res.state, gems: latest.current.gems + res.reward }
+    setProgress((p) => {
+      const again = claimQuestPure(p.quests, id)
+      return again ? { ...p, quests: again.state, gems: p.gems + again.reward } : p
+    })
+    track('quest_claimed', { quest_id: id, period: res.quest.period, reward: res.reward })
+    return res.reward
+  }, [])
+  const setIntroSeen = useCallback(() => setProgress((p) => (p.introSeen ? p : { ...p, introSeen: true })), [])
+  const buySkin = useCallback((id: string, isPro: boolean): BuyResult => {
+    const res = buySkinPure(latest.current.skins, latest.current.gems, id, isPro)
+    if (!res.ok) return res
+    latest.current = { ...latest.current, skins: res.state, gems: res.gems }
+    setProgress((p) => {
+      const again = buySkinPure(p.skins, p.gems, id, isPro)
+      return again.ok ? { ...p, skins: again.state, gems: again.gems } : p
+    })
+    track('skin_purchased', { skin_id: id, price: res.skin.price, slot: res.skin.slot, rarity: res.skin.rarity, pro: !!res.skin.pro })
+    track('tokens_spent', { reason: 'skin', amount: res.skin.price, where: 'wardrobe' })
+    track('skin_equipped', { skin_id: id, slot: res.skin.slot, action: 'equip', via: 'purchase' })
+    return res
+  }, [])
+  const equipSkin = useCallback((id: string) => {
+    const next = equipSkinPure(latest.current.skins, id)
+    if (!next || next === latest.current.skins) return
+    latest.current = { ...latest.current, skins: next }
+    setProgress((p) => ({ ...p, skins: equipSkinPure(p.skins, id) ?? p.skins }))
+    track('skin_equipped', { skin_id: id, slot: findSkin(id)?.slot, action: 'equip', via: 'wardrobe' })
+  }, [])
+  const unequipSkin = useCallback((slot: SkinSlot) => {
+    const id = latest.current.skins?.equipped[slot]
+    if (!id) return
+    latest.current = { ...latest.current, skins: unequipSlot(latest.current.skins, slot) }
+    setProgress((p) => ({ ...p, skins: unequipSlot(p.skins, slot) }))
+    track('skin_equipped', { skin_id: id, slot, action: 'unequip', via: 'wardrobe' })
+  }, [])
+  // явный выбор языка → в прогресс (уедет в облако вместе с ним), как в вебе
+  useEffect(() => onUserLocaleChange((l) => setProgress((p) => (p.locale === l ? p : { ...p, locale: l }))), [])
 
   const value = useMemo<Store>(
-    () => ({ session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl }),
-    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl],
+    () => ({ session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin }),
+    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin],
   )
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
+  const look = useMemo(() => lookOf(progress.skins), [progress.skins])
+  // надетые вещи — всем <Mascot /> и <MascotHead /> (общий контекст веба)
+  return (
+    <Ctx.Provider value={value}>
+      <MascotLookContext.Provider value={look}>{children}</MascotLookContext.Provider>
+    </Ctx.Provider>
+  )
 }
 
 export function useStore() {

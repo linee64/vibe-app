@@ -19,7 +19,7 @@ import { collectContext, flushFeedbackOutbox, onMicroChange, submitFeedback, tak
 import { track } from '../lib/analytics'
 import { Sheet } from './Sheet'
 import { FeedbackCtx, useFeedback } from './feedbackContext'
-import { Mascot, MascotHead } from './Mascot'
+import { Cross, Mascot, MascotHead } from './art'
 import { Btn, Txt } from './ui'
 import { C, font } from '../theme'
 import { feedbackCategoryLabel, manualCategories, paywallReasons, ratingLabel } from '@web/i18n/labels'
@@ -265,7 +265,7 @@ export function MicroPromptCard({ kind, route, onClose }: { kind: MicroPromptKin
   return (
     <Animated.View entering={FadeInDown.springify().damping(18)} testID={`micro-${kind}`} style={{ position: 'absolute', left: 12, right: 12, bottom: 12, borderRadius: 22, borderWidth: 2, borderColor: C.line, borderBottomWidth: 6, backgroundColor: C.white, padding: 14, gap: 10 }}>
       <Pressable accessibilityLabel={t('x1y40goj')} onPress={() => { if (!done) track('micro_prompt_dismissed', { source: kind }); onClose() }} hitSlop={10} style={{ position: 'absolute', right: 12, top: 10, zIndex: 2 }}>
-        <Text style={font(900, 18, '#B3ADC8')}>✕</Text>
+        <Cross size={20} color={C.faint} />
       </Pressable>
       {done ? (
         <Thanks compact />
@@ -310,7 +310,7 @@ export function FeedbackButton({ entry }: { entry: string }) {
 
 
 /** Экраны, где микро-опросы не показываем (урок, домашка, тест, пейвол, вход) */
-const BUSY_ROUTE = /^\/(lesson|homework|placement|paywall|login|shop|tier-up|lesson-complete)/
+const BUSY_ROUTE = /^\/(lesson|homework|intro|paywall|login|tier-up|lesson-complete)/
 
 export function FeedbackProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
