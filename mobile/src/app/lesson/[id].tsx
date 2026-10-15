@@ -84,12 +84,18 @@ function LessonScreen({ id }: { id: string }) {
     firstEver.current = progress.completed.length === 0
     finished.current = false
     if (found) track('lesson_started', { lesson_id: id, unit: found.unit.num, repeat: wasDone.current })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  // Pro/демо: заряд безлимитный. Отдельный эффект — статус Pro может прийти уже после открытия урока
+  // (подписка/RevenueCat грузятся асинхронно), и тогда Pro-юзер с нулевым зарядом не должен упереться в «Бипи на нуле».
+  useEffect(() => {
     if (progress.hearts === 0 && (DEMO_MODE || isPro)) {
       refillHearts()
       toast(t('x1imvgi9'))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [id, isPro])
 
   useEffect(() => {
     stepRef.current = pos
@@ -156,7 +162,7 @@ function LessonScreen({ id }: { id: string }) {
   }, [])
 
   const next = useCallback(() => {
-    if (status === 'wrong' && progress.hearts === 0) {
+    if (status === 'wrong' && progress.hearts === 0 && !isPro) {
       track('charge_empty', { lesson_id: id, step: pos + 1 })
       setEmpty('menu')
       return
@@ -166,7 +172,7 @@ function LessonScreen({ id }: { id: string }) {
       return
     }
     advance()
-  }, [status, progress.hearts, pos, queue.length, mistakes, attempts, finish, advance, id])
+  }, [status, progress.hearts, isPro, pos, queue.length, mistakes, attempts, finish, advance, id])
 
   const buyHint = useCallback(() => {
     if (!ex || hint || status !== 'idle') return
