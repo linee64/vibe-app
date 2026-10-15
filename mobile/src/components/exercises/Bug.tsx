@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native'
+import { Bug as BugIcon, Flag } from 'lucide-react-native'
 import Animated, { ZoomIn } from 'react-native-reanimated'
 import type { BugExercise } from '@web/data/types'
 import { C, font } from '../../theme'
@@ -31,7 +32,7 @@ export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugEx
               const bg = !idle ? (i === ex.correct ? C.tealLight : sel ? C.coralLight : 'transparent') : sel ? C.coralLight : 'transparent'
               return (
                 <Pressable key={i} testID={`line-${i}`} accessibilityRole="button" disabled={!idle || dim} onPress={() => setAnswer(i)} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderRadius: 12, borderWidth: 2, borderColor: border, backgroundColor: bg, paddingHorizontal: 10, paddingVertical: 8, opacity: dim ? 0.35 : !idle && i !== ex.correct && !sel ? 0.55 : 1 }}>
-                  <Text style={{ fontSize: 14, opacity: sel || (!idle && i === ex.correct) ? 1 : 0 }}>🚩</Text>
+                  <View style={{ marginTop: 2, opacity: sel || (!idle && i === ex.correct) ? 1 : 0 }}><Flag size={15} color={C.coralDark} fill={C.coral} strokeWidth={2.2} /></View>
                   <Text style={[font(600, 14.5), { flex: 1, lineHeight: 20 }]}>{line}</Text>
                 </Pressable>
               )
@@ -60,9 +61,9 @@ export function BugView({ ex, answer, setAnswer, status, hint }: ViewProps<BugEx
                   <Text style={[mono(13, 'rgba(255,255,255,0.3)'), { width: 32, textAlign: 'right', marginRight: 10 }]}>{i + 1}</Text>
                   <Text style={[mono(13), { flex: 1 }]}>{line ? highlight(line, `b${i}-`) : ' '}</Text>
                   {!idle && i === ex.correct ? (
-                    <Animated.Text entering={ZoomIn} style={{ paddingLeft: 6 }}>
-                      🐞
-                    </Animated.Text>
+                    <Animated.View entering={ZoomIn} style={{ paddingLeft: 6 }}>
+                      <BugIcon size={18} color="#FF9C85" strokeWidth={2.4} />
+                    </Animated.View>
                   ) : null}
                 </Pressable>
               )

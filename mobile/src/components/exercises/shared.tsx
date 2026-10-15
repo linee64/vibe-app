@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native'
+import { Lightbulb, Sparkle } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import Svg, { Circle, Path } from 'react-native-svg'
 import type { ExerciseKind, MiniUI, Outcome, UIBlock } from '@web/data/types'
@@ -45,7 +46,7 @@ export function HintNote({ hint }: { hint?: Hint | null }) {
   if (!hint) return null
   return (
     <Animated.View entering={FadeInUp} testID="hint-note" style={{ marginBottom: 10, flexDirection: 'row', gap: 8, alignItems: 'center', borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', borderColor: C.brandMid, backgroundColor: C.brandLight, paddingHorizontal: 12, paddingVertical: 8 }}>
-      <Text>💡</Text>
+      <Lightbulb size={18} color={C.goldDark} strokeWidth={2.4} />
       <Text style={[font(800, 14, C.brandDark), { flex: 1 }]}>{hint.text}</Text>
     </Animated.View>
   )
@@ -62,7 +63,7 @@ export function Letter({ i, on, color = C.muted }: { i: number; on?: boolean; co
 export function AiAvatar({ size = 30 }: { size?: number }) {
   return (
     <View style={{ width: size, height: size, borderRadius: size, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: C.brandDark }}>
-      <Text style={{ color: C.white, fontSize: size * 0.5 }}>✦</Text>
+      <Sparkle size={size * 0.5} color={C.white} fill={C.white} strokeWidth={2} />
     </View>
   )
 }

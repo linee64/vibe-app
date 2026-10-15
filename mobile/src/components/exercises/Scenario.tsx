@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native'
+import { Compass } from 'lucide-react-native'
 import type { ChoiceExercise } from '@web/data/types'
 import { C, font } from '../../theme'
 import { Tile } from '../ui'
@@ -12,7 +13,7 @@ export function ScenarioView({ ex, answer, setAnswer, status, hint }: ViewProps<
     <View>
       <Head kind="choice" title={ex.title} prompt={ex.situation ? ex.prompt : undefined} />
       <View style={{ marginBottom: 14, overflow: 'hidden', borderRadius: 20, borderWidth: 2, borderColor: '#FFD58C', borderBottomWidth: 5, backgroundColor: '#FFF8EA', paddingHorizontal: 16, paddingVertical: 13 }}>
-        <Text style={{ position: 'absolute', right: -6, top: -10, fontSize: 56, opacity: 0.15 }}>🧭</Text>
+        <View pointerEvents="none" style={{ position: 'absolute', right: -6, top: -6, opacity: 0.15 }}><Compass size={64} color={C.amberDark} strokeWidth={2} /></View>
         <Text style={[font(900, 11, C.amberDark), { textTransform: 'uppercase', letterSpacing: 0.8 }]}>{t('x0mg5v7s')}</Text>
         <Text style={[font(700, 16), { marginTop: 2, lineHeight: 22 }]}>{ex.situation ?? ex.prompt}</Text>
       </View>

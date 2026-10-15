@@ -1,12 +1,15 @@
-import { useState } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native'
+import { useState, type ReactNode } from 'react'
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getSupabase } from '../../lib/web-adapters/supabase'
 import { DEMO_MODE } from '../../lib/env'
 import { useStore } from '../../store/Store'
-import { Mascot } from '../../components/Mascot'
-import { Btn, Txt } from '../../components/ui'
-import { C, font } from '../../theme'
+import { Mascot } from '../../components/art'
+import { Float } from '../../components/motion'
+import { LanguageSwitcher } from '../../components/LanguageSwitcher'
+import { Btn } from '../../components/ui'
+import { C, alpha, font } from '../../theme'
+import { tx } from '@web/i18n/rich'
 import { track } from '../../lib/analytics'
 import { getLocale, t } from '@web/i18n/core'
 
@@ -63,54 +66,113 @@ export default function LoginScreen() {
     else if (mode === 'signup' && !res.data.session) setNote({ text: t('x0k62urh'), bad: false })
   }
 
+  const [title, subtitle] = mode === 'signup' ? [t('login.title.3'), t('login.title.4')] : mode === 'reset' ? [t('login.title.5'), t('login.title.6')] : [t('login.title.1'), t('login.title.2')]
+
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.snow }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: 22, gap: 14 }} keyboardShouldPersistTaps="handled">
-        <View style={{ alignItems: 'center' }}>
-          <Mascot mood="happy" size={150} />
-          <Txt w={900} size={34} center>{t('x0c6ksvf')}</Txt>
-          <Txt w={700} size={15} color={C.muted} center>{t('x04x30ab')}</Txt>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.white }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView testID="login" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} keyboardShouldPersistTaps="handled">
+        {/* как AuthLayout веба на телефоне: фиолетовая шапка с логотипом и Бипи */}
+        <View style={{ overflow: 'hidden', alignItems: 'center', backgroundColor: C.brand, paddingHorizontal: 24, paddingTop: insets.top + 32, paddingBottom: 32 }}>
+          <View pointerEvents="none" style={{ position: 'absolute', left: -96, top: -96, width: 320, height: 320, borderRadius: 160, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+          <View pointerEvents="none" style={{ position: 'absolute', right: -80, bottom: -128, width: 384, height: 384, borderRadius: 192, backgroundColor: alpha(C.brandDark, 0.4) }} />
+          <Text style={[font(900, 30, C.white), { marginBottom: 12, lineHeight: 32 }]}>{tx('x1ctbm6o', {}, [(chunk) => <Text style={{ color: C.coral }}>{chunk}</Text>])}</Text>
+          <Float>
+            <Mascot size={120} />
+          </Float>
+          <Text style={[font(900, 22, C.white), { marginTop: 16, maxWidth: 440, lineHeight: 27, textAlign: 'center' }]}>{t('x14h7w5u')}</Text>
         </View>
 
-        {!DEMO_MODE ? (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {([['login', t('x03mo60q')], ['signup', t('x0grikvd')]] as const).map(([m, l]) => (
-              <Btn key={m} label={l} small tone={mode === m ? 'brand' : 'ghost'} style={{ flex: 1 }} onPress={() => { if (m === 'signup' && mode !== 'signup') track('signup_started', { entry: 'login' }); setMode(m); setNote(null) }} />
-            ))}
+        <View style={{ paddingHorizontal: 24, paddingTop: 32 }}>
+          <View style={{ alignItems: 'flex-end', marginBottom: 8 }}>
+            <LanguageSwitcher returnTo="/(auth)/login" />
           </View>
-        ) : (
-          <View style={{ borderRadius: 16, backgroundColor: C.brandLight, paddingHorizontal: 14, paddingVertical: 10 }}>
-            <Txt w={800} size={13} color={C.brandDark} center>{t('x1pk0fut')}</Txt>
-          </View>
-        )}
+          <Text style={[font(900, 28), { lineHeight: 33 }]}>{title}</Text>
+          <Text style={[font(600, 16, C.muted), { marginTop: 4, marginBottom: 24 }]}>{subtitle}</Text>
 
-        <View style={{ gap: 10 }}>
-          {mode === 'signup' ? <Field value={name} onChange={setName} placeholder={t('x0t92out')} label={t('x143058q')} testID="name" /> : null}
-          <Field value={email} onChange={setEmail} placeholder="name@example.com" label="Email" testID="email" keyboard="email-address" />
-          {mode !== 'reset' && !DEMO_MODE ? <Field value={password} onChange={setPassword} placeholder={t('x151n5pr')} label={t('x1l0wi4n')} testID="password" secure /> : null}
+          {DEMO_MODE ? (
+            <View style={{ marginBottom: 20, borderRadius: 16, borderWidth: 2, borderColor: alpha(C.teal, 0.6), backgroundColor: alpha(C.tealLight, 0.6), paddingHorizontal: 16, paddingVertical: 12 }}>
+              <Text style={[font(700, 14), { lineHeight: 19 }]}>{t('x1pk0fut')}</Text>
+            </View>
+          ) : null}
+          {note ? (
+            <View accessibilityRole={note.bad ? 'alert' : undefined} style={{ marginBottom: 20, borderRadius: 16, borderWidth: 2, borderColor: alpha(note.bad ? C.coral : C.teal, 0.6), backgroundColor: alpha(note.bad ? C.coralLight : C.tealLight, 0.6), paddingHorizontal: 16, paddingVertical: 12 }}>
+              <Text style={[font(700, 14, note.bad ? C.coralDark : C.ink), { lineHeight: 19 }]}>{note.text}</Text>
+            </View>
+          ) : null}
+
+          <View style={{ gap: 16 }}>
+            {mode === 'signup' ? <Field value={name} onChange={setName} placeholder={t('x0t92out')} label={t('x143058q')} testID="name" /> : null}
+            <Field value={email} onChange={setEmail} placeholder="you@example.com" label="Email" testID="email" keyboard="email-address" />
+            {mode !== 'reset' && !DEMO_MODE ? (
+              <Field
+                value={password}
+                onChange={setPassword}
+                placeholder="••••••••"
+                label={t('x1l0wi4n')}
+                testID="password"
+                secure
+                extra={mode === 'login' ? (
+                  <Pressable onPress={() => { setMode('reset'); setNote(null) }} hitSlop={6}>
+                    <Text style={font(800, 13, C.brand)}>{t('x0w9rt0u')}</Text>
+                  </Pressable>
+                ) : null}
+              />
+            ) : null}
+          </View>
+
+          <Btn testID="submit" label={busy ? t('x15d421k') : DEMO_MODE ? t('x02lme7p') : mode === 'signup' ? t('x1tq5jtz') : mode === 'reset' ? t('x1kq4vgj') : t('x1h4dl4y')} onPress={() => void submit()} disabled={busy} block style={{ marginTop: 24 }} />
+
+          {!DEMO_MODE ? (
+            <View style={{ marginTop: 20, alignItems: 'center', gap: 12 }}>
+              {mode === 'reset' ? (
+                <Pressable onPress={() => { setMode('login'); setNote(null) }} hitSlop={6}>
+                  <Text style={font(800, 15, C.brand)}>{t('x0q2mvh7')}</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  testID="switch-mode"
+                  onPress={() => {
+                    const m = mode === 'signup' ? 'login' : 'signup'
+                    if (m === 'signup') track('signup_started', { entry: 'login' })
+                    setMode(m)
+                    setNote(null)
+                  }}
+                  hitSlop={6}
+                >
+                  <Text style={font(800, 15, C.brand)}>{mode === 'signup' ? t('x03mo60q') : t('x0grikvd')}</Text>
+                </Pressable>
+              )}
+            </View>
+          ) : null}
         </View>
-
-        {note ? (
-          <Txt w={800} size={13} color={note.bad ? C.coralDark : C.tealDark} center>
-            {note.text}
-          </Txt>
-        ) : null}
-
-        <Btn testID="submit" label={busy ? t('x15d421k') : DEMO_MODE ? t('x02lme7p') : mode === 'signup' ? t('x1tq5jtz') : mode === 'reset' ? t('x1kq4vgj') : t('x1h4dl4y')} onPress={() => void submit()} disabled={busy} block />
-
-        {!DEMO_MODE ? (
-          <Btn label={mode === 'reset' ? t('x0q2mvh7') : t('x0395wxj')} tone="ghost" small block onPress={() => { setMode(mode === 'reset' ? 'login' : 'reset'); setNote(null) }} />
-        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
-function Field({ value, onChange, placeholder, label, testID, secure, keyboard }: { value: string; onChange: (v: string) => void; placeholder: string; label: string; testID: string; secure?: boolean; keyboard?: 'email-address' | 'default' }) {
+/** Поле как .input веба: 54 px, скругление 16, фон snow, фокус — фиолетовая рамка */
+function Field({ value, onChange, placeholder, label, testID, secure, keyboard, extra }: { value: string; onChange: (v: string) => void; placeholder: string; label: string; testID: string; secure?: boolean; keyboard?: 'email-address' | 'default'; extra?: ReactNode }) {
+  const [focus, setFocus] = useState(false)
   return (
     <View>
-      <Text style={[font(800, 12, C.muted), { marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.6 }]}>{label}</Text>
-      <TextInput testID={testID} value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={C.muted} secureTextEntry={secure} keyboardType={keyboard ?? 'default'} autoCapitalize="none" autoCorrect={false} style={[font(700, 16), { borderRadius: 14, borderWidth: 2, borderColor: C.line, backgroundColor: C.white, paddingHorizontal: 14, paddingVertical: 12 }]} />
+      <View style={{ marginBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={font(800, 14)}>{label}</Text>
+        {extra}
+      </View>
+      <TextInput
+        testID={testID}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor="#AAA4C0"
+        secureTextEntry={secure}
+        keyboardType={keyboard ?? 'default'}
+        autoCapitalize="none"
+        autoCorrect={false}
+        onFocus={() => setFocus(true)}
+        onBlur={() => setFocus(false)}
+        style={[font(600, 16), { height: 54, borderRadius: 16, borderWidth: 2, borderColor: focus ? C.brand : C.line, backgroundColor: focus ? C.white : C.snow, paddingHorizontal: 18 }]}
+      />
     </View>
   )
 }

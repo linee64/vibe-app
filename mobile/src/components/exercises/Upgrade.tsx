@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { Flag } from 'lucide-react-native'
 import { Pressable, Text, View } from 'react-native'
 import Animated, { FadeInUp, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated'
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg'
@@ -67,7 +68,6 @@ export function VibeMeter({ value, target, size = 200 }: { value: number; target
   )
 }
 
-const plural = (n: number) => (n === 1 ? t('x0jqys9a') : n < 5 ? t('x0hj1ypi') : t('x0j6kr9o'))
 
 /** «Прокачай промпт»: слабый промпт + чипы-улучшения; Вайб-метр реагирует вживую */
 export function UpgradeView({ ex, answer, setAnswer, status, hint }: ViewProps<UpgradeExercise>) {
@@ -90,7 +90,7 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint }: ViewProps<U
             <View key={c} style={{ width: 9, height: 9, borderRadius: 9, backgroundColor: c }} />
           ))}
           <Text style={[font(600, 11, C.muted), { marginLeft: 6 }]}>prompt.md</Text>
-          <Text style={[font(800, 11, C.muted), { marginLeft: 'auto' }]}>{picked.length ? `+${picked.length} ${plural(picked.length)}` : t('x0r512do')}</Text>
+          <Text style={[font(800, 11, C.muted), { marginLeft: 'auto' }]}>{picked.length ? t('upgrade.edits', { n: picked.length }) : t('x0r512do')}</Text>
         </View>
         <Text style={[font(600, 15), { minHeight: 90, paddingHorizontal: 14, paddingVertical: 12, lineHeight: 23 }]} testID="prompt-text">
           {ex.base}
@@ -109,8 +109,7 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint }: ViewProps<U
         <VibeMeter value={score} target={ex.target} />
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={font(900, 15)}>{t('x1th9ida')}</Text>
-        <Text style={font(700, 12, C.muted)}>{t('x0jn9as3')}</Text>
+        <Text style={font(900, 15)}>{t('x1w3kwsx')}</Text>
       </View>
       <HintNote hint={hint} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9 }}>
@@ -145,9 +144,12 @@ export function UpgradeView({ ex, answer, setAnswer, status, hint }: ViewProps<U
           {ex.chips
             .filter((c) => c.trap)
             .map((c, k) => (
-              <Text key={k} style={[font(600, 13.5), { lineHeight: 18 }]}>
-                <Text style={font(900, 13.5, C.coralDark)}>🚩 «{c.text}»</Text> — {c.trap}
-              </Text>
+              <View key={k} style={{ flexDirection: 'row', gap: 6 }}>
+                <Flag size={14} color={C.coralDark} fill={C.coral} strokeWidth={2.2} style={{ marginTop: 2 }} />
+                <Text style={[font(600, 13.5), { lineHeight: 18, flex: 1 }]}>
+                  <Text style={font(900, 13.5, C.coralDark)}>«{c.text}»</Text> — {c.trap}
+                </Text>
+              </View>
             ))}
         </Animated.View>
       ) : null}

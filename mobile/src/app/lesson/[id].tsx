@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { findLesson } from '@web/data/course'
-import { CHARGE_MAX, HINT_COST, RECHARGE_COST, RECHARGE_MINUTES, tokens, waitText } from '@web/data/economy'
+import { HINT_COST, RECHARGE_COST, RECHARGE_MINUTES, tokens, waitText } from '@web/data/economy'
 import { canCheck, correctText, hintFor, isCorrect, type Answer, type Hint, type Status } from '@web/data/exerciseLogic'
 import type { Exercise } from '@web/data/types'
 import { hhmm } from '@web/data/charge'
@@ -11,27 +11,41 @@ import { useIsPro } from '../../lib/billing'
 import { DEMO_MODE } from '../../lib/env'
 import { useStore } from '../../store/Store'
 import { ExerciseView } from '../../components/exercises'
-import { Battery, Btn, ProgressBar, Token, Txt } from '../../components/ui'
-import { Sheet } from '../../components/Sheet'
-import { Mascot } from '../../components/Mascot'
+import { Battery, Btn, ChargeMeter, ProgressBar, Token, Txt } from '../../components/ui'
+import { Dialog } from '../../components/Sheet'
+import { Cross, Mascot } from '../../components/art'
+import { FadeUp, Pop, Shake } from '../../components/motion'
+import { GlossaryButton } from '../../components/Glossary'
+import { Gate } from '../../components/Gate'
+import { Lightbulb } from 'lucide-react-native'
 import { useToast } from '../../components/Toast'
 import { buzz } from '../../lib/haptics'
 import { playSound } from '../../lib/sound'
 import { track } from '../../lib/analytics'
 import { requestMicroPrompt } from '../../lib/feedback'
-import { C, font } from '../../theme'
-import { t } from '@web/i18n/core'
+import { C, caps, font } from '../../theme'
+import { rawMessage, t } from '@web/i18n/core'
 import { tx } from '@web/i18n/rich'
 
 const PRAISE = () => [t('lesson.praise.1'), t('lesson.praise.2'), t('lesson.praise.3'), t('lesson.praise.4'), t('lesson.praise.5')]
 
-export default function LessonScreen() {
+export default function LessonRoute() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const unit = findLesson(id)?.unit
+  if (!unit) return <LessonScreen key={id} id={id} />
+  return (
+    <Gate unitId={unit.id} nodeId={id} path={`/lesson/${id}`}>
+      <LessonScreen key={id} id={id} />
+    </Gate>
+  )
+}
+
+function LessonScreen({ id }: { id: string }) {
   const found = findLesson(id)
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const toast = useToast()
-  const { progress, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, completeLesson } = useStore()
+  const { progress, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, completeLesson, recordAnswer } = useStore()
   // Pro: заряд безлимитный — ошибки его не тратят
   const isPro = useIsPro()
 
@@ -44,7 +58,6 @@ export default function LessonScreen() {
   const [attempts, setAttempts] = useState(0)
   const [mistakes, setMistakes] = useState(0)
   const [praise, setPraise] = useState(PRAISE()[0])
-  const praiseRef = useRef(0)
   const [quitOpen, setQuitOpen] = useState(false)
   const [empty, setEmpty] = useState<null | 'menu' | 'review'>(null)
   const [hint, setHint] = useState<Hint | null>(null)
@@ -109,12 +122,12 @@ export default function LessonScreen() {
       setAttempts(a)
       const ok = !skip && isCorrect(ex, answer)
       track('exercise_answered', { lesson_id: id, type: ex.kind, correct: ok, retry: isRetry, skipped: skip })
+      recordAnswer(ok)
       if (ok) {
         void buzz('ok')
         playSound('correct')
         setSolved((s) => s + 1)
-        praiseRef.current = (praiseRef.current + 1) % PRAISE().length
-        setPraise(PRAISE()[praiseRef.current])
+        setPraise(PRAISE()[Math.floor(Math.random() * PRAISE().length)])
         setStatus('correct')
         if (isRetry) {
           addCharge(1)
@@ -131,7 +144,7 @@ export default function LessonScreen() {
         setQueue((q) => [...q, q[pos]])
       }
     },
-    [ex, status, answer, attempts, mistakes, pos, isRetry, isPro, loseHeart, addCharge, id],
+    [ex, status, answer, attempts, mistakes, pos, isRetry, isPro, loseHeart, addCharge, id, recordAnswer],
   )
 
   const advance = useCallback(() => {
@@ -178,49 +191,64 @@ export default function LessonScreen() {
   }
 
   const sheet = status === 'correct' ? { bg: C.tealLight, fg: C.tealDark, tone: 'teal' as const } : status === 'wrong' ? { bg: C.coralLight, fg: C.coralDark, tone: 'coral' as const } : null
+  const canHint = progress.gems >= HINT_COST && !hint
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.white }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: insets.top + 8, paddingHorizontal: 16, paddingBottom: 8 }}>
-        <Pressable testID="close-lesson" accessibilityLabel={t('x1fqusza')} onPress={() => setQuitOpen(true)} hitSlop={8}>
-          <Text style={font(900, 26, C.muted)}>✕</Text>
+    <View testID="lesson-screen" style={{ flex: 1, backgroundColor: C.white }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingTop: insets.top + 20, paddingHorizontal: 16 }}>
+        <Pressable testID="close-lesson" accessibilityRole="button" accessibilityLabel={t('x1fqusza')} onPress={() => setQuitOpen(true)} hitSlop={8} style={{ padding: 4 }}>
+          <Cross size={30} color={C.faint} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <ProgressBar value={(solved / exercises.length) * 100} />
+          <ProgressBar value={(solved / exercises.length) * 100} min={3} height={18} />
         </View>
-        <Battery level={progress.hearts} />
+        <GlossaryButton where="lesson_list" />
+        <Shake run={status === 'wrong'} key={progress.hearts}>
+          <ChargeMeter value={progress.hearts} size={26} textSize={19} />
+        </Shake>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
-        <View key={pos}>{ex ? <ExerciseView ex={ex} answer={answer} setAnswer={setAnswer} status={status} hint={hint} /> : null}</View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 20 }}>
+        <FadeUp key={pos}>{ex ? <ExerciseView ex={ex} answer={answer} setAnswer={setAnswer} status={status} hint={hint} /> : null}</FadeUp>
       </ScrollView>
 
-      <View style={{ borderTopWidth: 2, borderTopColor: sheet ? 'transparent' : C.line, backgroundColor: sheet ? sheet.bg : C.white, paddingHorizontal: 16, paddingTop: 14, paddingBottom: insets.bottom + 12, gap: 12 }}>
+      <View testID={sheet ? `sheet-${status}` : 'lesson-footer'} style={{ borderTopWidth: 2, borderTopColor: sheet ? 'transparent' : C.line, backgroundColor: sheet ? sheet.bg : C.white, paddingHorizontal: 16, paddingTop: 20, paddingBottom: insets.bottom + 20, gap: 16 }}>
         {sheet ? (
           <>
-            <View style={{ gap: 4 }}>
-              <Text style={font(900, 20, sheet.fg)}>{status === 'correct' ? praise : t('x1i1nft2')}</Text>
-              {recharged ? (
-                <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 99, backgroundColor: C.white, paddingHorizontal: 10, paddingVertical: 3 }}>
-                  <Battery level={Math.min(CHARGE_MAX, progress.hearts)} size={16} />
-                  <Text style={font(900, 12, C.tealDark)}>{t('x1l4yb9d')}</Text>
-                </View>
-              ) : null}
-              {status === 'wrong' && ex ? (
-                <Text style={font(800, 15, sheet.fg)}>{tx('x03h2ydh', { ex: correctText(ex) }, [(chunk) => <Text style={font(700, 15, sheet.fg)}>{chunk}</Text>])}</Text>
-              ) : null}
-              {ex ? <Text style={[font(600, 14, sheet.fg), { opacity: 0.9 }]}>{ex.explain}</Text> : null}
-              {status === 'wrong' && progress.hearts > 0 ? <Text style={[font(800, 12, sheet.fg), { opacity: 0.8 }]}>{t('x017zrtc')}</Text> : null}
+            <View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12, rowGap: 4 }}>
+                <Text style={[font(900, 22, sheet.fg), { lineHeight: 27 }]}>{status === 'correct' ? praise : t('x1i1nft2')}</Text>
+                {recharged ? (
+                  <Pop>
+                    <View testID="recharged" style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 99, backgroundColor: C.white, paddingHorizontal: 10, paddingVertical: 2 }}>
+                      <Battery level={Math.min(5, progress.hearts)} size={16} />
+                      <Text style={font(900, 13, C.tealDark)}>{rawMessage('x1br5ro2').replace(/<0\/>\s*/, '')}</Text>
+                    </View>
+                  </Pop>
+                ) : null}
+              </View>
+              {status === 'wrong' && ex ? <Text style={[font(800, 16, sheet.fg), { marginTop: 4 }]}>{tx('x03h2ydh', { ex: correctText(ex) }, [(chunk) => <Text style={font(700, 16, sheet.fg)}>{chunk}</Text>])}</Text> : null}
+              {ex ? <Text style={[font(600, 15, sheet.fg), { marginTop: 4, lineHeight: 20, opacity: 0.9 }]}>{ex.explain}</Text> : null}
+              {status === 'wrong' && progress.hearts > 0 ? <Text style={[font(800, 13, sheet.fg), { marginTop: 4, opacity: 0.8 }]}>{t('x017zrtc')}</Text> : null}
             </View>
             <Btn testID="next" label={status === 'correct' ? t('x1kpmy5f') : t('x0kpnyn9')} tone={sheet.tone} block onPress={next} />
           </>
         ) : (
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable testID="hint-btn" accessibilityLabel={t('x08bdlxg', { HINT_COST: tokens(HINT_COST) })} disabled={!!hint || progress.gems < HINT_COST} onPress={buyHint} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 16, borderWidth: 2, borderBottomWidth: 4, borderColor: C.line, borderBottomColor: C.line, paddingHorizontal: 12, opacity: hint || progress.gems < HINT_COST ? 0.45 : 1 }}>
-              <Text style={{ fontSize: 16 }}>💡</Text>
-              <Token size={16} />
-              <Text style={font(900, 14, C.tealDark)}>{HINT_COST}</Text>
-            </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Btn
+              testID="hint-btn"
+              tone="ghost"
+              disabled={!canHint}
+              onPress={buyHint}
+              style={{ flexShrink: 0 }}
+              icon={<Lightbulb size={20} color={canHint ? C.goldDark : C.disabledText} strokeWidth={2.4} />}
+              after={
+                <View accessibilityLabel={t('x08bdlxg', { HINT_COST: tokens(HINT_COST) })} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                  <Token size={18} />
+                  <Text style={font(800, 15, canHint ? C.tealDark : C.disabledText)}>{HINT_COST}</Text>
+                </View>
+              }
+            />
             <View style={{ flex: 1 }}>
               <Btn testID="check" label={t('x11ht3eb')} block disabled={!canCheck(ex, answer)} onPress={() => check()} />
             </View>
@@ -228,31 +256,48 @@ export default function LessonScreen() {
         )}
       </View>
 
-      <Sheet open={quitOpen} onClose={() => setQuitOpen(false)} label={t('x026dawp')}>
+      <Dialog open={quitOpen} label={t('x026dawp')} testID="quit-dialog">
         <View style={{ alignItems: 'center' }}>
-          <Mascot mood="think" size={110} />
+          <Mascot mood="think" size={120} />
         </View>
-        <Txt w={900} size={22} center>{t('x0anbgvi')}</Txt>
-        <Txt w={600} size={15} color={C.muted} center>{t('x1xlzamk')}</Txt>
+        <Txt w={900} size={22} center style={{ marginTop: 12 }}>{t('x0anbgvi')}</Txt>
+        <Txt w={600} size={16} color={C.muted} center style={{ marginTop: 4, marginBottom: 24 }}>{t('x1xlzamk')}</Txt>
         <Btn label={t('x1jeg8pe')} block onPress={() => setQuitOpen(false)} />
-        <Btn label={t('x0c80x6j')} tone="coral" block onPress={() => { exitReason.current = 'quit'; router.replace('/(tabs)/learn') }} />
-      </Sheet>
+        <Pressable
+          testID="quit-confirm"
+          accessibilityRole="button"
+          onPress={() => {
+            exitReason.current = 'quit'
+            setQuitOpen(false)
+            router.replace('/(tabs)/learn')
+          }}
+          style={{ marginTop: 16, paddingVertical: 8 }}
+        >
+          <Text style={[font(800, 15, C.coralDark), caps(15), { textAlign: 'center' }]}>{t('x0c80x6j')}</Text>
+        </Pressable>
+      </Dialog>
 
-      <Sheet open={empty === 'menu'} label={t('x1deozt6')}>
-        <View style={{ alignItems: 'center' }}>
-          <Mascot mood="think" size={100} />
-          <Battery level={0} />
+      <Dialog open={empty === 'menu'} label={t('x1deozt6')} testID="empty-dialog">
+        <View style={{ alignSelf: 'center' }}>
+          <Mascot mood="think" size={112} />
+          <View style={{ position: 'absolute', right: -24, bottom: 4, borderRadius: 12, backgroundColor: C.white, padding: 4, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
+            <Battery level={0} size={30} />
+          </View>
         </View>
-        <Txt w={900} size={22} center>{t('x11e7xbg')}</Txt>
-        <Txt w={600} size={14} color={C.muted} center>{t('lesson.chargePause', { min: RECHARGE_MINUTES })}{chargeAt ? t('x0p88rx4', { chargeAt: waitText(chargeAt) }) : ''}.
+        <Txt w={900} size={22} center style={{ marginTop: 12 }}>{t('x11e7xbg')}</Txt>
+        <Txt w={600} size={15} color={C.muted} center style={{ marginTop: 4, marginBottom: 20 }}>
+          {t('lesson.chargePause', { min: RECHARGE_MINUTES })}
+          {chargeAt ? t('x0p88rx4', { chargeAt: waitText(chargeAt) }) : ''}.
         </Txt>
-        {fullAt ? <Txt w={800} size={14} color={C.tealDark} center>{t('lesson.fullChargeIn', { time: hhmm(fullAt) })}</Txt> : null}
+        {fullAt ? <Txt w={800} size={14} color={C.tealDark} center style={{ marginTop: -12, marginBottom: 20 }}>{t('lesson.fullChargeIn', { time: hhmm(fullAt) })}</Txt> : null}
         <Btn testID="empty-review" label={t('x0s2jy7a')} tone="teal" block onPress={() => setEmpty('review')} />
         <Btn
           testID="empty-buy"
-          label={t('x0rqhnci', { RECHARGE_COST })}
+          label={rawMessage('x0xp4yz5').replace(/<0\/>\s*/, '').replace('{RECHARGE_COST}', String(RECHARGE_COST))}
+          icon={<Token size={20} />}
           tone="ghost"
           block
+          style={{ marginTop: 12 }}
           disabled={progress.gems < RECHARGE_COST}
           onPress={() => {
             if (!spendGems(RECHARGE_COST)) return
@@ -262,27 +307,38 @@ export default function LessonScreen() {
             advance()
           }}
         />
-        <Btn label={t('x0c80x6j')} tone="ghost" block onPress={() => { exitReason.current = 'charge_empty'; router.replace('/(tabs)/learn') }} />
-      </Sheet>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            exitReason.current = 'charge_empty'
+            setEmpty(null)
+            router.replace('/(tabs)/learn')
+          }}
+          style={{ marginTop: 12, paddingVertical: 8 }}
+        >
+          <Text style={[font(800, 15, C.muted), caps(15), { textAlign: 'center' }]}>{t('x0c80x6j')}</Text>
+        </Pressable>
+      </Dialog>
 
-      <Sheet open={empty === 'review' && !!lastWrong} label={t('x18w0nxa')}>
+      <Dialog open={empty === 'review' && !!lastWrong} label={t('x18w0nxa')} testID="review-dialog">
         {lastWrong ? (
           <>
-            <Txt w={900} size={12} color={C.brand}>{t('x09zgdye')}</Txt>
-            <Txt w={900} size={19}>{lastWrong.title}</Txt>
-            <View style={{ borderRadius: 16, borderWidth: 2, borderColor: C.teal, backgroundColor: C.tealLight, padding: 12 }}>
-              <Txt w={900} size={11} color={C.tealDark}>{t('x1ocwuu7')}</Txt>
-              <Txt w={800} size={15}>{correctText(lastWrong)}</Txt>
+            <Text style={[font(900, 12, C.brand), caps(12), { marginBottom: 4 }]}>{t('x11ixt8m')}</Text>
+            <Text style={[font(900, 20), { lineHeight: 25 }]}>{lastWrong.title}</Text>
+            <View style={{ marginTop: 12, borderRadius: 16, borderWidth: 2, borderColor: C.teal, backgroundColor: C.tealLight, paddingHorizontal: 16, paddingVertical: 12 }}>
+              <Text style={[font(900, 12, C.tealDark), caps(12)]}>{t('x0b5n5en')}</Text>
+              <Text style={[font(800, 15), { marginTop: 2 }]}>{correctText(lastWrong)}</Text>
             </View>
-            <View style={{ borderRadius: 16, backgroundColor: C.snow, padding: 12 }}>
-              <Txt w={900} size={11} color={C.muted}>{t('x0h7oyhh')}</Txt>
-              <Txt w={600} size={14}>{lastWrong.explain}</Txt>
+            <View style={{ marginTop: 12, borderRadius: 16, backgroundColor: C.snow, paddingHorizontal: 16, paddingVertical: 12 }}>
+              <Text style={[font(900, 12, C.muted), caps(12)]}>{t('x095ysxh')}</Text>
+              <Text style={[font(600, 15), { marginTop: 2, lineHeight: 20 }]}>{lastWrong.explain}</Text>
             </View>
             <Btn
               testID="empty-done"
               label={t('x122fqbj')}
               tone="teal"
               block
+              style={{ marginTop: 20 }}
               onPress={() => {
                 addCharge(1)
                 setEmpty(null)
@@ -292,7 +348,7 @@ export default function LessonScreen() {
             />
           </>
         ) : null}
-      </Sheet>
+      </Dialog>
     </View>
   )
 }

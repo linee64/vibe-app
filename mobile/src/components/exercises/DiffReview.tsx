@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native'
+import { Flag } from 'lucide-react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import type { DiffExercise } from '@web/data/types'
 import { C, MONO, font } from '../../theme'
@@ -78,7 +79,7 @@ export function DiffView({ ex, answer, setAnswer, status, hint }: ViewProps<Diff
               </View>
               {!idle && h.harmful ? (
                 <Animated.View entering={FadeInUp} style={{ borderTopWidth: 2, borderTopColor: C.line, backgroundColor: C.coralLight, paddingHorizontal: 12, paddingVertical: 8 }}>
-                  <Text style={[font(700, 13, C.coralDark), { lineHeight: 18 }]}>🚩 {h.harmful}</Text>
+                  <View style={{ flexDirection: 'row', gap: 6 }}><Flag size={14} color={C.coralDark} fill={C.coral} strokeWidth={2.2} style={{ marginTop: 2 }} /><Text style={[font(700, 13, C.coralDark), { lineHeight: 18, flex: 1 }]}>{h.harmful}</Text></View>
                 </Animated.View>
               ) : null}
             </View>

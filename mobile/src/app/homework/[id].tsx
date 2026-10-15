@@ -17,7 +17,10 @@ import { useStore } from '../../store/Store'
 import { recordHomeworkSubmission } from '../../store/progress'
 import { CardPreview, DeployPreview, FormPreview, LandingPreview, TodoPreview } from '../../components/homework/previews'
 import { SpecPreview } from '../../components/homework/specPreviews'
-import { MascotHead } from '../../components/Mascot'
+import { Check, Cross, MascotHead } from '../../components/art'
+import { Gate } from '../../components/Gate'
+import { continueAfter } from '../../lib/flow'
+import { Circle, CircleCheck, House as HouseIcon, SendHorizontal, Sparkle, Sparkles } from 'lucide-react-native'
 import { Btn, Chip, ProgressBar, Txt } from '../../components/ui'
 import { Sheet } from '../../components/Sheet'
 import { C, font } from '../../theme'
@@ -49,7 +52,11 @@ export default function HomeworkScreen() {
   if (!def) return <Missing />
   const sim = sims()[def.id]
   if (!sim) return <Missing />
-  return <Runner def={def} sim={sim} />
+  return (
+    <Gate unitId={def.unitId} nodeId={def.id} path={`/homework/${def.id}`}>
+      <Runner key={def.id} def={def} sim={sim} />
+    </Gate>
+  )
 }
 
 function Missing() {
@@ -213,7 +220,7 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
         </View>
         <Txt w={700} size={13} color={C.muted} center>{t('x0kcar36', { name: def.badge.name })}</Txt>
         <View style={{ flex: 1 }} />
-        <Btn label={t('x0odeypg')} block onPress={() => router.replace('/(tabs)/learn')} style={{ alignSelf: 'stretch' }} />
+        <Btn testID="hw-continue" label={t('x0odeypg')} block onPress={() => continueAfter(router, progress, def.id)} style={{ alignSelf: 'stretch' }} />
       </View>
     )
   }
@@ -223,10 +230,10 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
       <View style={{ paddingTop: insets.top + 6, paddingHorizontal: 14, paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: C.line, gap: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Pressable testID="close-hw" accessibilityLabel={t('x1uhk62u')} onPress={() => (sends ? setQuit(true) : router.replace('/(tabs)/learn'))} hitSlop={8}>
-            <Text style={font(900, 24, C.muted)}>✕</Text>
+            <Cross size={26} color={C.faint} />
           </Pressable>
           <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: color.main, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 3, borderBottomColor: color.dark }}>
-            <Text style={{ fontSize: 18 }}>🏠</Text>
+            <HouseIcon size={20} color={C.white} strokeWidth={2.4} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={font(800, 11, C.muted)}>{t('x173ou9z', { num: unit.num })}</Text>
@@ -249,14 +256,14 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
           {msgs.map((m) => <Bubble key={m.id} m={m} onUse={(t) => setDraft(t)} />)}
           {busy ? (
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-              <Text style={{ fontSize: 18 }}>✨</Text>
+              <Sparkles size={18} color={C.brand} strokeWidth={2.4} />
               <Text style={font(800, 13, C.muted)}>{aiMode === 'on' ? t('x1vew32d') : t('x0v55e7f')}</Text>
             </View>
           ) : null}
           <View style={{ gap: 6, marginTop: 4 }}>
             {def.requirements.map((r) => (
               <View key={r.id} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                <Text style={font(900, 14, checks[r.id] ? C.tealDark : C.line)}>{checks[r.id] ? '✓' : '○'}</Text>
+                {checks[r.id] ? <CircleCheck size={17} color={C.tealDark} strokeWidth={2.6} /> : <Circle size={17} color={C.line} strokeWidth={2.6} />}
                 <Text style={[font(700, 13.5, checks[r.id] ? C.tealDark : C.ink), { flex: 1 }]}>{r.label}</Text>
               </View>
             ))}
@@ -280,7 +287,7 @@ function Runner<S, U>({ def, sim }: { def: HomeworkDef; sim: Sim<S, U> }) {
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
           <TextInput testID="hw-input" value={draft} onChangeText={setDraft} placeholder={def.placeholder} placeholderTextColor={C.muted} multiline style={[font(700, 14), { flex: 1, maxHeight: 110, borderRadius: 14, borderWidth: 2, borderColor: C.line, paddingHorizontal: 12, paddingVertical: 8 }]} />
           <Pressable testID="hw-send" accessibilityLabel={t('x12pfvb2')} disabled={!draft.trim() || busy} onPress={send} style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center', opacity: !draft.trim() || busy ? 0.4 : 1, borderBottomWidth: 4, borderBottomColor: C.brandDark }}>
-            <Text style={font(900, 18, C.white)}>➤</Text>
+            <SendHorizontal size={20} color={C.white} strokeWidth={2.6} />
           </Pressable>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -329,13 +336,16 @@ function Bubble({ m, onUse }: { m: Msg; onUse: (t: string) => void }) {
   return (
     <View style={{ flexDirection: 'row', gap: 8 }}>
       <View style={{ width: 34, height: 34, borderRadius: 34, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: C.white }}>✨</Text>
+        <Sparkle size={16} color={C.white} fill={C.white} strokeWidth={2} />
       </View>
       <View style={{ flex: 1, borderRadius: 16, borderTopLeftRadius: 5, borderWidth: 2, borderColor: C.line, paddingHorizontal: 12, paddingVertical: 8, gap: 4 }}>
         <Text style={font(900, 11, C.muted)}>{t('x1crlu99')}</Text>
         <Text style={[font(700, 14), { lineHeight: 19 }]}>{m.text}</Text>
         {m.changes?.map((c, i) => (
-          <Text key={i} style={font(700, 13, C.tealDark)}>✓ {c}</Text>
+          <View key={i} style={{ flexDirection: 'row', gap: 6, alignItems: 'flex-start' }}>
+            <Check size={14} color={C.tealDark} />
+            <Text style={[font(700, 13, C.tealDark), { flex: 1 }]}>{c}</Text>
+          </View>
         ))}
       </View>
     </View>

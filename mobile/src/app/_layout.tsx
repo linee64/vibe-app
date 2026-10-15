@@ -96,14 +96,13 @@ export default function RootLayout() {
               <AnalyticsBridge />
               <StatusBar style="dark" />
               <FeedbackProvider>
-              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.snow }, animation: 'slide_from_right' }}>
+              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.white }, animation: 'slide_from_right' }}>
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="lesson/[id]" options={{ animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="homework/[id]" options={{ animation: 'slide_from_bottom' }} />
-                <Stack.Screen name="placement" options={{ animation: 'slide_from_bottom' }} />
-                <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-                <Stack.Screen name="shop" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+                <Stack.Screen name="intro" options={{ animation: 'fade' }} />
+                <Stack.Screen name="paywall" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
               </Stack>
               </FeedbackProvider>
             </Gate>
