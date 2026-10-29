@@ -12,6 +12,8 @@ import { TIERS, isTierComplete, isTierOpenByProgress, isTierPassedByTest, isTier
 import { t } from '@web/i18n/core'
 import { tx } from '@web/i18n/rich'
 import { useStore } from '../../store/Store'
+import { useProInfo } from '../../lib/billing'
+import { TRIAL_DAYS } from '@web/data/pricing'
 import { useToast } from '../../components/Toast'
 import { AgentArt, AiChatArt, Book, BrowserArt, BugArt, Check, Chest, DatabaseArt, DesignArt, Dumbbell, House, Lock, Mascot, PhoneArt, RocketArt, Star, TierBadge, Trophy } from '../../components/art'
 import { Btn, ProgressBar } from '../../components/ui'
@@ -47,7 +49,6 @@ function KindIcon({ kind, size, color }: { kind: NodeKind | 'homework'; size: nu
 
 function UnitBanner({ unit, label, locked }: { unit: Unit; label: string; locked: boolean }) {
   const c = UNIT_COLORS[unit.color]
-  const toast = useToast()
   return (
     <View style={{ backgroundColor: C.white, paddingTop: 4 }} testID={`unit-${unit.id}`}>
       <View style={{ borderRadius: 20, backgroundColor: locked ? '#A39DBA' : c.dark, paddingBottom: 5 }}>
@@ -64,14 +65,11 @@ function UnitBanner({ unit, label, locked }: { unit: Unit; label: string; locked
             <Text numberOfLines={1} style={[font(900, 21, C.white), { lineHeight: 26 }]}>{unit.title}</Text>
             <Text numberOfLines={2} style={[font(700, 14, 'rgba(255,255,255,0.85)'), { lineHeight: 18, marginTop: 2 }]}>{unit.description}</Text>
           </View>
-          <Pressable
-            disabled={locked}
-            accessibilityLabel={locked ? t('x09hg17m') : t('x14u0jyk', { title: unit.title })}
-            onPress={() => toast(t('x0xn1iho', { title: unit.title }))}
-            style={{ borderRadius: 16, borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)', paddingHorizontal: 12, paddingVertical: 10 }}
-          >
-            {locked ? <Lock size={20} color={C.white} /> : <Book size={20} color={C.white} />}
-          </Pressable>
+          {locked ? (
+            <View accessibilityLabel={t('x09hg17m')} style={{ borderRadius: 16, borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)', paddingHorizontal: 12, paddingVertical: 10 }}>
+              <Lock size={20} color={C.white} />
+            </View>
+          ) : null}
         </View>
       </View>
     </View>
@@ -264,6 +262,32 @@ function TierBanner({ tier }: { tier: Tier }) {
   )
 }
 
+/** Заметный вход в подписку на главном экране: «Vaibik Pro · Upgrade» → пейвол с обоими тарифами. Скрыт у Pro-пользователей */
+function ProEntry() {
+  const router = useRouter()
+  const pro = useProInfo()
+  if (pro.pro) return null
+  return (
+    <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, backgroundColor: C.white }}>
+      <Pressable
+        testID="learn-pro-entry"
+        accessibilityRole="button"
+        accessibilityLabel={`${t('learn.proTitle')}. ${t('learn.proBtn')}`}
+        onPress={() => router.push({ pathname: '/paywall', params: { source: 'learn' } })}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, backgroundColor: C.brand, borderBottomWidth: 4, borderBottomColor: C.brandDark, paddingHorizontal: 16, paddingVertical: 12 }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={font(900, 17, C.white)}>{t('learn.proTitle')}</Text>
+          <Text style={[font(700, 13, 'rgba(255,255,255,0.85)'), { marginTop: 1 }]}>{t('learn.proSub', { days: TRIAL_DAYS })}</Text>
+        </View>
+        <View style={{ borderRadius: 12, backgroundColor: C.white, paddingHorizontal: 14, paddingVertical: 8 }}>
+          <Text style={[font(900, 13, C.brand), caps(13)]}>{t('learn.proBtn')}</Text>
+        </View>
+      </Pressable>
+    </View>
+  )
+}
+
 export default function LearnScreen() {
   const { progress } = useStore()
   const router = useRouter()
@@ -359,16 +383,19 @@ export default function LearnScreen() {
   children.push(<ExploreMore key="explore" />)
 
   return (
-    <ScrollView ref={scroll} testID="path" style={{ flex: 1, backgroundColor: C.white }} stickyHeaderIndices={sticky} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 40 }} onScrollBeginDrag={() => openId && setOpenId(null)}>
-      {children.map((ch) => {
-        const key = (ch as { key: string }).key
-        return (
-          <View key={key} onLayout={(e) => blockY.current.set(key, e.nativeEvent.layout.y)}>
-            {ch}
-          </View>
-        )
-      })}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: C.white }}>
+      <ProEntry />
+      <ScrollView ref={scroll} testID="path" style={{ flex: 1, backgroundColor: C.white }} stickyHeaderIndices={sticky} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 }} onScrollBeginDrag={() => openId && setOpenId(null)}>
+        {children.map((ch) => {
+          const key = (ch as { key: string }).key
+          return (
+            <View key={key} onLayout={(e) => blockY.current.set(key, e.nativeEvent.layout.y)}>
+              {ch}
+            </View>
+          )
+        })}
+      </ScrollView>
+    </View>
   )
 }
 

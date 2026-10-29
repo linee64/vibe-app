@@ -31,6 +31,8 @@ export interface PlanOffer {
   per: string
   trialDays: number | null
   badge?: string
+  /** Название продукта из стора (как в App Store Connect: «Vaibik Pro — yearly») */
+  storeTitle?: string
   /** Годовой тариф: цена в месяц в валюте стора («≈ 2 490 ₸»); нет — не показываем */
   perMonth?: string
   /** Числовая цена и валюта из стора (для расчёта «в месяц» и скидки) */
@@ -41,7 +43,8 @@ export interface PlanOffer {
 }
 
 export interface BillingState {
-  mode: 'live' | 'demo'
+  /** live — цены из стора; error — ключ есть, но цены не загрузились (показываем «Повторить», не демо); demo — только сборки без ключа RevenueCat */
+  mode: 'live' | 'demo' | 'error'
   /** Почему не live (для экрана настроек/пейвола) */
   reason?: string
   pro: boolean
@@ -65,7 +68,7 @@ interface RCModule {
   default: {
     configure: (c: { apiKey: string }) => void
     isConfigured: () => Promise<boolean>
-    getOfferings: () => Promise<{ current?: { availablePackages: RCPackage[] } | null }>
+    getOfferings: () => Promise<{ current?: { availablePackages: RCPackage[] } | null; all?: Record<string, { availablePackages: RCPackage[] }> }>
     purchasePackage: (p: RCPackage) => Promise<{ customerInfo: RCInfo }>
     restorePurchases: () => Promise<RCInfo>
     getCustomerInfo: () => Promise<RCInfo>
@@ -82,6 +85,7 @@ interface RCPackage {
   packageType: string
   product: {
     identifier: string
+    title?: string
     priceString: string
     price?: number
     currencyCode?: string
@@ -104,6 +108,10 @@ interface RCInfo {
 }
 
 let rc: RCModule | null | undefined
+/** Только для тестов: подставить SDK (в jest нет динамического import) */
+export function __setSdkForTests(mod: unknown) {
+  rc = mod as RCModule | null | undefined
+}
 
 async function loadSdk(): Promise<RCModule | null> {
   if (rc !== undefined) return rc
@@ -120,9 +128,10 @@ async function loadSdk(): Promise<RCModule | null> {
     mod.default.addCustomerInfoUpdateListener?.((info) => void isPro(info))
     rc = mod
   } catch {
-    rc = null
+    // не кэшируем сбой: «Повторить» на пейволе должен попробовать снова
+    rc = undefined
   }
-  return rc
+  return rc ?? null
 }
 
 const PLAN_META: Record<Plan, { title: string; per: string }> = {
@@ -294,22 +303,25 @@ export function createBilling(): Billing {
     async state() {
       const sdk = await loadSdk()
       if (!sdk) {
+        // демо-цены — только когда ключа RevenueCat нет вовсе (веб/разработка). В сборке с ключом сбой SDK — это ошибка, а не «демо»
+        if (platformKey()) return { mode: 'error', reason: t('paywall.loadError'), pro: current.pro, offers: [] }
         return {
           mode: 'demo',
-          reason: Platform.OS === 'web' ? t('x06e94q2') : platformKey() ? t('x1msfcvt') : t('x1al1pw1'),
+          reason: Platform.OS === 'web' ? t('x06e94q2') : t('x1al1pw1'),
           pro: current.pro,
           offers: demoOffers(),
         }
       }
       try {
         const offerings = await sdk.default.getOfferings()
+        const offering = offerings.current ?? offerings.all?.default ?? Object.values(offerings.all ?? {})[0]
         const offers: PlanOffer[] = []
-        for (const p of offerings.current?.availablePackages ?? []) {
+        for (const p of offering?.availablePackages ?? []) {
           const plan = planOf(p)
           if (!plan || offers.some((o) => o.plan === plan)) continue
           const amount = typeof p.product.price === 'number' ? p.product.price : undefined
           const currency = p.product.currencyCode || undefined
-          offers.push({ plan, ...PLAN_META[plan], price: p.product.priceString, per: PLAN_META[plan].per, trialDays: trialOf(p), amount, currency, pkg: p })
+          offers.push({ plan, ...PLAN_META[plan], price: p.product.priceString, per: PLAN_META[plan].per, trialDays: trialOf(p), amount, currency, pkg: p, storeTitle: p.product.title || undefined })
         }
         // «в месяц» для годового и скидка — только из цен стора в местной валюте (никаких «$5» рядом с ₸/€)
         const annual = offers.find((o) => o.plan === 'annual')
@@ -325,9 +337,11 @@ export function createBilling(): Billing {
         offers.sort((a, b) => Number(b.plan === 'annual') - Number(a.plan === 'annual'))
         const info = await sdk.default.getCustomerInfo()
         isPro(info)
-        return { mode: 'live', pro: current.pro, offers: offers.length ? offers : demoOffers(), managementURL: info.managementURL ?? null }
+        // нет ни одного известного тарифа — это ошибка загрузки (не показываем выдуманные демо-цены)
+        if (!offers.length) return { mode: 'error', reason: t('paywall.loadError'), pro: current.pro, offers: [], managementURL: info.managementURL ?? null }
+        return { mode: 'live', pro: current.pro, offers, managementURL: info.managementURL ?? null }
       } catch {
-        return { mode: 'demo', reason: t('x0qp34vx'), pro: current.pro, offers: demoOffers() }
+        return { mode: 'error', reason: t('paywall.loadError'), pro: current.pro, offers: [] }
       }
     },
     async purchase(offer) {

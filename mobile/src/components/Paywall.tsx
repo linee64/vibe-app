@@ -5,7 +5,7 @@
  * Если Pro уже активен — показываем «Pro уже активен» и «Управлять подпиской» вместо пробного периода.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { PRO_FEATURES } from '@web/data/pricing'
 import { t } from '@web/i18n/core'
@@ -27,16 +27,24 @@ import { C, alpha, caps, font } from '../theme'
 
 const billing = createBilling()
 
-/** Подпись тарифа в переключателе: «2 490 ₸ / мес»; годовой без «в месяц» — цена за год */
-export function planLabel(o: PlanOffer) {
-  if (o.plan === 'monthly') return t('x1iktayt', { monthly: o.price })
-  return o.perMonth ? t('x09cu3l6', { annualPerMonth: o.perMonth }) : `${o.price} ${o.per}`
+/** Название тарифа как в App Store Connect: «Vaibik Pro — yearly» (из стора, иначе из каталога) */
+export function planName(o: PlanOffer) {
+  return o.storeTitle || t(o.plan === 'annual' ? 'paywall.planYearly' : 'paywall.planMonthly')
 }
 
-/** «Сегодня $0. Через 3 дня — …»: ноль — в валюте стора */
-function afterTrial(o: PlanOffer, days: number) {
-  const line = t(o.plan === 'annual' ? 'pricing.afterTrialYear' : 'pricing.afterTrialMonth', { days, price: o.price })
-  return o.currency ? line.replace('$0', formatMoney(0, o.currency) ?? '0') : line
+/** Полная цена за период, крупно: «$59.99 / year», «$9.99 / month» (Guideline 3.1.2: сумма за период — главная) */
+export function planPrice(o: PlanOffer) {
+  return t(o.plan === 'annual' ? 'paywall.priceYear' : 'paywall.priceMonth', { price: o.price })
+}
+
+/** Подпись тарифа (для тестов и доступности): название + цена за период */
+export function planLabel(o: PlanOffer) {
+  return `${planName(o)} · ${planPrice(o)}`
+}
+
+/** Условия пробного периода: «3-day free trial, then $59.99 per year» */
+function trialTerms(o: PlanOffer, days: number) {
+  return t(o.plan === 'annual' ? 'paywall.trialThenYear' : 'paywall.trialThenMonth', { days, price: o.price })
 }
 
 export function PaywallView({ title, unit, source, onClose, onPurchased }: { title?: string; unit?: string; source: string; onClose: () => void; onPurchased: () => void }) {
@@ -52,18 +60,34 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
     track('paywall_viewed', { source, unit: params.unit })
   }, [source, params.unit])
 
+  /** Номер попытки: растёт при «Повторить» и автоповторах — перезапускает загрузку цен */
+  const [attempt, setAttempt] = useState(0)
+  const [loading, setLoading] = useState(true)
+
   useEffect(() => {
     let alive = true
-    void billing.identify(session?.real ? (session.id ?? null) : null)
-    void billing.state().then((s) => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    setLoading(true)
+    void (async () => {
+      await billing.identify(session?.real ? (session.id ?? null) : null)
+      const s = await billing.state()
       if (!alive) return
       setState(s)
+      setLoading(false)
       if (!s.offers.some((o) => o.plan === 'annual') && s.offers[0]) setPlan(s.offers[0].plan)
-    })
+      // цены не загрузились (сеть, StoreKit ещё не отдал продукты) — молча пробуем ещё до 3 раз, дальше — кнопка «Повторить»
+      if (s.mode === 'error' && attempt < 3) timer = setTimeout(() => alive && setAttempt((n) => n + 1), [2000, 4000, 8000][attempt])
+    })()
     return () => {
       alive = false
+      if (timer) clearTimeout(timer)
     }
-  }, [session])
+  }, [session, attempt])
+  const failed = state?.mode === 'error'
+  const retry = () => {
+    setState(null)
+    setAttempt((n) => n + 1)
+  }
 
   const offers = useMemo(() => {
     const list = state?.offers ?? []
@@ -109,7 +133,7 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
   }
 
   const trialDays = offer?.trialDays ?? null
-  const cta = busy ? t('x15d421k') : demo ? t('x0n3k6d9') : trialDays ? t('x1bsn2w4', { TRIAL_DAYS: trialDays }) : offer ? `${offer.title} · ${offer.price}` : t('x15d421k')
+  const cta = busy ? t('x15d421k') : demo ? t('x0n3k6d9') : trialDays ? t('x1bsn2w4', { TRIAL_DAYS: trialDays }) : offer ? `${planName(offer)} · ${planPrice(offer)}` : t('x15d421k')
 
   return (
     <View testID="paywall" style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: alpha(C.ink, 0.4) }}>
@@ -126,7 +150,7 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
             </Float>
             <View style={{ flex: 1 }}>
               <Text style={[font(900, 13, C.coral), caps(13)]}>{t('x0x0c6hg')}</Text>
-              <Text style={[font(900, 24), { lineHeight: 29 }]}>{pro ? t('x16nd0og') : params.title ? t('x044jpau', { title: params.title }) : t('x1hbxwho')}</Text>
+              <Text style={[font(900, 24), { lineHeight: 29 }]}>{pro ? t('x16nd0og') : params.title ? t('x044jpau', { title: params.title }) : t('x1xtdtme')}</Text>
             </View>
           </View>
 
@@ -153,8 +177,19 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
                 ))}
               </View>
 
-              {offers.length > 1 ? (
-                <View accessibilityRole="radiogroup" accessibilityLabel={t('x0uh9q75')} style={{ marginTop: 20, flexDirection: 'row', gap: 8, borderRadius: 16, backgroundColor: C.snow, padding: 6 }}>
+              {loading && !state ? (
+                <View testID="paywall-loading" style={{ marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 20 }}>
+                  <ActivityIndicator color={C.brand} />
+                  <Text style={font(700, 15, C.muted)}>{t('paywall.loading')}</Text>
+                </View>
+              ) : failed ? (
+                <View testID="paywall-error" accessibilityRole="alert" style={{ marginTop: 20, borderRadius: 16, backgroundColor: C.coralLight, padding: 16 }}>
+                  <Text style={font(900, 16, C.coralDark)}>{t('paywall.loadError')}</Text>
+                  <Text style={[font(600, 14, C.ink), { marginTop: 4, lineHeight: 19 }]}>{t('paywall.loadErrorHint')}</Text>
+                  <Btn testID="paywall-retry" tone="coral" block label={t('paywall.retry')} onPress={retry} style={{ marginTop: 12 }} />
+                </View>
+              ) : (
+                <View accessibilityRole="radiogroup" accessibilityLabel={t('x0uh9q75')} style={{ marginTop: 20, gap: 10 }}>
                   {offers.map((o) => {
                     const on = offer?.plan === o.plan
                     return (
@@ -162,24 +197,43 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
                         key={o.plan}
                         testID={`plan-${o.plan}`}
                         accessibilityRole="radio"
+                        accessibilityLabel={`${planName(o)}, ${planPrice(o)}`}
                         accessibilityState={{ checked: on }}
                         onPress={() => setPlan(o.plan)}
-                        style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 10, backgroundColor: on ? C.white : 'transparent', borderBottomWidth: on ? 3 : 0, borderBottomColor: C.line, marginBottom: on ? 0 : 3 }}
+                        style={{ borderRadius: 16, borderWidth: 2, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brandLight : C.white, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}
                       >
-                        <Text style={font(800, 15, on ? C.brand : C.muted)}>{planLabel(o)}</Text>
-                        {o.badge ? (
-                          <View style={{ borderRadius: 99, backgroundColor: C.gold, paddingHorizontal: 6, paddingVertical: 1 }}>
-                            <Text style={font(900, 11, C.goldInk)}>{o.badge}</Text>
+                        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.brand : C.line, backgroundColor: on ? C.brand : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                          {on ? <Check size={12} color={C.white} /> : null}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+                            <Text style={font(900, 16, on ? C.brand : C.ink)}>{planName(o)}</Text>
+                            {o.badge ? (
+                              <View style={{ borderRadius: 99, backgroundColor: C.gold, paddingHorizontal: 6, paddingVertical: 1 }}>
+                                <Text style={font(900, 11, C.goldInk)}>{t('paywall.save', { pct: o.badge.replace(/\D/g, '') })}</Text>
+                              </View>
+                            ) : null}
                           </View>
-                        ) : null}
+                          <Text style={[font(900, 20, C.ink), { marginTop: 2 }]}>{planPrice(o)}</Text>
+                          {o.trialDays ? <Text style={[font(700, 13, C.tealDark), { marginTop: 2 }]}>{trialTerms(o, o.trialDays)}</Text> : null}
+                          {o.plan === 'annual' && o.perMonth ? <Text style={[font(600, 12, C.muted), { marginTop: 2 }]}>{t('x09cu3l6', { annualPerMonth: o.perMonth })}</Text> : null}
+                        </View>
                       </Pressable>
                     )
                   })}
                 </View>
-              ) : null}
+              )}
 
-              <Btn testID="buy" tone="coral" block big label={cta} disabled={busy || !offer} onPress={() => void buy()} style={{ marginTop: 16 }} />
-              {offer && trialDays ? <Text testID="paywall-after-trial" style={[font(600, 13, C.muted), { marginTop: 8, textAlign: 'center' }]}>{afterTrial(offer, trialDays)}</Text> : offer ? <Text style={[font(600, 13, C.muted), { marginTop: 8, textAlign: 'center' }]}>{`${offer.price} ${offer.per}`}</Text> : null}
+              {failed ? null : (
+                <>
+                  <Btn testID="buy" tone="coral" block big label={cta} disabled={busy || !offer} onPress={() => void buy()} style={{ marginTop: 16 }} />
+                  {offer ? (
+                    <Text testID="paywall-terms-line" style={[font(700, 13, C.ink), { marginTop: 8, textAlign: 'center' }]}>
+                      {trialDays ? trialTerms(offer, trialDays) : `${planName(offer)} · ${planPrice(offer)}`}
+                    </Text>
+                  ) : null}
+                </>
+              )}
               <Btn testID="paywall-close" tone="ghost" block label={t('x0vau8r7')} onPress={close} style={{ marginTop: 12 }} />
             </View>
           )}
@@ -198,12 +252,12 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
                 <Text style={[font(800, 13, C.brand), caps(13)]}>{t('x08lcpuz')}</Text>
               </Pressable>
             ) : null}
-            <Text style={[font(600, 11, C.muted), { textAlign: 'center', lineHeight: 15 }]}>{t('x0reciq9')}</Text>
+            <Text testID="paywall-disclosure" style={[font(600, 11, C.muted), { textAlign: 'center', lineHeight: 15 }]}>{t('paywall.disclosure')}</Text>
             <View style={{ flexDirection: 'row', gap: 16 }}>
-              <Pressable accessibilityRole="link" onPress={() => openLegal('terms')} hitSlop={6}>
+              <Pressable accessibilityRole="link" testID="paywall-terms" onPress={() => openLegal('terms')} hitSlop={6}>
                 <Text style={[font(700, 12, C.muted), { textDecorationLine: 'underline' }]}>{t('legal.terms')}</Text>
               </Pressable>
-              <Pressable accessibilityRole="link" onPress={() => openLegal('privacy')} hitSlop={6}>
+              <Pressable accessibilityRole="link" testID="paywall-privacy" onPress={() => openLegal('privacy')} hitSlop={6}>
                 <Text style={[font(700, 12, C.muted), { textDecorationLine: 'underline' }]}>{t('x1y9umvl')}</Text>
               </Pressable>
             </View>

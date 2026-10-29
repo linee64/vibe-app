@@ -11,6 +11,7 @@ export type AnalyticsEvent =
   | 'signup_completed'
   | 'login_completed'
   | 'logout'
+  | 'account_deleted'
   | 'placement_started'
   | 'placement_completed'
   | 'lesson_started'
