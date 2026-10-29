@@ -7,6 +7,7 @@ import { getSupabase } from './supabase'
 import { mergeCharge, withChargeFields } from '../data/charge'
 import { mergeQuests, sanitizeQuests } from '../data/quests'
 import { mergeSkins, sanitizeSkins } from '../data/skins'
+import { mergeStreak } from '../data/streak'
 
 const union = (a: string[] = [], b: string[] = []) => [...new Set([...a, ...b])]
 const num = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : d)
@@ -25,6 +26,7 @@ export function sanitizeRemote(raw: unknown): Partial<Progress> | null {
     ...(num(r.chargeAt) ? { chargeAt: num(r.chargeAt) } : {}),
     ...(num(r.depletedAt) ? { depletedAt: num(r.depletedAt) } : {}),
     streak: num(r.streak),
+    ...(day(r.streakDay) ? { streakDay: day(r.streakDay) } : {}),
     todayXp: num(r.todayXp),
     perfectToday: num(r.perfectToday),
     lessonsToday: num(r.lessonsToday),
@@ -70,7 +72,7 @@ export function mergeProgress(local: Progress, remote: Partial<Progress> | null)
     tiersCelebrated: union(local.tiersCelebrated, remote.tiersCelebrated),
     xp: Math.max(local.xp, remote.xp ?? 0),
     gems: Math.max(local.gems, remote.gems ?? 0),
-    streak: Math.max(local.streak, remote.streak ?? 0),
+    ...mergeStreak(local, remote),
     placementSeen: local.placementSeen || !!remote.placementSeen,
     portfolioUrl: local.portfolioUrl || remote.portfolioUrl || '',
     ...(local.locale || remote.locale ? { locale: local.locale || remote.locale } : {}),

@@ -168,16 +168,63 @@ export function Login({ initialError }: { initialError?: string | null } = {}) {
       setShake((s) => s + 1)
       return
     }
-    if (res.message) setNotice({ tone: 'info', text: res.message })
     if (mode === 'signup' && res.needsConfirm) {
-      setPassword('')
+      // пароль остаётся в памяти формы, чтобы «Я подтвердил(а)» входило одним нажатием
+      setNotice(null)
       setPendingEmail(mail)
+      return
     }
+    if (res.message) setNotice({ tone: 'info', text: res.message })
     // успешный вход: сессия придёт из Supabase, App сам переведёт на /learn
+  }
+
+  /** «Я подтвердил(а) почту»: входим теми же данными; не подтверждено — подсказываем, что сделать */
+  const confirmedContinue = async () => {
+    if (busy || !pendingEmail) return
+    setBusy(true)
+    setNotice(null)
+    const res = await auth.signIn(pendingEmail, password)
+    setBusy(false)
+    if (res.ok) {
+      track('login_completed', { method: 'password_after_confirm' })
+      return // сессия придёт из Supabase, App сам откроет первый урок
+    }
+    setNotice({ tone: 'error', text: res.unconfirmed ? t('auth.check.notYet') : res.error })
+    setShake((s) => s + 1)
   }
 
   const [title, subtitle] = TITLES()[mode]
   const submitLabel = busy ? t('x15d421k') : mode === 'signin' ? t('x1h4dl4y') : mode === 'signup' ? t('x1tq5jtz') : t('x1kq4vgj')
+
+  // Регистрация прошла, ждём подтверждения: отдельный понятный экран вместо формы регистрации
+  if (mode === 'signup' && pendingEmail && !DEMO_MODE)
+    return (
+      <AuthLayout>
+        <div className="w-full max-w-[400px] text-center" aria-busy={busy} data-check-email>
+          <Mascot mood="happy" size={110} className="mx-auto" />
+          <h1 className="mt-3 text-[28px] font-black leading-tight">{t('auth.check.title')}</h1>
+          <p className="mb-5 mt-2 text-[16px] font-semibold leading-snug text-muted">{tx('auth.check.body', { email: pendingEmail }, [(chunk) => <b className="break-all text-ink">{chunk}</b>])}</p>
+          {notice && <Notice tone={notice.tone}>{notice.text}</Notice>}
+          <button type="button" disabled={busy} onClick={confirmedContinue} className="btn btn-block !min-h-[54px] !text-[16px]" data-confirmed-continue>
+            {busy ? t('x15d421k') : t('auth.check.continue')}
+          </button>
+          <div className="mt-5 text-left">
+            <ResendConfirm key={pendingEmail} email={pendingEmail} />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setPendingEmail(null)
+              setNotice(null)
+              setPassword('')
+            }}
+            className="text-[15px] font-extrabold text-muted hover:text-ink"
+          >
+            {t('auth.check.change')}
+          </button>
+        </div>
+      </AuthLayout>
+    )
 
   return (
     <AuthLayout>

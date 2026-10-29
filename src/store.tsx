@@ -6,6 +6,7 @@ import { loadRemoteProgress, mergeProgress, saveRemoteProgress } from './lib/pro
 import { addChargeState, fullChargeAt, nextChargeAt, settleCharge, spendCharge, withChargeFields, type ChargeState } from './data/charge'
 import { buySkin as buySkinPure, equipSkin as equipSkinPure, findSkin, sanitizeSkins, unequipSlot, type BuyResult, type SkinSlot, type SkinState } from './data/skins'
 import { applyQuestEvent, claimQuest as claimQuestPure, markNotified, newlyCompleted, rollQuests, type QuestEvent, type QuestState } from './data/quests'
+import { bumpStreak, expireStreak } from './data/streak'
 import { track } from './lib/analytics'
 import { t, isLocale, LOCALE_STORAGE_KEY } from './i18n/core'
 import { changeLocale, onUserLocaleChange } from './i18n/runtime'
@@ -34,6 +35,8 @@ export interface Progress {
   depletedAt?: number
   /** деплой-серия: дней подряд */
   streak: number
+  /** последний (локальный) день, за который серия засчитана — src/data/streak.ts */
+  streakDay?: string
   todayXp: number
   perfectToday: number
   lessonsToday: number
@@ -118,7 +121,7 @@ function read<T>(key: string): T | null {
 }
 
 const rollDay = (p: Progress): Progress =>
-  p.lastDay !== today() ? { ...p, todayXp: 0, perfectToday: 0, lessonsToday: 0, lastDay: today() } : p
+  expireStreak(p.lastDay !== today() ? { ...p, todayXp: 0, perfectToday: 0, lessonsToday: 0, lastDay: today() } : p)
 
 function loadProgress(): Progress {
   const saved = read<Progress>(PROGRESS_KEY)
@@ -145,6 +148,8 @@ interface Store {
   session: Session | null
   /** Настоящие аккаунты: сессия уже восстановлена (в демо всегда true) */
   authReady: boolean
+  /** Прогресс уже подтянут из облака (без аккаунта/в демо — всегда true) */
+  progressReady: boolean
   progress: Progress
   /** Демо-вход по email (в режиме Supabase не используется — там вход через src/lib/auth.ts) */
   login: (email: string) => void
@@ -410,6 +415,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setProgress((p) => ({
       ...p,
       completed: p.completed.includes(id) ? p.completed : [...p.completed, id],
+      ...bumpStreak(p),
       xp: p.xp + xp,
       gems: p.gems + (perfect ? 10 : 5),
       todayXp: p.todayXp + xp,
@@ -440,6 +446,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return {
         ...p,
         homework: again ? p.homework : [...p.homework, id],
+        ...bumpStreak(p),
         xp: p.xp + gain,
         gems: p.gems + (again ? 5 : 20),
         todayXp: p.todayXp + gain,
@@ -517,10 +524,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // явный выбор языка → в прогресс (уедет в облако вместе с ним)
   useEffect(() => onUserLocaleChange((l) => setProgress((p) => (p.locale === l ? p : { ...p, locale: l }))), [])
 
+  const progressReady = !userId || syncedFor === userId
   const value = useMemo(
     () => ({
       session,
       authReady,
+      progressReady,
       progress,
       login,
       logout,
@@ -545,7 +554,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       equipSkin,
       unequipSkin,
     }),
-    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin],
+    [session, authReady, progressReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

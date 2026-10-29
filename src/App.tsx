@@ -17,6 +17,7 @@ import { Landing } from './screens/Landing'
 import { TierUpScreen } from './screens/TierUp'
 import { LockedScreen } from './components/Locked'
 import { findLesson } from './data/course'
+import { FIRST_LESSON_ID, isNewLearner } from './flow'
 import { findHomework } from './data/homework'
 import { isUnitLocked, needsPro, tierOfUnit } from './data/tiers'
 import { isNodeReachable } from './data/path'
@@ -47,8 +48,9 @@ export default function App() {
 }
 
 function AppInner() {
-  const { session, authReady } = useStore()
+  const { session, authReady, progress, progressReady } = useStore()
   const route = useRoute()
+  const newLearner = isNewLearner(progress)
   // ссылки из писем Supabase (?reset=1, ошибки) — разбираем один раз при старте
   const [redirect] = useState(() => (SUPABASE_ENABLED ? consumeAuthRedirect() : { reset: false, error: null }))
   const [, rerender] = useState(0)
@@ -61,8 +63,16 @@ function AppInner() {
   useEffect(() => {
     if (!authReady) return
     if (!session && route !== '/login' && !isPublic) navigate('/login')
-    if (session && (route === '/login' || route === '/')) navigate('/learn')
-  }, [session, authReady, route, isPublic])
+    if (session && (route === '/login' || route === '/')) {
+      // после входа: новичок сразу попадает в первый урок (без тура и пути), остальные — на путь.
+      // Ждём, пока подтянется прогресс из облака, чтобы не отправить «старичка» в урок 1; если облако молчит >4 с — просто на путь.
+      if (!progressReady) {
+        const id = window.setTimeout(() => navigate('/learn'), 4000)
+        return () => window.clearTimeout(id)
+      }
+      navigate(newLearner ? `/lesson/${FIRST_LESSON_ID}` : '/learn')
+    }
+  }, [session, authReady, route, isPublic, progressReady, newLearner])
 
   // настоящие аккаунты: ждём, пока Supabase восстановит сессию (доли секунды), чтобы не мигал экран входа
   if (!authReady && !isPublic) return <Blank />
@@ -143,13 +153,10 @@ function useCheckoutReturn() {
   }, [refresh, toast])
 }
 
-/** Новичок открывает самый первый урок — сначала короткий тур «Как это работает» (один раз) */
-const needsIntro = (p: { completed: string[]; homework: string[]; introSeen?: boolean }) => !p.introSeen && p.completed.length === 0 && p.homework.length === 0
-
 function AppRoutes({ route }: { route: string }) {
   useCheckoutReturn()
   useDailyReminder()
-  const { progress, setIntroSeen } = useStore()
+  const { setIntroSeen } = useStore()
 
   if (route === '/intro')
     return (
@@ -165,7 +172,6 @@ function AppRoutes({ route }: { route: string }) {
   if (route === '/debug/crash' && debugRoutes()) return <CrashTest />
   if (route.startsWith('/lesson/')) {
     const id = route.slice('/lesson/'.length)
-    if (needsIntro(progress)) return <IntroScreen entry="first_lesson" onDone={setIntroSeen} />
     // уроки закрытого тира по прямой ссылке не открываются
     const unit = findLesson(id)?.unit
     if (!unit) return <LessonScreen key={id} id={id} />

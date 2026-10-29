@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Mascot } from '../components/Mascot'
-import { Clock, Spark, Target, Token } from '../components/Icons'
-import { useToast } from '../components/Toast'
+import { Clock, Rocket, Spark, Target, Token } from '../components/Icons'
+import type { NextStep } from '../flow'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
 
@@ -55,8 +55,40 @@ function StatCard({ label, value, icon, color, edge }: { label: string; value: s
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
-export function LessonComplete({ result, lessonTitle, unitLabel, onContinue }: { result: LessonResult; lessonTitle: string; unitLabel?: string; onContinue: () => void }) {
-  const toast = useToast()
+/** Серия после урока: «серия началась» в первый день, дальше — сколько дней подряд */
+function StreakCard({ streak }: { streak: number }) {
+  if (streak < 1) return null
+  const first = streak === 1
+  return (
+    <div className="anim-pop mt-4 flex w-full max-w-[540px] items-center gap-3 rounded-[18px] border-2 border-brand-mid bg-brand-light/60 px-4 py-3 text-left" data-streak={streak}>
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-brand-mid bg-white">
+        <Rocket size={28} />
+      </span>
+      <div className="min-w-0">
+        <div className="text-[17px] font-black leading-tight text-brand-dark">{first ? t('lc.streak.startTitle') : t('lc.streak.title', { n: streak })}</div>
+        <div className="text-[14px] font-semibold leading-snug text-muted">{first ? t('lc.streak.startBody') : t('lc.streak.keepBody')}</div>
+      </div>
+    </div>
+  )
+}
+
+export function LessonComplete({
+  result,
+  lessonTitle,
+  unitLabel,
+  streak = 0,
+  next = null,
+  onNext,
+  onContinue,
+}: {
+  result: LessonResult
+  lessonTitle: string
+  unitLabel?: string
+  streak?: number
+  next?: NextStep | null
+  onNext?: (to: string) => void
+  onContinue: () => void
+}) {
   const perfect = result.accuracy === 100
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -75,11 +107,24 @@ export function LessonComplete({ result, lessonTitle, unitLabel, onContinue }: {
           <StatCard label={t('x0ngco8m')} value={`${result.accuracy}%`} icon={<Target size={24} />} color="#13C2AE" edge="#0E9C8C" />
           <StatCard label={t('x14ec53v')} value={fmt(result.seconds)} icon={<Clock size={24} />} color="#7C4DFF" edge="#5B2FD6" />
         </div>
+        <StreakCard streak={streak} />
       </main>
       <footer className="border-t-2 border-line">
         <div className="mx-auto flex max-w-[1040px] flex-col-reverse gap-3 px-4 py-5 md:flex-row md:items-center md:justify-between md:px-8 md:py-8">
-          <button className="btn btn-ghost w-full md:w-[180px]" onClick={() => toast(t('x19064zg'))}>{t('x0nv9ya6')}</button>
-          <button className="btn w-full md:w-[180px]" onClick={onContinue} autoFocus>{t('x1kpmy5f')}</button>
+          {next && onNext ? (
+            <>
+              <button className="btn btn-ghost w-full md:w-[200px]" onClick={onContinue}>{t('lc.toPath')}</button>
+              <div className="flex w-full flex-col items-stretch gap-1 md:w-auto md:items-end">
+                <div className="truncate text-center text-[13px] font-extrabold text-muted md:text-right" data-next-title>{t('lc.upNext', { title: next.title })}</div>
+                <button className="btn w-full md:w-[260px]" onClick={() => onNext(next.to)} autoFocus data-next-lesson>{t('lc.next')}</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="hidden md:block" />
+              <button className="btn w-full md:w-[220px]" onClick={onContinue} autoFocus>{t('x1kpmy5f')}</button>
+            </>
+          )}
         </div>
       </footer>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { UNIT_COLORS, type NodeKind, type Unit } from '../data/course'
 import { HOMEWORK_XP } from '../data/homework'
 import { currentNodeId, isNodeDone, isNodeReachable, unitNodes, type PathItem } from '../data/path'
@@ -16,6 +16,7 @@ import {
 import { LAST_LESSON_KEY, useStore } from '../store'
 import { useToast } from '../components/Toast'
 import { navigate } from '../router'
+import { FIRST_LESSON_ID, isNewLearner } from '../flow'
 import { Book, Check, Chest, Dumbbell, House, Lock, Star, Trophy } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
 import { EXPLORE_ANCHOR, ExploreMore } from '../components/ExploreMore'
@@ -141,6 +142,13 @@ function PathNode({
   const edge = locked ? LOCK.edge : soft ? c.mid : golden ? '#E5A100' : c.dark
   const iconColor = locked ? LOCK.icon : soft ? c.mid : '#fff'
   const lessonCount = unit.lessons.length
+  const nodeRef = useRef<HTMLDivElement>(null)
+  // узел открыли у края экрана (под липким баннером раздела или нижней панелью) — ставим его в центр, чтобы карточка была видна целиком
+  useEffect(() => {
+    if (!open) return
+    const id = window.setTimeout(() => nodeRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 40)
+    return () => window.clearTimeout(id)
+  }, [open])
 
   let pop: ReactNode = null
   if (open && hw && !locked) {
@@ -183,11 +191,12 @@ function PathNode({
   const title = hw ? t('x0a5c8tb', { short: hw.short }) : item.type === 'lesson' ? item.lesson.title : ''
   return (
     <div
+      ref={nodeRef}
       data-lesson={item.id}
       data-node={hw ? 'homework' : 'lesson'}
       data-locked={locked ? '1' : undefined}
       data-state={state}
-      className={`relative ${open ? 'z-[16]' : ''} ${first ? '' : state === 'current' ? 'mt-14' : hw ? 'mt-8' : 'mt-6'}`}
+      className={`relative ${open ? 'z-[25]' : ''} ${first ? '' : state === 'current' ? 'mt-14' : hw ? 'mt-8' : 'mt-6'}`}
       style={{ transform: `translateX(${offset}px)` }}
     >
       {state === 'current' && (
@@ -325,6 +334,21 @@ function TierBanner({ tier }: { tier: Tier }) {
   )
 }
 
+/** Новичок: один большой понятный шаг вместо длинного пути */
+function FirstLessonCta() {
+  return (
+    <div className="mb-5 flex flex-col items-center rounded-[24px] border-2 border-brand-mid bg-brand-light/60 px-5 pb-5 pt-4 text-center" data-first-cta>
+      <Mascot mood="happy" size={96} />
+      <div className="mt-1 text-[12px] font-black uppercase tracking-wider text-brand">{t('first.kicker')}</div>
+      <h2 className="mt-0.5 text-[24px] font-black leading-tight">{t('first.title')}</h2>
+      <p className="mt-1 max-w-[420px] text-[15px] font-semibold leading-snug text-muted">{t('first.body')}</p>
+      <button className="btn btn-block mt-4 !min-h-[56px] !text-[17px]" onClick={() => navigate(`/lesson/${FIRST_LESSON_ID}`)} autoFocus data-first-start>
+        {t('first.btn')}
+      </button>
+    </div>
+  )
+}
+
 export function Home() {
   const { progress } = useStore()
   const [openId, setOpenId] = useState<string | null>(null)
@@ -357,6 +381,7 @@ export function Home() {
   let ui = 0
   return (
     <div className="mx-auto max-w-[600px]">
+      {isNewLearner(progress) && <FirstLessonCta />}
       {openId && <div className="fixed inset-0 z-[15]" onClick={() => setOpenId(null)} />}
       {TIERS.map((tier, ti) => {
         const locked = !isTierUnlocked(tier, progress)

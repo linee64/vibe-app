@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { findLesson } from '../data/course'
 import { useStore } from '../store'
-import { continueAfter } from '../flow'
+import { continueAfter, nextStep, FIRST_LESSON_ID, FIRST_RUN_PICK } from '../flow'
 import { navigate } from '../router'
 import { useToast } from '../components/Toast'
 import { Battery, Check, Cross, Token } from '../components/Icons'
@@ -43,7 +43,14 @@ export function LessonScreen({ id }: { id: string }) {
   const locale = useLocale()
   const toast = useToast()
 
-  const exercises = found?.exercises ?? []
+  // Самый первый урок, пока он не пройден: короткая версия (3 простых упражнения из 5), чтобы первая победа пришла за ~минуту.
+  // Решаем один раз при открытии: после прохождения урок станет «пройденным», а набор упражнений менять уже нельзя.
+  const [firstRun] = useState(() => id === FIRST_LESSON_ID && !progress.completed.includes(id))
+  const allExercises = found?.exercises
+  const exercises = useMemo(() => {
+    const all = allExercises ?? []
+    return firstRun ? FIRST_RUN_PICK.map((i) => all[i]).filter((e): e is Exercise => !!e) : all
+  }, [allExercises, firstRun])
   const [queue, setQueue] = useState<number[]>(() => exercises.map((_, i) => i))
   const [pos, setPos] = useState(0)
   const [answer, setAnswer] = useState<Answer>(null)
@@ -114,7 +121,7 @@ export function LessonScreen({ id }: { id: string }) {
 
   const ex = exercises[queue[pos]]
   // Словарик: термин подсвечивается там, где он впервые встречается в уроке
-  const plan = useMemo(() => glossPlan(findLesson(id)?.exercises ?? [], locale), [id, locale])
+  const plan = useMemo(() => glossPlan(exercises, locale), [exercises, locale])
   const glossFields = plan.get(queue[pos])
   /** Это упражнение уже решали с ошибкой (вернулось в очередь) */
   const isRetry = queue.indexOf(queue[pos]) < pos
@@ -222,6 +229,9 @@ export function LessonScreen({ id }: { id: string }) {
         result={result}
         lessonTitle={found.title}
         unitLabel={t('x11mxrex', { num: found.unit.num, title: found.unit.title })}
+        streak={progress.streak}
+        next={nextStep(progress)}
+        onNext={(to) => navigate(to)}
         onContinue={() => continueAfter(progress, id)}
       />
     )
