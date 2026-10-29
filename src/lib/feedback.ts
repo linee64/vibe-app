@@ -12,6 +12,7 @@ import {
   MICRO_STORAGE_KEY,
   idsFromRoute,
   markMicroShown,
+  microAllowed,
   microToShow,
   parseMicroState,
   queueMicro,
@@ -130,6 +131,17 @@ const saveMicro = (s: ReturnType<typeof loadMicro>) => {
 /** Попросить микро-опрос (покажется вне урока, если позволяют лимиты) */
 export function requestMicroPrompt(kind: MicroPromptKind) {
   saveMicro(queueMicro(loadMicro(), kind, Date.now()))
+}
+
+/**
+ * Инлайн-оценка (на экране «урок пройден»): лимиты те же, что у микро-опросов, показ засчитывается сразу —
+ * true один раз, потом false. В очередь для карточки на пути не ставится.
+ */
+export function claimInlinePrompt(kind: MicroPromptKind): boolean {
+  if (!microAllowed(loadMicro(), kind, Date.now())) return false
+  markMicroPromptShown(kind)
+  track('micro_prompt_shown', { source: kind, where: 'lesson_complete' })
+  return true
 }
 
 export function pendingMicroPrompt(): MicroPromptKind | null {

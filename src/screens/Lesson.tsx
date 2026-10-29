@@ -17,7 +17,7 @@ import type { Exercise } from '../data/types'
 import { LessonComplete, type LessonResult } from './LessonComplete'
 import { track } from '../lib/analytics'
 import { playSound } from '../lib/sound'
-import { requestMicroPrompt } from '../lib/feedback'
+import { claimInlinePrompt } from '../lib/feedback'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
 import { useLocale } from '../i18n/react'
@@ -60,6 +60,7 @@ export function LessonScreen({ id }: { id: string }) {
   const [mistakes, setMistakes] = useState(0)
   const [praise, setPraise] = useState(PRAISE()[0])
   const [result, setResult] = useState<LessonResult | null>(null)
+  const [rateFirst, setRateFirst] = useState(false)
   const [quitOpen, setQuitOpen] = useState(false)
   /** Модалка «заряд сел»: 'menu' — варианты, 'review' — разбор последней ошибки */
   const [empty, setEmpty] = useState<null | 'menu' | 'review'>(null)
@@ -177,8 +178,8 @@ export function LessonScreen({ id }: { id: string }) {
       playSound('complete')
       finished.current = true
       track('lesson_completed', { lesson_id: id, unit: unitNum, mistakes, duration_s: seconds, perfect, accuracy, repeat: wasDone.current })
-      // самый первый пройденный урок — потом (на пути, не в уроке) спросим «Как тебе первый урок?»
-      if (!wasDone.current && progress.completed.length === 0) requestMicroPrompt('first_lesson')
+      // самый первый пройденный урок — тут же, на экране «урок пройден», компактно спросим «Как тебе первый урок?» (один раз)
+      if (!wasDone.current && progress.completed.length === 0) setRateFirst(claimInlinePrompt('first_lesson'))
       setResult({ xp, accuracy, seconds, gems: perfect ? 10 : 5 })
       return
     }
@@ -230,6 +231,7 @@ export function LessonScreen({ id }: { id: string }) {
         lessonTitle={found.title}
         unitLabel={t('x11mxrex', { num: found.unit.num, title: found.unit.title })}
         streak={progress.streak}
+        rateFirstLesson={rateFirst}
         next={nextStep(progress)}
         onNext={(to) => navigate(to)}
         onContinue={() => continueAfter(progress, id)}

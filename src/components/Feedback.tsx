@@ -322,6 +322,60 @@ const MICRO_COPY: Record<MicroPromptKind, { title: string; sub: string }> = {
   paywall_exit: { get title() { return t('x1pdlh9q') }, get sub() { return t('x0lxb58t') } },
 }
 
+/**
+ * Компактная оценка прямо на экране «урок пройден»: пять лиц, после выбора — необязательный комментарий.
+ * Не перекрывает кнопки и не блокирует «Следующий урок»; пишет в ту же таблицу отзывов (source = first_lesson).
+ */
+export function InlineLessonRating({ kind = 'first_lesson' }: { kind?: MicroPromptKind }) {
+  const [rating, setRating] = useState<number | null>(null)
+  const [message, setMessage] = useState('')
+  const [done, setDone] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const send = async () => {
+    if (rating === null || busy) return
+    setBusy(true)
+    await submitFeedback({ rating, category: null, message, source: kind, context: collectContext() })
+    setBusy(false)
+    setDone(true)
+  }
+  return (
+    <section className="mt-4 w-full max-w-[540px] rounded-[18px] border-2 border-line bg-white px-4 py-3 text-left" aria-label={MICRO_COPY[kind].title} data-inline-rating={kind}>
+      {done ? (
+        <div className="flex items-center gap-2.5" data-feedback-thanks>
+          <MascotHead size={32} />
+          <p className="text-[15px] font-extrabold text-teal-dark">{t('x00nmb14')}</p>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-2.5">
+            <MascotHead size={32} />
+            <h3 className="text-[15px] font-black leading-tight">{MICRO_COPY[kind].title}</h3>
+          </div>
+          <div className="mt-2">
+            <RatingFaces value={rating} onChange={setRating} size={28} />
+          </div>
+          {rating !== null && (
+            <div className="anim-fade-up mt-1 flex items-start gap-2">
+              <textarea
+                className="input min-h-[44px] flex-1 resize-none !py-2 !text-[14px] leading-snug"
+                aria-label={t('x00apcr5')}
+                placeholder={t('x09b04yc')}
+                rows={1}
+                maxLength={FEEDBACK_MAX_MESSAGE}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              <button className="btn btn-sm shrink-0" onClick={send} disabled={busy} data-micro-send>
+                {busy ? t('x0xqc2da') : t('x0x5ywt2')}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
+
 /** Небольшая карточка внизу экрана: не закрывает путь целиком, крестик — и её нет */
 export function MicroPromptCard({ kind, onClose }: { kind: MicroPromptKind; onClose: () => void }) {
   const [rating, setRating] = useState<number | null>(null)

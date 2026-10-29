@@ -1,10 +1,12 @@
-import type { ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { Mascot } from '../components/Mascot'
 import { Clock, Rocket, Spark, Target, Token } from '../components/Icons'
 import type { NextStep } from '../flow'
 import { t } from '../i18n/core'
 import { tx } from '../i18n/rich'
 
+
+const InlineLessonRating = lazy(() => import('../components/Feedback').then((m) => ({ default: m.InlineLessonRating })))
 
 export interface LessonResult {
   xp: number
@@ -77,6 +79,7 @@ export function LessonComplete({
   lessonTitle,
   unitLabel,
   streak = 0,
+  rateFirstLesson = false,
   next = null,
   onNext,
   onContinue,
@@ -85,6 +88,8 @@ export function LessonComplete({
   lessonTitle: string
   unitLabel?: string
   streak?: number
+  /** Первый пройденный урок: показать компактную оценку (один раз) */
+  rateFirstLesson?: boolean
   next?: NextStep | null
   onNext?: (to: string) => void
   onContinue: () => void
@@ -92,28 +97,33 @@ export function LessonComplete({
   const perfect = result.accuracy === 100
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <main className="relative flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
+      <main className={`relative flex flex-1 flex-col items-center justify-center px-4 text-center ${rateFirstLesson ? 'py-5 md:py-6' : 'py-10'}`}>
         <Confetti />
         <div className="relative">
-          <div className="absolute left-1/2 top-[54%] h-[230px] w-[230px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-light" />
-          <Mascot mood="happy" size={210} className="anim-pop relative" />
+          <div className={`absolute left-1/2 top-[54%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-light ${rateFirstLesson ? 'h-[130px] w-[130px]' : 'h-[230px] w-[230px]'}`} />
+          <Mascot mood="happy" size={rateFirstLesson ? 112 : 210} className="anim-pop relative" />
         </div>
         {unitLabel && <div className="mt-4 text-[13px] font-extrabold uppercase tracking-wider text-muted">{unitLabel}</div>}
         <h1 className={`${unitLabel ? 'mt-1' : 'mt-4'} text-[30px] font-black leading-tight text-brand md:text-[36px]`}>{perfect ? t('x04sz8f0') : t('x0w4ioxt')}</h1>
         <p className="mt-1 max-w-[460px] text-[17px] font-semibold text-muted">{tx('x0koxje8', { lessonTitle }, [(chunk) => <b className="text-ink">{chunk}</b>])}</p>
         <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-teal-light px-3 py-1 text-[15px] font-black text-teal-dark" data-reward-tokens>{tx('x0anpi05', { gems: result.gems }, [() => <Token size={20} />])}</p>
-        <div className="mt-8 grid w-full max-w-[540px] grid-cols-3 gap-3 md:gap-4">
+        <div className={`${rateFirstLesson ? 'mt-4' : 'mt-8'} grid w-full max-w-[540px] grid-cols-3 gap-3 md:gap-4`}>
           <StatCard label={t('x0r86dp9')} value={`+${result.xp}`} icon={<Spark size={26} />} color="#FFB61D" edge="#E5A100" />
           <StatCard label={t('x0ngco8m')} value={`${result.accuracy}%`} icon={<Target size={24} />} color="#13C2AE" edge="#0E9C8C" />
           <StatCard label={t('x14ec53v')} value={fmt(result.seconds)} icon={<Clock size={24} />} color="#7C4DFF" edge="#5B2FD6" />
         </div>
         <StreakCard streak={streak} />
+        {rateFirstLesson && (
+          <Suspense fallback={null}>
+            <InlineLessonRating />
+          </Suspense>
+        )}
       </main>
-      <footer className="border-t-2 border-line">
-        <div className="mx-auto flex max-w-[1040px] flex-col-reverse gap-3 px-4 py-5 md:flex-row md:items-center md:justify-between md:px-8 md:py-8">
+      <footer className="sticky bottom-0 z-10 border-t-2 border-line bg-white">
+        <div className="mx-auto flex max-w-[1040px] flex-col-reverse gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8 md:py-5">
           {next && onNext ? (
             <>
-              <button className="btn btn-ghost w-full md:w-[200px]" onClick={onContinue}>{t('lc.toPath')}</button>
+              <button className="btn btn-ghost w-full md:w-[240px]" onClick={onContinue}>{t('lc.toPath')}</button>
               <div className="flex w-full flex-col items-stretch gap-1 md:w-auto md:items-end">
                 <div className="truncate text-center text-[13px] font-extrabold text-muted md:text-right" data-next-title>{t('lc.upNext', { title: next.title })}</div>
                 <button className="btn w-full md:w-[260px]" onClick={() => onNext(next.to)} autoFocus data-next-lesson>{t('lc.next')}</button>
