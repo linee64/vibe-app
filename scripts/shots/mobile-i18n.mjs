@@ -23,9 +23,12 @@ const noCyrillic = async (where) => {
 }
 
 await p.goto(BASE + '/')
-await id('email').waitFor({ timeout: 20000 })
+await id('welcome').waitFor({ timeout: 20000 })
 const lang = await p.evaluate(() => document.documentElement.lang)
 console.log('html lang (en-US phone):', lang)
+await noCyrillic('welcome en')
+await id('start-login').click()
+await id('email').waitFor({ timeout: 20000 })
 await noCyrillic('login en')
 await id('email').fill('aidar@example.com')
 await id('submit').click()

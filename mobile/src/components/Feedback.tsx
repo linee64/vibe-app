@@ -310,7 +310,7 @@ export function FeedbackButton({ entry }: { entry: string }) {
 
 
 /** Экраны, где микро-опросы не показываем (урок, домашка, тест, пейвол, вход) */
-const BUSY_ROUTE = /^\/(lesson|homework|intro|paywall|login|tier-up|lesson-complete)/
+const BUSY_ROUTE = /^\/(lesson|homework|intro|paywall|login|welcome|callback|guide|tier-up|lesson-complete)/
 
 export function FeedbackProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()

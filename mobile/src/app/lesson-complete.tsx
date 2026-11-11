@@ -32,7 +32,7 @@ function StatCard({ label, value, icon, color, edge }: { label: string; value: s
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
 export default function LessonCompleteScreen() {
-  const p = useLocalSearchParams<{ xp: string; accuracy: string; seconds: string; gems: string; title: string; unit: string; node: string }>()
+  const p = useLocalSearchParams<{ xp: string; accuracy: string; seconds: string; gems: string; title: string; unit: string; node: string; guided?: string }>()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { progress } = useStore()
@@ -63,7 +63,7 @@ export default function LessonCompleteScreen() {
         </View>
       </ScrollView>
       <View style={{ borderTopWidth: 2, borderTopColor: C.line, paddingHorizontal: 16, paddingTop: 20, paddingBottom: insets.bottom + 20, gap: 12 }}>
-        <Btn testID="continue" block label={t('x1kpmy5f')} onPress={() => continueAfter(router, progress, p.node ?? '')} />
+        <Btn testID="continue" block label={p.guided === '1' ? t('guide.next') : t('x1kpmy5f')} onPress={() => (p.guided === '1' ? router.replace('/guide') : continueAfter(router, progress, p.node ?? ''))} />
         <Btn tone="ghost" block label={t('x0nv9ya6')} onPress={share} />
       </View>
     </View>

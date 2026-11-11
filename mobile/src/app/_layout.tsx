@@ -15,6 +15,7 @@ import { C } from '../theme'
 import { LocaleKeyed } from '@web/i18n/react'
 import { onUserLocaleChange } from '@web/i18n/runtime'
 import { initMobileLocale, takeReturnRoute } from '../lib/locale'
+import { needsGuide, startRoute } from '../lib/guide'
 import { useProSync } from '../lib/billing'
 
 initSentry()
@@ -65,20 +66,43 @@ function ProSync() {
 void SplashScreen.preventAutoHideAsync().catch(() => {})
 
 function Gate({ children }: { children: React.ReactNode }) {
-  const { session, authReady } = useStore()
+  const { session, authReady, progress, progressReady, progressSynced } = useStore()
   const segments = useSegments()
   const router = useRouter()
   useEffect(() => {
     if (!authReady) return
-    const onAuth = segments[0] === '(auth)'
-    if (!session && !onAuth) router.replace('/(auth)/login')
-    else if (session && onAuth) router.replace('/(tabs)/learn')
-    else if (session) {
-      // после смены языка дерево экранов пересоздаётся — возвращаемся туда, где был переключатель
-      const back = takeReturnRoute()
-      if (back) router.replace(back as never)
+    const top = segments[0]
+    const onAuth = top === '(auth)'
+    if (!session) {
+      if (!onAuth) router.replace('/(auth)/welcome')
+      return
     }
-  }, [session, authReady, segments, router])
+    // облако молчит — не держим человека на входе; новичка в урок 1 не гадаем
+    if (!progressReady) return
+    // урок и экран награды не перебиваем: проводка откроется, когда ученик выйдет
+    const inLesson = top === 'lesson' || top === 'lesson-complete' || top === 'homework' || top === 'guide'
+    if (progressSynced && needsGuide(progress) && !inLesson) {
+      router.replace('/guide')
+      return
+    }
+    if (onAuth) {
+      const dest = startRoute(progress, progressSynced)
+      if (dest === '/lesson/u1-1') router.replace({ pathname: '/lesson/[id]', params: { id: 'u1-1' } })
+      else router.replace(dest)
+      return
+    }
+    // после смены языка дерево экранов пересоздаётся — возвращаемся туда, где был переключатель
+    const back = takeReturnRoute()
+    if (back) router.replace(back as never)
+  }, [session, authReady, progress, progressReady, progressSynced, segments, router])
+  useEffect(() => {
+    if (!session || progressReady) return
+    const top = segments[0]
+    // вход и корень ждут облако; если оно молчит 4 с — на путь, не в урок 1
+    if (top && top !== '(auth)' && top !== 'index') return
+    const timer = setTimeout(() => router.replace('/(tabs)/learn'), 4000)
+    return () => clearTimeout(timer)
+  }, [session, progressReady, segments, router])
   return <>{children}</>
 }
 
@@ -111,6 +135,7 @@ export default function RootLayout() {
                 <Stack.Screen name="lesson/[id]" options={{ animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="homework/[id]" options={{ animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="intro" options={{ animation: 'fade' }} />
+                <Stack.Screen name="guide" options={{ animation: 'fade' }} />
                 <Stack.Screen name="paywall" options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
               </Stack>
               </FeedbackProvider>

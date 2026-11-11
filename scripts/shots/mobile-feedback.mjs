@@ -19,6 +19,8 @@ const shot = async (name) => {
 }
 
 await p.goto(BASE + '/')
+await id('welcome').waitFor()
+await id('start-login').click()
 await id('email').waitFor()
 await id('email').fill('aidar@example.com')
 await id('submit').click()
