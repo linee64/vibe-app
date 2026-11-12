@@ -14,7 +14,7 @@ const config: ExpoConfig = {
   name: 'Vaibik',
   slug: 'vaibik',
   owner: 'linee64',
-  version: '1.1',
+  version: '1.2.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'vaibik',
