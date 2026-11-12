@@ -24,6 +24,8 @@ export function getSupabase(): Promise<SupabaseClient | null> {
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: false,
+            // PKCE: код из vaibik://callback обменивается на сессию, токены не светятся в адресе
+            flowType: 'pkce',
           },
         })
         // токен обновляется только пока приложение на экране (рекомендация Supabase для RN)

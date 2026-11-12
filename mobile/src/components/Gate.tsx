@@ -1,9 +1,8 @@
 /**
- * Вход в урок/домашку — как Gate и IntroScreen в src/App.tsx веба:
- * новичок перед первым уроком видит тур «Как это работает», закрытый тир/шаг — экран «пока закрыто»,
- * Pro-раздел без подписки — пейвол.
+ * Вход в урок/домашку: закрытый тир/шаг — экран «пока закрыто», Pro-раздел без подписки — пейвол.
+ * Первого ученика Бипи ведёт внутри самого урока (isGuidedLesson), отдельный тур сюда больше не вставляет.
  */
-import { useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -17,8 +16,6 @@ import { Mascot, TierBadge } from './art'
 import { Btn } from './ui'
 import { PaywallView } from './Paywall'
 import { C, font } from '../theme'
-
-export const needsIntro = (p: { completed: string[]; homework: string[]; introSeen?: boolean }) => !p.introSeen && p.completed.length === 0 && p.homework.length === 0
 
 export function LockedView({ tier }: { tier: Tier }) {
   const router = useRouter()
@@ -43,15 +40,10 @@ export function LockedView({ tier }: { tier: Tier }) {
   )
 }
 
-export function Gate({ unitId, nodeId, path, children }: { unitId: string; nodeId: string; path: string; children: ReactNode }) {
+export function Gate({ unitId, nodeId, children }: { unitId: string; nodeId: string; path: string; children: ReactNode }) {
   const router = useRouter()
   const { progress } = useStore()
   const { pro, loading } = useProStatus()
-  const intro = needsIntro(progress)
-  useEffect(() => {
-    if (intro) router.replace({ pathname: '/intro', params: { entry: 'first_lesson', next: path } })
-  }, [intro, path, router])
-  if (intro) return <View style={{ flex: 1, backgroundColor: C.white }} />
   if (isUnitLocked(unitId, progress) || !isNodeReachable(nodeId, progress)) return <LockedView tier={tierOfUnit(unitId)} />
   if (needsPro(unitId) && !pro) {
     if (loading) return <View style={{ flex: 1, backgroundColor: C.white }} />

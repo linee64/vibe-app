@@ -25,6 +25,7 @@ import { track } from '../../lib/analytics'
 import { requestMicroPrompt } from '../../lib/feedback'
 import { C, caps, font } from '../../theme'
 import { rawMessage, t } from '@web/i18n/core'
+import { coachBeat, GUIDED_PICK, isGuidedLesson, type CoachBeat } from '../../lib/guide'
 import { tx } from '@web/i18n/rich'
 
 const PRAISE = () => [t('lesson.praise.1'), t('lesson.praise.2'), t('lesson.praise.3'), t('lesson.praise.4'), t('lesson.praise.5')]
@@ -42,6 +43,35 @@ export default function LessonRoute() {
 
 function LessonScreen({ id }: { id: string }) {
   const found = findLesson(id)
+  const { progress, progressReady } = useStore()
+  if (!found) return <LessonMissing />
+  if (!progressReady) return <View testID="lesson-screen" style={{ flex: 1, backgroundColor: C.white }} />
+  // Монтируется один раз, когда прогресс уже известен — набор упражнений не прыгает вслед за зарядом
+  return <LessonReady key={id} id={id} found={found} progress={progress} />
+}
+
+function LessonReady({ id, found, progress }: { id: string; found: NonNullable<ReturnType<typeof findLesson>>; progress: { introSeen?: boolean; completed: string[] } }) {
+  const [run] = useState(() => {
+    const guided = isGuidedLesson(progress, id)
+    const all = found.exercises
+    const picked = guided ? GUIDED_PICK.map((i) => all[i]).filter((e): e is Exercise => !!e) : all
+    return { exercises: picked.length ? picked : all, guided: guided && picked.length > 0 }
+  })
+  return <LessonPlay id={id} found={found} exercises={run.exercises} guided={run.guided} />
+}
+
+function LessonMissing() {
+  const router = useRouter()
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: C.white }}>
+      <Mascot mood="think" size={140} />
+      <Txt w={900} size={22}>{t('x0thqany')}</Txt>
+      <Btn label={t('x0povobi')} onPress={() => router.replace('/(tabs)/learn')} />
+    </View>
+  )
+}
+
+function LessonPlay({ id, found, exercises, guided }: { id: string; found: NonNullable<ReturnType<typeof findLesson>>; exercises: Exercise[]; guided: boolean }) {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const toast = useToast()
@@ -49,7 +79,6 @@ function LessonScreen({ id }: { id: string }) {
   // Pro: заряд безлимитный — ошибки его не тратят
   const isPro = useIsPro()
 
-  const exercises = found?.exercises ?? []
   const [queue, setQueue] = useState<number[]>(() => exercises.map((_, i) => i))
   const [pos, setPos] = useState(0)
   const [answer, setAnswer] = useState<Answer>(null)
@@ -62,6 +91,7 @@ function LessonScreen({ id }: { id: string }) {
   const [empty, setEmpty] = useState<null | 'menu' | 'review'>(null)
   const [hint, setHint] = useState<Hint | null>(null)
   const [recharged, setRecharged] = useState(false)
+  const [dismissed, setDismissed] = useState<string[]>([])
   const [lastWrong, setLastWrong] = useState<Exercise | null>(null)
   const startRef = useRef(0)
   const wasDone = useRef(false)
@@ -84,6 +114,7 @@ function LessonScreen({ id }: { id: string }) {
     firstEver.current = progress.completed.length === 0
     finished.current = false
     if (found) track('lesson_started', { lesson_id: id, unit: found.unit.num, repeat: wasDone.current })
+    if (guided) track('onboarding_started', { entry: 'guided_lesson' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
@@ -115,9 +146,9 @@ function LessonScreen({ id }: { id: string }) {
       finished.current = true
       track('lesson_completed', { lesson_id: id, unit: found?.unit.num ?? 0, mistakes: m, duration_s: seconds, perfect, accuracy, repeat: wasDone.current })
       if (!wasDone.current && firstEver.current) void requestMicroPrompt('first_lesson')
-      router.replace({ pathname: '/lesson-complete', params: { xp: String(xp), accuracy: String(accuracy), seconds: String(seconds), gems: String(perfect ? 10 : 5), title: found?.title ?? '', unit: found ? t('x11mxrex', { num: found.unit.num, title: found.unit.title }) : '', node: id } })
+      router.replace({ pathname: '/lesson-complete', params: { xp: String(xp), accuracy: String(accuracy), seconds: String(seconds), gems: String(perfect ? 10 : 5), title: found.title, unit: t('x11mxrex', { num: found.unit.num, title: found.unit.title }), node: id, guided: guided ? '1' : '0' } })
     },
-    [completeLesson, exercises.length, found, id, router],
+    [completeLesson, exercises.length, found, guided, id, router],
   )
 
   const check = useCallback(
@@ -186,17 +217,8 @@ function LessonScreen({ id }: { id: string }) {
     setHint(hintFor(ex))
   }, [ex, hint, status, spendGems, toast, id])
 
-  if (!found) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: C.white }}>
-        <Mascot mood="think" size={140} />
-        <Txt w={900} size={22}>{t('x0thqany')}</Txt>
-        <Btn label={t('x0povobi')} onPress={() => router.replace('/(tabs)/learn')} />
-      </View>
-    )
-  }
-
   const sheet = status === 'correct' ? { bg: C.tealLight, fg: C.tealDark, tone: 'teal' as const } : status === 'wrong' ? { bg: C.coralLight, fg: C.coralDark, tone: 'coral' as const } : null
+  const beat = coachBeat({ guided, pos, status, dismissed })
   const canHint = progress.gems >= HINT_COST && !hint
 
   return (
@@ -218,7 +240,8 @@ function LessonScreen({ id }: { id: string }) {
         <FadeUp key={pos}>{ex ? <ExerciseView ex={ex} answer={answer} setAnswer={setAnswer} status={status} hint={hint} /> : null}</FadeUp>
       </ScrollView>
 
-      <View testID={sheet ? `sheet-${status}` : 'lesson-footer'} style={{ borderTopWidth: 2, borderTopColor: sheet ? 'transparent' : C.line, backgroundColor: sheet ? sheet.bg : C.white, paddingHorizontal: 16, paddingTop: 20, paddingBottom: insets.bottom + 20, gap: 16 }}>
+      <View testID={sheet ? `sheet-${status}` : 'lesson-footer'} style={{ borderTopWidth: 2, borderTopColor: sheet ? 'transparent' : C.line, backgroundColor: sheet ? sheet.bg : C.white, paddingHorizontal: 16, paddingTop: 16, paddingBottom: insets.bottom + 20, gap: 16 }}>
+        {beat ? <CoachCard beat={beat} onDismiss={() => setDismissed((d) => (d.includes(beat) ? d : [...d, beat]))} /> : null}
         {sheet ? (
           <>
             <View>
@@ -355,6 +378,27 @@ function LessonScreen({ id }: { id: string }) {
           </>
         ) : null}
       </Dialog>
+    </View>
+  )
+}
+
+const COACH_TEXT: Record<CoachBeat, 'guide.welcome' | 'guide.after' | 'guide.tokens'> = {
+  welcome: 'guide.welcome',
+  after: 'guide.after',
+  tokens: 'guide.tokens',
+}
+
+/** Короткая реплика Бипи поверх футера первого урока — не вместо задания */
+function CoachCard({ beat, onDismiss }: { beat: CoachBeat; onDismiss: () => void }) {
+  return (
+    <View testID="coach-card" style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 18, borderWidth: 2, borderColor: C.brandMid, backgroundColor: C.white, padding: 10 }}>
+      <Mascot mood="happy" size={64} />
+      <View style={{ flex: 1, gap: 6 }}>
+        <Text style={[font(700, 14), { lineHeight: 19 }]}>{t(COACH_TEXT[beat])}</Text>
+        <Pressable testID="coach-dismiss" accessibilityRole="button" onPress={onDismiss} hitSlop={6}>
+          <Text style={font(800, 14, C.brand)}>{t('guide.gotIt')}</Text>
+        </Pressable>
+      </View>
     </View>
   )
 }

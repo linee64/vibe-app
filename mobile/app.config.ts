@@ -14,7 +14,7 @@ const config: ExpoConfig = {
   name: 'Vaibik',
   slug: 'vaibik',
   owner: 'linee64',
-  version: '1.1',
+  version: '1.2.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   scheme: 'vaibik',
@@ -25,6 +25,7 @@ const config: ExpoConfig = {
     // eas.json: appVersionSource "remote" + autoIncrement — EAS сам выставит номер сборки; локальное значение для справки
     buildNumber: '2',
     supportsTablet: false,
+    usesAppleSignIn: true,
     infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
   android: {
@@ -41,6 +42,8 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     'expo-font',
+    'expo-web-browser',
+    'expo-apple-authentication',
     ['expo-splash-screen', { backgroundColor: '#7C4DFF', image: './assets/splash-icon.png', imageWidth: 220 }],
     'expo-localization',
     ...sentryPlugin,

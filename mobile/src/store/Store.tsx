@@ -18,6 +18,10 @@ const SAVE_DEBOUNCE_MS = 1200
 interface Store {
   session: Session | null
   authReady: boolean
+  /** Локальный прогресс прочитан и облако ответило — или мы перестали ждать */
+  progressReady: boolean
+  /** Облако уже слито (или это демо без аккаунта). Пока false, новичка в урок 1 не отправляем */
+  progressSynced: boolean
   progress: Progress
   /** Демо-вход по email (когда Supabase не подключён) */
   login: (email: string) => void
@@ -156,6 +160,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const userId = session?.real ? session.id : undefined
+  const progressSynced = hydrated && (!userId || syncedFor === userId)
+  const progressReady = progressSynced
 
   useEffect(() => {
     if (!userId || !hydrated) return
@@ -323,8 +329,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => onUserLocaleChange((l) => setProgress((p) => (p.locale === l ? p : { ...p, locale: l }))), [])
 
   const value = useMemo<Store>(
-    () => ({ session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin }),
-    [session, authReady, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin],
+    () => ({ session, authReady, progressReady, progressSynced, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin }),
+    [session, authReady, progressReady, progressSynced, progress, login, logout, completeLesson, loseHeart, refillHearts, addCharge, spendGems, chargeAt, fullAt, resetProgress, completeHomework, passTiersByTest, markTierCelebrated, setUnlockAll, setPlacementSeen, setPortfolioUrl, recordAnswer, claimQuest, setIntroSeen, buySkin, equipSkin, unequipSkin],
   )
   const look = useMemo(() => lookOf(progress.skins), [progress.skins])
   // надетые вещи — всем <Mascot /> и <MascotHead /> (общий контекст веба)

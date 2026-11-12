@@ -1,9 +1,13 @@
 import { Redirect } from 'expo-router'
 import { useStore } from '../store/Store'
+import { startRoute } from '../lib/guide'
 
-/** Корень «/»: раньше тут был «Unmatched Route» — теперь сразу на путь или на вход */
+/** Корень «/»: гость — на приглашение Бипи, новичок — в первый урок, остальные — на путь */
 export default function Index() {
-  const { session, authReady } = useStore()
-  if (!authReady) return null
-  return <Redirect href={session ? '/(tabs)/learn' : '/(auth)/login'} />
+  const { session, authReady, progress, progressReady, progressSynced } = useStore()
+  if (!authReady || (session && !progressReady)) return null
+  if (!session) return <Redirect href="/(auth)/welcome" />
+  const dest = startRoute(progress, progressSynced)
+  if (dest === `/lesson/u1-1`) return <Redirect href={{ pathname: '/lesson/[id]', params: { id: 'u1-1' } }} />
+  return <Redirect href={dest} />
 }

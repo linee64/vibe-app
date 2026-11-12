@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { PRO_FEATURES } from '@web/data/pricing'
 import { t } from '@web/i18n/core'
 import { tx } from '@web/i18n/rich'
-import { createBilling, formatMoney, useProInfo, type BillingState, type Plan, type PlanOffer } from '../lib/billing'
+import { createBilling, useProInfo, type BillingState, type Plan, type PlanOffer } from '../lib/billing'
 import { ProActiveCard } from './ProStatus'
 import { useRouter } from 'expo-router'
 import { REVIEW_MODE } from '../lib/env'
@@ -62,18 +62,18 @@ export function PaywallView({ title, unit, source, onClose, onPurchased }: { tit
 
   /** Номер попытки: растёт при «Повторить» и автоповторах — перезапускает загрузку цен */
   const [attempt, setAttempt] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [loadedAttempt, setLoadedAttempt] = useState(-1)
+  const loading = loadedAttempt !== attempt
 
   useEffect(() => {
     let alive = true
     let timer: ReturnType<typeof setTimeout> | undefined
-    setLoading(true)
     void (async () => {
       await billing.identify(session?.real ? (session.id ?? null) : null)
       const s = await billing.state()
       if (!alive) return
       setState(s)
-      setLoading(false)
+      setLoadedAttempt(attempt)
       if (!s.offers.some((o) => o.plan === 'annual') && s.offers[0]) setPlan(s.offers[0].plan)
       // цены не загрузились (сеть, StoreKit ещё не отдал продукты) — молча пробуем ещё до 3 раз, дальше — кнопка «Повторить»
       if (s.mode === 'error' && attempt < 3) timer = setTimeout(() => alive && setAttempt((n) => n + 1), [2000, 4000, 8000][attempt])
